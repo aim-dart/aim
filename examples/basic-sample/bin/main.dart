@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:aim_server/aim_server.dart';
+import 'package:aim_server_cors/aim_server_cors.dart';
 
 void main() async {
   final app = Aim();
+
+  app.use(cors());
 
   app.get('/', (c) async {
     return c.json({'message': 'Hello, Aim Framework!'});

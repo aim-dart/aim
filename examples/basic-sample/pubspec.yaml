@@ -11,6 +11,9 @@ environment:
 dependencies:
   aim_server:
     path: ../../packages/aim_server
+  aim_server_cors:
+    path: ../../packages/aim_server_cors
+
 
 dev_dependencies:
   lints: ^6.0.0
