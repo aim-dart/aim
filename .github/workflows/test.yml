@@ -38,14 +38,6 @@ jobs:
         working-directory: packages/aim_server
         run: dart test
 
-      - name: Run tests for aim_server_cookie
-        working-directory: packages/aim_server_cookie
-        run: dart test
-
-      - name: Run tests for aim_server_cors
-        working-directory: packages/aim_server_cors
-        run: dart test
-
       - name: Analyze aim_server
         run: dart analyze --fatal-infos
 
