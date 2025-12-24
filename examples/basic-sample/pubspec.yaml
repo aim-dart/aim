@@ -1,0 +1,17 @@
+name: basic_sample
+description: A starting point for Dart libraries or applications.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.10.4
+
+# Add regular dependencies here.
+dependencies:
+  aim_server:
+    path: ../../packages/aim_server
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

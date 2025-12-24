@@ -5,3 +5,4 @@ environment:
 workspace:
   - packages/aim_server
   - packages/aim_cli
+  - examples/basic-sample
