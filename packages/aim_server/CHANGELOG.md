@@ -1,3 +1,6 @@
+## 0.0.4
+Fix README.md and pubspec description
+
 ## 0.0.3
 ### Breaking Changes
 - **CORS middleware removed**: CORS functionality has been extracted to the `aim_server_cors` package
