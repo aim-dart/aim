@@ -23,18 +23,7 @@ Add `aim_server` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  aim_server:
-    git:
-      url: https://github.com/aim-dart/aim.git
-      path: packages/aim_server
-```
-
-Or for local development:
-
-```yaml
-dependencies:
-  aim_server:
-    path: ../aim/packages/aim_server
+  aim_server: <latest version>
 ```
 
 Then run:
