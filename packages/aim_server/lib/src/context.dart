@@ -35,11 +35,6 @@ class Context<E extends Env> {
   /// Early response set by middleware (e.g., for CORS preflight).
   Response? _response;
 
-  /// Whether the connection has been upgraded (e.g., to WebSocket).
-  ///
-  /// When true, no HTTP response should be sent.
-  bool _upgraded = false;
-
   Context(this.request, this.variables);
 
   /// Whether a response has been finalized.
@@ -49,13 +44,6 @@ class Context<E extends Env> {
 
   /// Gets the finalized response, if any.
   Response? get response => _response;
-
-  /// Mark the connection as upgraded.
-  ///
-  /// This is used internally by WebSocket and other protocol upgrades.
-  void markAsUpgraded() {
-    _upgraded = true;
-  }
 
   // Request accessors
 
