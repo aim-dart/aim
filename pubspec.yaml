@@ -6,4 +6,5 @@ workspace:
   - packages/aim_server
   - packages/aim_cli
   - packages/aim_server_cors
+  - packages/aim_server_cookie
   - examples/basic-sample
