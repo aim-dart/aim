@@ -4,3 +4,4 @@ environment:
   sdk: ^3.10.0
 workspace:
   - packages/aim_server
+  - packages/aim_cli

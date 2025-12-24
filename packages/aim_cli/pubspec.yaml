@@ -1,6 +1,6 @@
-name: aim_server
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
+name: aim_cli
+description: A sample command-line application with basic argument parsing.
+version: 0.0.1
 repository: https://github.com/aim-dart/aim
 resolution: workspace
 
@@ -9,7 +9,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  # path: ^1.9.0
+  args: ^2.7.0
 
 dev_dependencies:
   lints: ^6.0.0
