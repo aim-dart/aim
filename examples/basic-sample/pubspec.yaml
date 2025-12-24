@@ -15,3 +15,6 @@ dependencies:
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.25.6
+
+aim:
+  entry: bin/main.dart

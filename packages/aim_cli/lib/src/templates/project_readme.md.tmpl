@@ -1,0 +1,39 @@
+# {{projectName}}
+
+A web server project built with Aim framework.
+
+## Setup
+
+Install dependencies:
+```bash
+dart pub get
+```
+
+## Run
+
+Development mode (JIT):
+```bash
+dart run bin/server.dart
+```
+
+Production mode (AOT):
+```bash
+dart compile exe bin/server.dart -o server
+./server
+```
+
+## Test
+
+```bash
+dart test
+```
+
+## Project Structure
+
+- `bin/server.dart` - Server entry point
+- `lib/src/server.dart` - Server implementation
+- `test/{{projectName}}_test.dart` - Test files
+
+## About Aim Framework
+
+For more details, see [Aim Documentation](https://github.com/yourusername/aim).

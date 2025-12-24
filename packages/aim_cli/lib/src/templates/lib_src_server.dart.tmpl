@@ -1,0 +1,79 @@
+import 'dart:io';
+import 'package:aim_server/aim_server.dart';
+
+/// Create Aim application
+Aim createApp() {
+  final app = Aim();
+
+  // Logging middleware
+  app.use((c, next) async {
+    print('[${DateTime.now()}] ${c.method} ${c.path}');
+    await next();
+  });
+
+  // Route definitions
+  app
+      // Home page
+      .get('/', (c) async {
+    return c.json({
+      'message': 'Welcome to {{projectName}}!',
+      'framework': 'Aim',
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  })
+
+      // GET request with parameters
+      .get('/users/:id', (c) async {
+    final id = c.param('id');
+    return c.json({
+      'userId': id,
+      'name': 'User $id',
+    });
+  })
+
+      // Query parameter example
+      .get('/search', (c) async {
+    final query = c.queryParam('q', '');
+    final page = c.queryParam('page', '1');
+
+    return c.json({
+      'query': query,
+      'page': int.parse(page),
+      'results': [],
+    });
+  })
+
+      // POST request (JSON)
+      .post('/api/users', (c) async {
+    final data = await c.req.json();
+
+    return c.json({
+      'message': 'User created',
+      'user': data,
+      'id': 'user-${DateTime.now().millisecondsSinceEpoch}',
+    });
+  })
+
+      // Redirect
+      .get('/old-path', (c) async {
+    return c.redirect('/');
+  });
+
+  // 404 handler
+  app.notFound((c) async {
+    return c.json({
+      'error': 'Not Found',
+      'path': c.path,
+    }, statusCode: 404);
+  });
+
+  // Error handler
+  app.onError((error, c) async {
+    print('Error: $error');
+    return c.json({
+      'error': error.toString(),
+    }, statusCode: 500);
+  });
+
+  return app;
+}

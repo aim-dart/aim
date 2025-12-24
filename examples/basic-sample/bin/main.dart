@@ -9,6 +9,10 @@ void main() async {
     return c.json({'message': 'Hello, Aim Framework!'});
   });
 
+  app.get('/ping', (c) async {
+    return c.text('pong');
+  });
+
   final server = await app.serve(host: InternetAddress.anyIPv4, port: 8081);
   print('Server started at http://${server.host}:${server.port}');
 }
