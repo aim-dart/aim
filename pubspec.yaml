@@ -1,0 +1,6 @@
+name: _
+publish_to: none
+environment:
+  sdk: ^3.10.0
+workspace:
+  - packages/aim_server
