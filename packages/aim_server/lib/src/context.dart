@@ -21,9 +21,6 @@ class Context<E extends Env> {
   /// Internal map for backward compatibility with set/get methods.
   final Map<String, Object> _variables = {};
 
-  /// Set-Cookie headers to be added to the response.
-  final List<String> _setCookieHeaders = [];
-
   /// Additional headers to be added to all responses.
   final Map<String, String> _responseHeaders = {};
 
@@ -277,23 +274,12 @@ class Context<E extends Env> {
     _response = response;
   }
 
-  /// Finalizes the response by adding cookies and custom headers.
+  /// Finalizes the response by adding custom headers.
   Response _finalizeResponse(Response response) {
     final headers = Map<String, String>.from(response.headers);
 
     // Add custom response headers
     headers.addAll(_responseHeaders);
-
-    // Add Set-Cookie headers
-    if (_setCookieHeaders.isNotEmpty) {
-      // Note: HTTP allows multiple Set-Cookie headers
-      // We join them with a newline for the headers map
-      if (headers.containsKey('set-cookie')) {
-        headers['set-cookie'] = '${headers['set-cookie']}\n${_setCookieHeaders.join('\n')}';
-      } else {
-        headers['set-cookie'] = _setCookieHeaders.join('\n');
-      }
-    }
 
     // Modify the existing response headers directly
     response.headers.addAll(headers);

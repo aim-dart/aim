@@ -1,6 +1,114 @@
-// TODO: Put public facing types in this file.
+import 'package:aim_server/aim_server.dart';
+import 'package:aim_server_cookie/src/cookie_options.dart';
 
-/// Checks if you are awesome. Spoiler: you are.
-class Awesome {
-  bool get isAwesome => true;
+extension CookieContext on Context {
+  /// Sets a cookie in the response.
+  ///
+  /// Multiple cookies can be set by calling this method multiple times.
+  ///
+  /// Example:
+  /// ```dart
+  /// app.get('/login', (c) {
+  ///   c.setCookie('session_id', 'abc123', options: CookieOptions(
+  ///     httpOnly: true,
+  ///     secure: true,
+  ///     maxAge: Duration(hours: 24),
+  ///     sameSite: SameSite.strict,
+  ///   ));
+  ///   return c.json({'status': 'logged in'});
+  /// });
+  /// ```
+  void setCookie(String name, String value, {CookieOptions? options}) {
+    final cookieString = _buildCookieString(name, value, options);
+
+    // Add to existing set-cookie header (joined by newline)
+    final existing = responseHeaders['set-cookie'];
+    if (existing != null) {
+      header('set-cookie', '$existing\n$cookieString');
+    } else {
+      header('set-cookie', cookieString);
+    }
+  }
+
+  /// Builds a Set-Cookie header value from name, value, and options.
+  String _buildCookieString(String name, String value, CookieOptions? options) {
+    final buffer = StringBuffer('$name=$value');
+
+    if (options != null) {
+      if (options.path != null) {
+        buffer.write('; Path=${options.path}');
+      }
+      if (options.domain != null) {
+        buffer.write('; Domain=${options.domain}');
+      }
+      if (options.maxAge != null) {
+        buffer.write('; Max-Age=${options.maxAge!.inSeconds}');
+      }
+      if (options.expires != null) {
+        buffer.write('; Expires=${_formatHttpDate(options.expires!)}');
+      }
+      if (options.secure == true) {
+        buffer.write('; Secure');
+      }
+      if (options.httpOnly == true) {
+        buffer.write('; HttpOnly');
+      }
+      if (options.sameSite != null) {
+        final sameSiteValue = _formatSameSite(options.sameSite!);
+        buffer.write('; SameSite=$sameSiteValue');
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /// Formats a DateTime to HTTP date format (RFC 1123).
+  ///
+  /// Example: "Wed, 21 Oct 2015 07:28:00 GMT"
+  String _formatHttpDate(DateTime date) {
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    final utc = date.toUtc();
+    final weekday = weekdays[utc.weekday - 1];
+    final month = months[utc.month - 1];
+
+    return '$weekday, ${utc.day.toString().padLeft(2, '0')} $month ${utc.year} '
+           '${utc.hour.toString().padLeft(2, '0')}:'
+           '${utc.minute.toString().padLeft(2, '0')}:'
+           '${utc.second.toString().padLeft(2, '0')} GMT';
+  }
+
+  /// Formats SameSite enum to proper case.
+  String _formatSameSite(SameSite sameSite) {
+    switch (sameSite) {
+      case SameSite.strict:
+        return 'Strict';
+      case SameSite.lax:
+        return 'Lax';
+      case SameSite.none:
+        return 'None';
+    }
+  }
+
+  /// Deletes a cookie by setting its Max-Age to 0.
+  ///
+  /// Note: To successfully delete a cookie, you must specify the same
+  /// path and domain that were used when setting the cookie.
+  ///
+  /// Example:
+  /// ```dart
+  /// app.get('/logout', (c) async {
+  ///   c.deleteCookie('session_id', path: '/');
+  ///   return c.json({'status': 'logged out'});
+  /// });
+  /// ```
+  void deleteCookie(String name, {String? path, String? domain}) {
+    setCookie(name, '', options: CookieOptions(
+      maxAge: Duration.zero,
+      path: path,
+      domain: domain,
+    ));
+  }
 }
