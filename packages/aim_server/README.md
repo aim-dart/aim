@@ -12,7 +12,6 @@ A lightweight and fast web server framework for Dart.
 - 🛣️ **Route Definitions** - Intuitive routing with path parameters
 - 🔌 **Middleware Support** - Composable middleware chain
 - 📨 **Request/Response Handling** - Easy-to-use request and response APIs
-- 🌐 **CORS Support** - Built-in Cross-Origin Resource Sharing
 - 🔒 **Type-safe** - Full Dart type safety
 - 🌍 **Environment Variables** - Built-in environment variable support
 - 📝 **JSON Support** - Native JSON request/response handling

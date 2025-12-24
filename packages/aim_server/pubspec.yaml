@@ -1,5 +1,5 @@
 name: aim_server
-description: A lightweight, fast web framework for Dart with routing, middleware, CORS support, and hot reload during development.
+description: A lightweight, fast web framework for Dart with routing, middleware and hot reload during development.
 version: 0.0.3
 repository: https://github.com/aim-dart/aim
 resolution: workspace
