@@ -1,3 +1,37 @@
+## 0.0.3
+### Breaking Changes
+- **CORS middleware removed**: CORS functionality has been extracted to the `aim_server_cors` package
+- If you need CORS support, add the `aim_server_cors` package to your dependencies
+
+### Migration
+Before:
+```dart
+import 'package:aim_server/aim_server.dart';
+
+final app = Aim();
+app.use(cors());
+```
+
+After:
+```dart
+import 'package:aim_server/aim_server.dart';
+import 'package:aim_server_cors/aim_server_cors.dart';
+
+final app = Aim();
+app.use(cors());
+```
+
+pubspec.yaml:
+```yaml
+dependencies:
+  aim_server: ^0.1.0
+  aim_server_cors: ^0.0.1
+```
+
+## 0.0.2
+### Fixes
+Fix README.md
+
 ## 0.0.1
 
 Initial release of aim_server - A lightweight and fast web server framework for Dart.

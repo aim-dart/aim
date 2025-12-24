@@ -46,3 +46,5 @@ Thumbs.db
 /refs/
 CLAUDE.local.md
 .claude/
+
+/scripts/

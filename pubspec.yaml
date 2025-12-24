@@ -5,4 +5,5 @@ environment:
 workspace:
   - packages/aim_server
   - packages/aim_cli
+  - packages/aim_server_cors
   - examples/basic-sample
