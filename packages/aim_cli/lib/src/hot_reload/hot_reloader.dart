@@ -1,5 +1,5 @@
-import 'process_manager.dart';
-import 'file_watcher.dart';
+import 'package:aim_cli/src/hot_reload/process_manager.dart';
+import 'package:aim_cli/src/hot_reload/file_watcher.dart';
 
 /// Integration class for hot reload functionality
 class HotReloader {

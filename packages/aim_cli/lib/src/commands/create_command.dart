@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
-import '../utils/validators.dart';
-import '../utils/file_generator.dart';
-import '../templates/templates.dart';
+import 'package:aim_cli/src/utils/validators.dart';
+import 'package:aim_cli/src/utils/file_generator.dart';
+import 'package:aim_cli/src/templates/templates.dart';
 
 class CreateCommand extends Command {
   @override

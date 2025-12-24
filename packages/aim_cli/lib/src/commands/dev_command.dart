@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
-import 'package:path/path.dart' as path;
-import '../utils/env_expander.dart';
-import '../hot_reload/hot_reloader.dart';
+import 'package:aim_cli/src/utils/env_expander.dart';
+import 'package:aim_cli/src/hot_reload/hot_reloader.dart';
 
 class DevCommand extends Command {
   @override
