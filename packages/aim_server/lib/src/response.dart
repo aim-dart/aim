@@ -30,14 +30,14 @@ class Response with MessageMixin {
   /// This constructor is private. Use factory methods like [Response.json]
   /// or [Response.text], or use the Context API (c.json, c.text, etc.).
   Response._(
-      this.statusCode, {
-        Object? bodyContent,
-        Map<String, String>? headers,
-        Encoding? encoding,
-        Map<String, Object>? context,
-      })  : body = Body(bodyContent, encoding),
-        headers = headers ?? {},
-        context = context ?? {} {
+    this.statusCode, {
+    Object? bodyContent,
+    Map<String, String>? headers,
+    Encoding? encoding,
+    Map<String, Object>? context,
+  }) : body = Body(bodyContent, encoding),
+       headers = headers ?? {},
+       context = context ?? {} {
     if (statusCode < 100) {
       throw ArgumentError('Invalid status code: $statusCode.');
     }
@@ -54,10 +54,7 @@ class Response with MessageMixin {
     Encoding? encoding,
     Map<String, Object>? context,
   }) {
-    final mergedHeaders = {
-      'content-type': 'application/json',
-      ...?headers,
-    };
+    final mergedHeaders = {'content-type': 'application/json', ...?headers};
     return Response._(
       statusCode,
       bodyContent: jsonEncode(body),
@@ -71,12 +68,12 @@ class Response with MessageMixin {
   ///
   /// The Content-Type header will be set to "text/plain; charset=utf-8".
   factory Response.text(
-      String text, {
-        int statusCode = 200,
-        Map<String, String>? headers,
-        Encoding? encoding,
-        Map<String, Object>? context,
-      }) {
+    String text, {
+    int statusCode = 200,
+    Map<String, String>? headers,
+    Encoding? encoding,
+    Map<String, Object>? context,
+  }) {
     final mergedHeaders = {
       'content-type': 'text/plain; charset=utf-8',
       ...?headers,
@@ -142,9 +139,7 @@ class Response with MessageMixin {
   /// ```
   factory Response.redirect(String location, [int statusCode = 302]) {
     if (statusCode < 300 || statusCode >= 400) {
-      throw ArgumentError(
-        'Redirect status code must be 3xx, got $statusCode',
-      );
+      throw ArgumentError('Redirect status code must be 3xx, got $statusCode');
     }
 
     return Response._(
@@ -167,11 +162,11 @@ class Response with MessageMixin {
   /// );
   /// ```
   factory Response.stream(
-      Stream<List<int>> body, {
-        int statusCode = 200,
-        Map<String, String>? headers,
-        Map<String, Object>? context,
-      }) {
+    Stream<List<int>> body, {
+    int statusCode = 200,
+    Map<String, String>? headers,
+    Map<String, Object>? context,
+  }) {
     return Response._(
       statusCode,
       bodyContent: body,

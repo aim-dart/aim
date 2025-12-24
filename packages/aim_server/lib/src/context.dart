@@ -151,15 +151,13 @@ class Context<E extends Env> {
   /// });
   /// ```
   Response json(
-      Map<String, dynamic> body, {
-        int statusCode = 200,
-        Map<String, String>? headers,
-      }) {
-    return _finalizeResponse(Response.json(
-      body: body,
-      statusCode: statusCode,
-      headers: headers,
-    ));
+    Map<String, dynamic> body, {
+    int statusCode = 200,
+    Map<String, String>? headers,
+  }) {
+    return _finalizeResponse(
+      Response.json(body: body, statusCode: statusCode, headers: headers),
+    );
   }
 
   /// Returns a plain text response.
@@ -173,15 +171,13 @@ class Context<E extends Env> {
   /// });
   /// ```
   Response text(
-      String text, {
-        int statusCode = 200,
-        Map<String, String>? headers,
-      }) {
-    return _finalizeResponse(Response.text(
-      text,
-      statusCode: statusCode,
-      headers: headers,
-    ));
+    String text, {
+    int statusCode = 200,
+    Map<String, String>? headers,
+  }) {
+    return _finalizeResponse(
+      Response.text(text, statusCode: statusCode, headers: headers),
+    );
   }
 
   /// Returns an HTML response.
@@ -195,19 +191,17 @@ class Context<E extends Env> {
   /// });
   /// ```
   Response html(
-      String html, {
-        int statusCode = 200,
-        Map<String, String>? headers,
-      }) {
+    String html, {
+    int statusCode = 200,
+    Map<String, String>? headers,
+  }) {
     final mergedHeaders = {
       'content-type': 'text/html; charset=utf-8',
       ...?headers,
     };
-    return _finalizeResponse(Response.text(
-      html,
-      statusCode: statusCode,
-      headers: mergedHeaders,
-    ));
+    return _finalizeResponse(
+      Response.text(html, statusCode: statusCode, headers: mergedHeaders),
+    );
   }
 
   /// Returns a 404 Not Found response.
@@ -252,15 +246,13 @@ class Context<E extends Env> {
   /// });
   /// ```
   Response stream(
-      Stream<List<int>> body, {
-        int statusCode = 200,
-        Map<String, String>? headers,
-      }) {
-    return _finalizeResponse(Response.stream(
-      body,
-      statusCode: statusCode,
-      headers: headers,
-    ));
+    Stream<List<int>> body, {
+    int statusCode = 200,
+    Map<String, String>? headers,
+  }) {
+    return _finalizeResponse(
+      Response.stream(body, statusCode: statusCode, headers: headers),
+    );
   }
 
   /// Internal method to finalize a response that was created outside of context methods.

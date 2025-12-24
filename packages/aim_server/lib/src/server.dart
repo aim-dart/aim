@@ -14,12 +14,14 @@ typedef Handler<E extends Env> = Future<Response> Function(Context<E> c);
 ///
 /// Middleware can modify the context, perform actions before/after the handler,
 /// or finalize the response early.
-typedef Middleware<E extends Env> = Future<void> Function(Context<E> c, Next next);
+typedef Middleware<E extends Env> =
+    Future<void> Function(Context<E> c, Next next);
 
 /// A function that handles errors that occur during request processing.
 ///
 /// Error handlers are registered via [Aim.onError].
-typedef ErrorHandler<E extends Env> = Future<Response> Function(Object error, Context<E> c);
+typedef ErrorHandler<E extends Env> =
+    Future<Response> Function(Object error, Context<E> c);
 
 /// A function that calls the next middleware in the chain.
 typedef Next = Future<void> Function();
@@ -67,7 +69,7 @@ class Aim<E extends Env> {
   /// final app = Aim<MyEnv>(envFactory: () => MyEnv());
   /// ```
   Aim({E Function()? envFactory})
-      : _envFactory = envFactory ?? (() => EmptyEnv() as E);
+    : _envFactory = envFactory ?? (() => EmptyEnv() as E);
 
   /// Starts the HTTP server and begins listening for requests.
   ///
@@ -99,12 +101,12 @@ class Aim<E extends Env> {
     final server = await (securityContext == null
         ? HttpServer.bind(host, port, backlog: backlog, shared: shared)
         : HttpServer.bindSecure(
-      host,
-      port,
-      securityContext,
-      backlog: backlog,
-      shared: shared,
-    ));
+            host,
+            port,
+            securityContext,
+            backlog: backlog,
+            shared: shared,
+          ));
     server.listen(_handleRequest);
     return AimHttpServer._(server, server.address.host, server.port);
   }
@@ -117,7 +119,9 @@ class Aim<E extends Env> {
     });
 
     // Build absolute URI
-    final scheme = httpRequest.connectionInfo?.localPort == 443 ? 'https' : 'http';
+    final scheme = httpRequest.connectionInfo?.localPort == 443
+        ? 'https'
+        : 'http';
     final host = httpRequest.headers.value('host') ?? 'localhost';
     final absoluteUri = Uri.parse('$scheme://$host${httpRequest.uri}');
 
@@ -157,8 +161,9 @@ class Aim<E extends Env> {
 
       if (matchingRoute == null) {
         // 404 handler
-        finalHandler = _notFoundHandler ??
-                (c) async => Response.notFound(body: 'Not Found');
+        finalHandler =
+            _notFoundHandler ??
+            (c) async => Response.notFound(body: 'Not Found');
       } else {
         // Route handler with path parameters
         finalHandler = (c) async {
@@ -171,7 +176,6 @@ class Aim<E extends Env> {
 
       // Execute middleware chain + handler
       response = await _executeMiddlewareChain(context, finalHandler);
-
     } catch (e, st) {
       // Handle errors
       if (_errorHandler != null) {
@@ -239,12 +243,9 @@ class Aim<E extends Env> {
   /// });
   /// ```
   Aim<E> get(String path, Handler<E> handler, {Object? metadata}) {
-    _routes.add(Route<E>(
-      path: path,
-      method: 'GET',
-      handler: handler,
-      metadata: metadata,
-    ));
+    _routes.add(
+      Route<E>(path: path, method: 'GET', handler: handler, metadata: metadata),
+    );
     return this;
   }
 
@@ -258,67 +259,74 @@ class Aim<E extends Env> {
   /// });
   /// ```
   Aim<E> post(String path, Handler<E> handler, {Object? metadata}) {
-    _routes.add(Route<E>(
-      path: path,
-      method: 'POST',
-      handler: handler,
-      metadata: metadata,
-    ));
+    _routes.add(
+      Route<E>(
+        path: path,
+        method: 'POST',
+        handler: handler,
+        metadata: metadata,
+      ),
+    );
     return this;
   }
 
   /// Registers a PUT route.
   Aim<E> put(String path, Handler<E> handler, {Object? metadata}) {
-    _routes.add(Route<E>(
-      path: path,
-      method: 'PUT',
-      handler: handler,
-      metadata: metadata,
-    ));
+    _routes.add(
+      Route<E>(path: path, method: 'PUT', handler: handler, metadata: metadata),
+    );
     return this;
   }
 
   /// Registers a DELETE route.
   Aim<E> delete(String path, Handler<E> handler, {Object? metadata}) {
-    _routes.add(Route<E>(
-      path: path,
-      method: 'DELETE',
-      handler: handler,
-      metadata: metadata,
-    ));
+    _routes.add(
+      Route<E>(
+        path: path,
+        method: 'DELETE',
+        handler: handler,
+        metadata: metadata,
+      ),
+    );
     return this;
   }
 
   /// Registers a PATCH route.
   Aim<E> patch(String path, Handler<E> handler, {Object? metadata}) {
-    _routes.add(Route<E>(
-      path: path,
-      method: 'PATCH',
-      handler: handler,
-      metadata: metadata,
-    ));
+    _routes.add(
+      Route<E>(
+        path: path,
+        method: 'PATCH',
+        handler: handler,
+        metadata: metadata,
+      ),
+    );
     return this;
   }
 
   /// Registers a HEAD route.
   Aim<E> head(String path, Handler<E> handler, {Object? metadata}) {
-    _routes.add(Route<E>(
-      path: path,
-      method: 'HEAD',
-      handler: handler,
-      metadata: metadata,
-    ));
+    _routes.add(
+      Route<E>(
+        path: path,
+        method: 'HEAD',
+        handler: handler,
+        metadata: metadata,
+      ),
+    );
     return this;
   }
 
   /// Registers an OPTIONS route.
   Aim<E> options(String path, Handler<E> handler, {Object? metadata}) {
-    _routes.add(Route<E>(
-      path: path,
-      method: 'OPTIONS',
-      handler: handler,
-      metadata: metadata,
-    ));
+    _routes.add(
+      Route<E>(
+        path: path,
+        method: 'OPTIONS',
+        handler: handler,
+        metadata: metadata,
+      ),
+    );
     return this;
   }
 
@@ -393,11 +401,13 @@ class Aim<E extends Env> {
     // Add all routes from sub-app with prefix
     for (final route in subApp._routes) {
       final prefixedPath = normalizedBasePath + route.path;
-      _routes.add(Route<E>(
-        path: prefixedPath,
-        method: route.method,
-        handler: route.handler,
-      ));
+      _routes.add(
+        Route<E>(
+          path: prefixedPath,
+          method: route.method,
+          handler: route.handler,
+        ),
+      );
     }
 
     return this;
@@ -412,9 +422,9 @@ class Aim<E extends Env> {
   ///
   /// This allows middlewares to access the response after the handler executes.
   Future<Response> _executeMiddlewareChain(
-      Context<E> context,
-      Handler<E> finalHandler,
-      ) async {
+    Context<E> context,
+    Handler<E> finalHandler,
+  ) async {
     var index = -1;
 
     Future<Response> dispatch(int i) async {
@@ -439,7 +449,9 @@ class Aim<E extends Env> {
         }
 
         // This shouldn't happen - either middleware or handler should finalize
-        throw StateError('Middleware chain completed without finalizing response');
+        throw StateError(
+          'Middleware chain completed without finalizing response',
+        );
       } else {
         // All middlewares executed, now execute the final handler
         final response = await finalHandler(context);
@@ -620,4 +632,3 @@ class Route<E extends Env> {
     return params;
   }
 }
-

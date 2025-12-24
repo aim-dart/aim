@@ -37,16 +37,16 @@ class Request with MessageMixin {
   /// [raw] is the underlying [HttpRequest] object, which is needed for
   /// operations like WebSocket upgrades.
   Request(
-      this.method,
-      this.uri, {
-        Object? bodyContent,
-        Map<String, String>? headers,
-        Encoding? encoding,
-        Map<String, Object>? context,
-        this.raw,
-      })  : body = Body(bodyContent, encoding),
-        headers = headers ?? {},
-        context = context ?? {} {
+    this.method,
+    this.uri, {
+    Object? bodyContent,
+    Map<String, String>? headers,
+    Encoding? encoding,
+    Map<String, Object>? context,
+    this.raw,
+  }) : body = Body(bodyContent, encoding),
+       headers = headers ?? {},
+       context = context ?? {} {
     if (method.isEmpty) {
       throw ArgumentError.value(method, 'method', 'cannot be empty.');
     }
