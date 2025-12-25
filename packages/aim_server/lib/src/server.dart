@@ -49,6 +49,11 @@ class Aim<E extends Env> {
   /// This is useful for generating OpenAPI specifications, documentation, etc.
   List<Route<E>> get routes => List.unmodifiable(_routes);
 
+  /// Get an unmodifiable list of all registered middlewares.
+  ///
+  /// This is useful for testing and debugging purposes.
+  List<Middleware<E>> get middlewares => List.unmodifiable(_middlewares);
+
   /// Handler for 404 Not Found responses
   Handler<E>? _notFoundHandler;
 
@@ -109,6 +114,94 @@ class Aim<E extends Env> {
           ));
     server.listen(_handleRequest);
     return AimHttpServer._(server, server.address.host, server.port);
+  }
+
+  /// Handles a request and returns a response without HTTP layer.
+  ///
+  /// This is a public API mainly for testing purposes, allowing TestClient
+  /// to execute the full Aim request handling logic (routing, middleware, handlers)
+  /// without starting an actual HTTP server.
+  ///
+  /// This method:
+  /// 1. Creates a Context with the provided request
+  /// 2. Finds a matching route based on request method and path
+  /// 3. Executes the middleware chain
+  /// 4. Calls the appropriate handler (route handler or 404 handler)
+  /// 5. Handles errors using the registered error handler
+  /// 6. Returns the final Response
+  ///
+  /// Example (for testing):
+  /// ```dart
+  /// final app = Aim();
+  /// app.get('/users/:id', (c) => c.json({'id': c.param('id')}));
+  ///
+  /// final request = Request('GET', Uri.parse('http://localhost/users/123'));
+  /// final response = await app.handle(request);
+  /// // response.statusCode == 200
+  /// ```
+  Future<Response> handle(Request request) async {
+    // Create Context
+    final env = _envFactory();
+    final context = Context<E>(request, env);
+
+    Response response;
+
+    try {
+      // Find matching route
+      Route<E>? matchingRoute;
+      Map<String, String>? pathParams;
+
+      for (final route in _routes) {
+        if (route.method == request.method) {
+          final params = route.match(request.path);
+          if (params != null) {
+            matchingRoute = route;
+            pathParams = params;
+            break;
+          }
+        }
+      }
+
+      // Define final handler (either route handler or 404 handler)
+      Handler<E> finalHandler;
+
+      if (matchingRoute == null) {
+        // 404 handler
+        finalHandler =
+            _notFoundHandler ??
+            (c) async => Response.notFound(body: 'Not Found');
+      } else {
+        // Route handler with path parameters
+        finalHandler = (c) async {
+          pathParams!.forEach((key, value) {
+            c.set('param:$key', value);
+          });
+          return await matchingRoute!.handler(c);
+        };
+      }
+
+      // Execute middleware chain + handler
+      response = await _executeMiddlewareChain(context, finalHandler);
+    } catch (e) {
+      // Handle errors
+      if (_errorHandler != null) {
+        try {
+          response = await _errorHandler!(e, context);
+        } catch (handlerError) {
+          // Error handler itself threw an error
+          response = Response.internalServerError(
+            body: 'Internal Server Error',
+          );
+        }
+      } else {
+        // Default error handling
+        response = Response.internalServerError(
+          body: 'Internal Server Error: $e',
+        );
+      }
+    }
+
+    return response;
   }
 
   Future<void> _handleRequest(HttpRequest httpRequest) async {

@@ -7,4 +7,5 @@ workspace:
   - packages/aim_cli
   - packages/aim_server_cors
   - packages/aim_server_cookie
+  - packages/aim_server_testing
   - examples/basic-sample

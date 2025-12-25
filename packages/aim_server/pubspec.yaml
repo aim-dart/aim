@@ -1,6 +1,6 @@
 name: aim_server
 description: A lightweight, fast web framework for Dart with routing, middleware and hot reload during development.
-version: 0.0.4
+version: 0.0.5
 repository: https://github.com/aim-dart/aim
 resolution: workspace
 
