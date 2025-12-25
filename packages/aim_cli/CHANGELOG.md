@@ -1,3 +1,38 @@
+## 0.0.2
+
+Production build and Docker support.
+
+### Features
+
+- Production Build:
+  - `aim build` command to compile server for production deployment
+  - Native executable compilation using `dart compile exe`
+  - Automatic entry point detection from `pubspec.yaml`
+  - Configurable output path with `--output` option
+  - Default output: `build/server`
+- Docker Support:
+  - Dockerfile template with multi-stage build
+  - Optimized for minimal image size using `scratch` base
+  - `.dockerignore` template to exclude unnecessary files
+  - Production-ready Docker configuration
+- Enhanced Project Templates:
+  - Updated README with production deployment instructions
+  - Environment variable usage examples for native and Docker deployments
+  - Security best practices for environment variable handling
+  - Simplified `pubspec.yaml` with `aim_server: ^0.0.5`
+
+### Commands
+
+- `aim build [options]` - Compile server for production deployment
+  - `-e, --entry` - Specify server entry point
+  - `-o, --output` - Specify output file path
+
+### Security
+
+- Environment variables are not embedded at compile time
+- Runtime environment variable support for secure configuration management
+- Compatible with Docker secrets and Kubernetes ConfigMaps
+
 ## 0.0.1
 
 Initial release of aim_cli - Command-line tools for the Aim web framework.

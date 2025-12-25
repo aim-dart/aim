@@ -79,6 +79,8 @@ class CreateCommand extends Command {
       'lib/src/server.dart': Templates.libSrcServer,
       'test/${projectName}_test.dart': Templates.testTest,
       '.gitignore': Templates.gitignore,
+      'Dockerfile': Templates.dockerfile,
+      '.dockerignore': Templates.dockerignore,
     };
 
     for (final entry in templates.entries) {

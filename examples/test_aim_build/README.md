@@ -1,4 +1,4 @@
-# {{projectName}}
+# test_aim_build
 
 A web server project built with Aim framework.
 
@@ -35,36 +35,16 @@ Run the executable:
 ./build/server
 ```
 
-With environment variables:
-```bash
-PORT=3000 ./build/server
-```
-
-Or using a `.env` file (if your app uses a dotenv package):
-```bash
-./build/server
-```
-
 ### Option 2: Docker
 
 Build Docker image:
 ```bash
-docker build -t {{projectName}} .
+docker build -t test_aim_build .
 ```
 
 Run container:
 ```bash
-docker run -p 8080:8080 {{projectName}}
-```
-
-With environment variables:
-```bash
-docker run -p 8080:8080 -e PORT=3000 -e ENV=production {{projectName}}
-```
-
-Or using an env file:
-```bash
-docker run -p 8080:8080 --env-file .env {{projectName}}
+docker run -p 8080:8080 test_aim_build
 ```
 
 ## Test
@@ -77,7 +57,7 @@ dart test
 
 - `bin/server.dart` - Server entry point
 - `lib/src/server.dart` - Server implementation
-- `test/{{projectName}}_test.dart` - Test files
+- `test/test_aim_build_test.dart` - Test files
 - `Dockerfile` - Docker configuration for production
 - `.dockerignore` - Files to exclude from Docker build
 

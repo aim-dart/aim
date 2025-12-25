@@ -8,12 +8,7 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  aim_server:
-    git:
-      url: https://github.com/yourusername/aim.git
-      path: packages/aim_server
-      # For development, use local path:
-      # path: ../aim/packages/aim_server
+  aim_server: ^0.0.5
 
 dev_dependencies:
   lints: ^6.0.0
@@ -34,17 +29,62 @@ Install dependencies:
 dart pub get
 ```
 
-## Run
+## Development
 
-Development mode (JIT):
+Start development server with hot reload:
+```bash
+aim dev
+```
+
+Or run directly:
 ```bash
 dart run bin/server.dart
 ```
 
-Production mode (AOT):
+## Production Build
+
+### Option 1: Native Executable
+
+Compile to a native executable:
 ```bash
-dart compile exe bin/server.dart -o server
-./server
+aim build
+```
+
+Run the executable:
+```bash
+./build/server
+```
+
+With environment variables:
+```bash
+PORT=3000 ./build/server
+```
+
+Or using a `.env` file (if your app uses a dotenv package):
+```bash
+./build/server
+```
+
+### Option 2: Docker
+
+Build Docker image:
+```bash
+docker build -t {{projectName}} .
+```
+
+Run container:
+```bash
+docker run -p 8080:8080 {{projectName}}
+```
+
+With environment variables:
+```bash
+docker run -p 8080:8080 -e PORT=3000 -e ENV=production {{projectName}}
+```
+
+Or using an env file:
+```bash
+docker run -p 8080:8080 --env-file .env {{projectName}}
 ```
 
 ## Test
@@ -58,6 +98,8 @@ dart test
 - `bin/server.dart` - Server entry point
 - `lib/src/server.dart` - Server implementation
 - `test/{{projectName}}_test.dart` - Test files
+- `Dockerfile` - Docker configuration for production
+- `.dockerignore` - Files to exclude from Docker build
 
 ## About Aim Framework
 
@@ -186,5 +228,80 @@ pubspec.lock
 .idea/
 .vscode/
 *.iml
+''';
+
+  static const dockerfile = '''# Official Dart image: https://hub.docker.com/_/dart
+FROM dart:stable AS build
+
+WORKDIR /app
+
+# Copy and resolve dependencies
+COPY pubspec.* ./
+RUN dart pub get
+
+# Copy app source code
+COPY . .
+
+# Ensure packages are up-to-date
+RUN dart pub get --offline
+
+# Compile to native executable
+RUN dart compile exe bin/server.dart -o bin/server
+
+# Build minimal serving image from AOT-compiled binary
+FROM scratch
+
+# Copy runtime dependencies and compiled binary
+COPY --from=build /runtime/ /
+COPY --from=build /app/bin/server /app/bin/
+
+# Expose port (default: 8080)
+EXPOSE 8080
+
+# Start server
+CMD ["/app/bin/server"]
+''';
+
+  static const dockerignore = '''# Dockerfile
+.dockerignore
+Dockerfile
+
+# Build outputs
+build/
+*.exe
+*.app
+
+# Dart
+.dart_tool/
+.packages
+
+# Version control
+.git/
+.gitignore
+.github/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+
+# Tests
+test/
+*_test.dart
+
+# CI/CD
+.travis.yml
+.gitlab-ci.yml
+
+# Misc
+*.log
+*.tmp
+.DS_Store
 ''';
 }

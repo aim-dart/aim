@@ -1,4 +1,4 @@
-name: {{projectName}}
+name: test_aim_build
 description: A web server built with Aim framework
 version: 1.0.0
 
