@@ -4,7 +4,8 @@ import 'package:aim_cli/aim_cli.dart';
 void main(List<String> arguments) async {
   final runner = CommandRunner('aim', 'Command-line tool for Aim framework')
     ..addCommand(CreateCommand())
-    ..addCommand(DevCommand());
+    ..addCommand(DevCommand())
+    ..addCommand(BuildCommand());
 
   try {
     await runner.run(arguments);
