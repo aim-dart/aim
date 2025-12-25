@@ -8,4 +8,5 @@ workspace:
   - packages/aim_server_cors
   - packages/aim_server_cookie
   - packages/aim_server_testing
+  - packages/aim_form
   - examples/basic-sample
