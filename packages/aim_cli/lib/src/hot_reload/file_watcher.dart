@@ -15,9 +15,9 @@ class FileWatcher {
     required List<String> watchPaths,
     required void Function() onChanged,
     Duration debounceDuration = const Duration(milliseconds: 500),
-  })  : _watchPaths = watchPaths,
-        _onChanged = onChanged,
-        _debounceDuration = debounceDuration;
+  }) : _watchPaths = watchPaths,
+       _onChanged = onChanged,
+       _debounceDuration = debounceDuration;
 
   /// Start watching
   Future<void> start() async {

@@ -1,5 +1,5 @@
 import 'package:aim_server/aim_server.dart';
-import 'package:aim_form/aim_form.dart';
+import 'package:aim_server_form/aim_server_form.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -92,7 +92,8 @@ void main() {
       final request = Request(
         'POST',
         Uri.parse('/test'),
-        bodyContent: 'name=%E5%A4%AA%E9%83%8E&message=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF',
+        bodyContent:
+            'name=%E5%A4%AA%E9%83%8E&message=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF',
         headers: {'content-type': 'application/x-www-form-urlencoded'},
       );
 
@@ -141,31 +142,40 @@ void main() {
 
       expect(
         () => request.formData(),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('Expected Content-Type: application/x-www-form-urlencoded'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains(
+              'Expected Content-Type: application/x-www-form-urlencoded',
+            ),
+          ),
+        ),
       );
     });
 
-    test('Should throw FormatException for wrong Content-Type (application/json)', () async {
-      final request = Request(
-        'POST',
-        Uri.parse('/test'),
-        bodyContent: '{"username":"alice"}',
-        headers: {'content-type': 'application/json'},
-      );
+    test(
+      'Should throw FormatException for wrong Content-Type (application/json)',
+      () async {
+        final request = Request(
+          'POST',
+          Uri.parse('/test'),
+          bodyContent: '{"username":"alice"}',
+          headers: {'content-type': 'application/json'},
+        );
 
-      expect(
-        () => request.formData(),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('application/json'),
-        )),
-      );
-    });
+        expect(
+          () => request.formData(),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains('application/json'),
+            ),
+          ),
+        );
+      },
+    );
 
     test('Should throw FormatException for multipart/form-data', () async {
       final request = Request(
@@ -175,10 +185,7 @@ void main() {
         headers: {'content-type': 'multipart/form-data'},
       );
 
-      expect(
-        () => request.formData(),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => request.formData(), throwsA(isA<FormatException>()));
     });
 
     test('Should accept application/x-www-form-urlencoded', () async {

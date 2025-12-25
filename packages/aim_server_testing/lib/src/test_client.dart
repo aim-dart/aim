@@ -109,13 +109,8 @@ class TestClient<E extends Env> {
   }
 
   /// Sends a HEAD request.
-  Future<TestResponse> head(
-    String path, {
-    Map<String, String>? headers,
-  }) async {
-    return _sendRequest(
-      TestRequestBuilder().head(path).headers(headers ?? {}),
-    );
+  Future<TestResponse> head(String path, {Map<String, String>? headers}) async {
+    return _sendRequest(TestRequestBuilder().head(path).headers(headers ?? {}));
   }
 
   /// Sends an OPTIONS request.

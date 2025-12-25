@@ -71,11 +71,7 @@ void main() async {
   app.get('/search', (c) async {
     final query = c.req.queryParameters['q'];
     final limit = c.req.queryParameters['limit'] ?? '10';
-    return c.json({
-      'query': query,
-      'limit': int.parse(limit),
-      'results': [],
-    });
+    return c.json({'query': query, 'limit': int.parse(limit), 'results': []});
   });
 
   final server = await app.serve(host: InternetAddress.anyIPv4, port: 8081);

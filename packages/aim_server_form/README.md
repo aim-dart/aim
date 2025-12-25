@@ -40,7 +40,7 @@ Parse form data from a POST request:
 
 ```dart
 import 'package:aim_server/aim_server.dart';
-import 'package:aim_form/aim_form.dart';
+import 'package:aim_form/aim_server_form.dart';
 
 void main() async {
   final app = Aim();
@@ -136,7 +136,7 @@ app.post('/submit', (c) async {
 ```dart
 import 'dart:io';
 import 'package:aim_server/aim_server.dart';
-import 'package:aim_form/aim_form.dart';
+import 'package:aim_form/aim_server_form.dart';
 
 void main() async {
   final app = Aim();

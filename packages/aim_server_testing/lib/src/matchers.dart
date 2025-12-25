@@ -110,8 +110,9 @@ class _HeaderMatcher extends Matcher {
       return mismatchDescription.add('does not have header "$_name"');
     }
 
-    return mismatchDescription
-        .add('has header "$_name" with value "$actualValue"');
+    return mismatchDescription.add(
+      'has header "$_name" with value "$actualValue"',
+    );
   }
 }
 

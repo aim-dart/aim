@@ -49,7 +49,9 @@ void main() {
 
     test('handles errors with error handler', () async {
       final app = Aim();
-      app.onError((e, c) async => c.json({'error': e.toString()}, statusCode: 500));
+      app.onError(
+        (e, c) async => c.json({'error': e.toString()}, statusCode: 500),
+      );
       app.get('/error', (c) async => throw Exception('Test error'));
 
       final request = Request('GET', Uri.parse('http://localhost/error'));
@@ -114,7 +116,9 @@ void main() {
 
     test('custom 404 handler is used', () async {
       final app = Aim();
-      app.notFound((c) async => c.json({'error': 'Custom not found'}, statusCode: 404));
+      app.notFound(
+        (c) async => c.json({'error': 'Custom not found'}, statusCode: 404),
+      );
 
       final request = Request('GET', Uri.parse('http://localhost/nowhere'));
       final response = await app.handle(request);

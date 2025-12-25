@@ -67,17 +67,29 @@ extension CookieContext on Context {
   /// Example: "Wed, 21 Oct 2015 07:28:00 GMT"
   String _formatHttpDate(DateTime date) {
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
     final utc = date.toUtc();
     final weekday = weekdays[utc.weekday - 1];
     final month = months[utc.month - 1];
 
     return '$weekday, ${utc.day.toString().padLeft(2, '0')} $month ${utc.year} '
-           '${utc.hour.toString().padLeft(2, '0')}:'
-           '${utc.minute.toString().padLeft(2, '0')}:'
-           '${utc.second.toString().padLeft(2, '0')} GMT';
+        '${utc.hour.toString().padLeft(2, '0')}:'
+        '${utc.minute.toString().padLeft(2, '0')}:'
+        '${utc.second.toString().padLeft(2, '0')} GMT';
   }
 
   /// Formats SameSite enum to proper case.
@@ -105,10 +117,10 @@ extension CookieContext on Context {
   /// });
   /// ```
   void deleteCookie(String name, {String? path, String? domain}) {
-    setCookie(name, '', options: CookieOptions(
-      maxAge: Duration.zero,
-      path: path,
-      domain: domain,
-    ));
+    setCookie(
+      name,
+      '',
+      options: CookieOptions(maxAge: Duration.zero, path: path, domain: domain),
+    );
   }
 }

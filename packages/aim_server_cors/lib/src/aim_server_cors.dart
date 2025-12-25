@@ -105,7 +105,10 @@ Middleware<E> cors<E extends Env>([CorsOptions options = const CorsOptions()]) {
       }
 
       if (options.allowMethods.isNotEmpty) {
-        c.header('access-control-allow-methods', options.allowMethods.join(', '));
+        c.header(
+          'access-control-allow-methods',
+          options.allowMethods.join(', '),
+        );
       }
 
       // Handle Access-Control-Request-Headers
@@ -114,7 +117,10 @@ Middleware<E> cors<E extends Env>([CorsOptions options = const CorsOptions()]) {
         if (options.allowHeaders.contains('*')) {
           c.header('access-control-allow-headers', requestHeaders);
         } else if (options.allowHeaders.isNotEmpty) {
-          c.header('access-control-allow-headers', options.allowHeaders.join(', '));
+          c.header(
+            'access-control-allow-headers',
+            options.allowHeaders.join(', '),
+          );
         }
       }
 
@@ -138,7 +144,10 @@ Middleware<E> cors<E extends Env>([CorsOptions options = const CorsOptions()]) {
     }
 
     if (options.exposeHeaders.isNotEmpty) {
-      c.header('access-control-expose-headers', options.exposeHeaders.join(', '));
+      c.header(
+        'access-control-expose-headers',
+        options.exposeHeaders.join(', '),
+      );
     }
 
     await next();

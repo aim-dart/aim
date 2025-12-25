@@ -27,7 +27,9 @@ class FileGenerator {
 
   /// Replace variables in template
   static String replaceVariables(
-      String template, Map<String, String> variables) {
+    String template,
+    Map<String, String> variables,
+  ) {
     var result = template;
     variables.forEach((key, value) {
       result = result.replaceAll('{{$key}}', value);

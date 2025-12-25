@@ -230,7 +230,8 @@ pubspec.lock
 *.iml
 ''';
 
-  static const dockerfile = '''# Official Dart image: https://hub.docker.com/_/dart
+  static const dockerfile =
+      '''# Official Dart image: https://hub.docker.com/_/dart
 FROM dart:stable AS build
 
 WORKDIR /app

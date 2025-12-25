@@ -76,11 +76,7 @@ void main() {
     app.get('/search', (c) async {
       final query = c.req.queryParameters['q'];
       final limit = c.req.queryParameters['limit'] ?? '10';
-      return c.json({
-        'query': query,
-        'limit': int.parse(limit),
-        'results': [],
-      });
+      return c.json({'query': query, 'limit': int.parse(limit), 'results': []});
     });
 
     client = TestClient(app);
@@ -160,7 +156,11 @@ void main() {
 
     test('PUT /users/:id updates entire user', () async {
       // Create a user first
-      users['123'] = {'id': '123', 'name': 'Charlie', 'email': 'charlie@example.com'};
+      users['123'] = {
+        'id': '123',
+        'name': 'Charlie',
+        'email': 'charlie@example.com',
+      };
 
       final response = await client.put(
         '/users/123',
@@ -177,10 +177,7 @@ void main() {
     });
 
     test('PUT /users/:id returns 404 for non-existent user', () async {
-      final response = await client.put(
-        '/users/999',
-        body: {'name': 'Nobody'},
-      );
+      final response = await client.put('/users/999', body: {'name': 'Nobody'});
 
       expect(response, hasStatus(404));
       expect(response, isClientError());
@@ -255,10 +252,7 @@ void main() {
     });
 
     test('GET /search uses default limit when not specified', () async {
-      final response = await client.get(
-        '/search',
-        query: {'q': 'test'},
-      );
+      final response = await client.get('/search', query: {'q': 'test'});
 
       expect(response, hasStatus(200));
 
@@ -290,10 +284,7 @@ void main() {
       );
 
       expect(response, hasStatus(200));
-      expect(
-        response.header('access-control-allow-origin'),
-        equals('*'),
-      );
+      expect(response.header('access-control-allow-origin'), equals('*'));
     });
 
     test('POST /users includes CORS headers', () async {
@@ -304,10 +295,7 @@ void main() {
       );
 
       expect(response, hasStatus(201));
-      expect(
-        response.header('access-control-allow-origin'),
-        equals('*'),
-      );
+      expect(response.header('access-control-allow-origin'), equals('*'));
     });
   });
 
@@ -330,10 +318,7 @@ void main() {
     test('JSON responses have correct content-type', () async {
       final response = await client.get('/');
 
-      expect(
-        response.header('content-type'),
-        contains('application/json'),
-      );
+      expect(response.header('content-type'), contains('application/json'));
 
       final json = await response.bodyAsJson();
       expect(json, isA<Map<String, dynamic>>());
@@ -342,10 +327,7 @@ void main() {
     test('Text responses have correct content-type', () async {
       final response = await client.get('/ping');
 
-      expect(
-        response.header('content-type'),
-        contains('text/plain'),
-      );
+      expect(response.header('content-type'), contains('text/plain'));
     });
   });
 
@@ -396,7 +378,10 @@ void main() {
       // Create
       final createResponse = await client.post(
         '/users',
-        body: {'name': 'Integration Test User', 'email': 'integration@example.com'},
+        body: {
+          'name': 'Integration Test User',
+          'email': 'integration@example.com',
+        },
       );
       expect(createResponse, hasStatus(201));
       final createdUser = await createResponse.bodyAsJson();

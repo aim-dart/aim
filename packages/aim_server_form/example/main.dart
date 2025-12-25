@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:aim_server/aim_server.dart';
-import 'package:aim_form/aim_form.dart';
+import 'package:aim_server_form/aim_server_form.dart';
 
 void main() async {
   final app = Aim();
@@ -124,17 +124,11 @@ void main() async {
 
       // Basic validation
       if (username == null || username.isEmpty) {
-        return c.json(
-          {'error': 'Username is required'},
-          statusCode: 400,
-        );
+        return c.json({'error': 'Username is required'}, statusCode: 400);
       }
 
       if (password == null || password.isEmpty) {
-        return c.json(
-          {'error': 'Password is required'},
-          statusCode: 400,
-        );
+        return c.json({'error': 'Password is required'}, statusCode: 400);
       }
 
       // Simulate authentication
@@ -212,10 +206,10 @@ void main() async {
         ''', statusCode: 401);
       }
     } on FormatException catch (e) {
-      return c.json(
-        {'error': 'Invalid form data', 'details': e.message},
-        statusCode: 400,
-      );
+      return c.json({
+        'error': 'Invalid form data',
+        'details': e.message,
+      }, statusCode: 400);
     }
   });
 
@@ -316,10 +310,9 @@ void main() async {
       final password = form['password'];
 
       if (username == null || password == null) {
-        return c.json(
-          {'error': 'Username and password are required'},
-          statusCode: 400,
-        );
+        return c.json({
+          'error': 'Username and password are required',
+        }, statusCode: 400);
       }
 
       final success = username == 'alice' && password == 'secret123';
@@ -327,29 +320,24 @@ void main() async {
       if (success) {
         return c.json({
           'success': true,
-          'user': {
-            'username': username,
-            'token': 'mock-jwt-token',
-          },
+          'user': {'username': username, 'token': 'mock-jwt-token'},
         });
       } else {
-        return c.json(
-          {'success': false, 'error': 'Invalid credentials'},
-          statusCode: 401,
-        );
+        return c.json({
+          'success': false,
+          'error': 'Invalid credentials',
+        }, statusCode: 401);
       }
     } on FormatException catch (e) {
-      return c.json(
-        {'error': 'Invalid Content-Type', 'expected': 'application/x-www-form-urlencoded', 'details': e.message},
-        statusCode: 400,
-      );
+      return c.json({
+        'error': 'Invalid Content-Type',
+        'expected': 'application/x-www-form-urlencoded',
+        'details': e.message,
+      }, statusCode: 400);
     }
   });
 
-  final server = await app.serve(
-    host: InternetAddress.anyIPv4,
-    port: 8080,
-  );
+  final server = await app.serve(host: InternetAddress.anyIPv4, port: 8080);
 
   print('🚀 Server running on http://localhost:${server.port}');
   print('📝 Open http://localhost:${server.port} in your browser');

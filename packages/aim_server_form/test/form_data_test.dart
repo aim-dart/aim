@@ -1,4 +1,4 @@
-import 'package:aim_form/aim_form.dart';
+import 'package:aim_server_form/aim_server_form.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -153,21 +153,14 @@ void main() {
     });
 
     test('Should handle empty string values', () {
-      final form = FormData({
-        'username': '',
-        'email': 'alice@example.com',
-      });
+      final form = FormData({'username': '', 'email': 'alice@example.com'});
 
       expect(form['username'], equals(''));
       expect(form.has('username'), isTrue);
     });
 
     test('Should handle Unicode values', () {
-      final form = FormData({
-        'name': '太郎',
-        'message': 'こんにちは',
-        'emoji': '👋',
-      });
+      final form = FormData({'name': '太郎', 'message': 'こんにちは', 'emoji': '👋'});
 
       expect(form['name'], equals('太郎'));
       expect(form['message'], equals('こんにちは'));

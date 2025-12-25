@@ -1,8 +1,4 @@
-enum SameSite {
-  strict,
-  lax,
-  none,
-}
+enum SameSite { strict, lax, none }
 
 class CookieOptions {
   const CookieOptions({

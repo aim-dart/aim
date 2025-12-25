@@ -1,5 +1,5 @@
 import 'package:aim_server/aim_server.dart';
-import 'package:aim_form/src/form_data.dart';
+import 'package:aim_server_form/src/form_data.dart';
 
 /// Extension on [Request] to parse form data.
 ///

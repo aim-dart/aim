@@ -21,10 +21,7 @@ class CreateCommand extends Command {
   Future<void> run() async {
     // Get project name
     if (argResults?.rest.isEmpty ?? true) {
-      throw UsageException(
-        'Please specify a project name',
-        invocation,
-      );
+      throw UsageException('Please specify a project name', invocation);
     }
 
     final projectName = argResults!.rest.first;
@@ -67,9 +64,7 @@ class CreateCommand extends Command {
   }
 
   Future<void> _createProjectStructure(String projectName) async {
-    final variables = {
-      'projectName': projectName,
-    };
+    final variables = {'projectName': projectName};
 
     // Get templates from string constants and generate
     final templates = {

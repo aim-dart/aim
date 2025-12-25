@@ -16,7 +16,8 @@ class BuildCommand extends Command {
     argParser.addOption(
       'entry',
       abbr: 'e',
-      help: 'Server entry point (default: pubspec.yaml aim.entry or bin/server.dart)',
+      help:
+          'Server entry point (default: pubspec.yaml aim.entry or bin/server.dart)',
     );
 
     argParser.addOption(
@@ -69,13 +70,7 @@ class BuildCommand extends Command {
     }
 
     // Build compile command
-    final compileArgs = [
-      'compile',
-      'exe',
-      entryPoint,
-      '-o',
-      outputPath,
-    ];
+    final compileArgs = ['compile', 'exe', entryPoint, '-o', outputPath];
 
     // Display build information
     print('🔨 Compiling for production...');
@@ -133,7 +128,10 @@ class BuildCommand extends Command {
         if (line.startsWith('  entry:') || line.startsWith('    entry:')) {
           final parts = line.split(':');
           if (parts.length >= 2) {
-            final entry = parts[1].trim().replaceAll('"', '').replaceAll("'", '');
+            final entry = parts[1]
+                .trim()
+                .replaceAll('"', '')
+                .replaceAll("'", '');
             if (entry.isNotEmpty) {
               return entry;
             }
@@ -141,7 +139,9 @@ class BuildCommand extends Command {
         }
 
         // End aim section if next top-level section starts
-        if (line.isNotEmpty && !line.startsWith(' ') && !line.startsWith('\t')) {
+        if (line.isNotEmpty &&
+            !line.startsWith(' ') &&
+            !line.startsWith('\t')) {
           inAimSection = false;
         }
       }

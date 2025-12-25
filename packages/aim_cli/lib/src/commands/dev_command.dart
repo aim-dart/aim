@@ -19,15 +19,8 @@ class DevCommand extends Command {
       abbr: 'e',
       help: 'Server entry point (default: bin/server.dart)',
     );
-    argParser.addOption(
-      'host',
-      help: 'Server host (if configured)',
-    );
-    argParser.addOption(
-      'port',
-      abbr: 'p',
-      help: 'Server port (if configured)',
-    );
+    argParser.addOption('host', help: 'Server host (if configured)');
+    argParser.addOption('port', abbr: 'p', help: 'Server port (if configured)');
     argParser.addFlag(
       'hot-reload',
       defaultsTo: true,
@@ -179,7 +172,10 @@ class DevCommand extends Command {
         if (line.startsWith('  entry:') || line.startsWith('    entry:')) {
           final parts = line.split(':');
           if (parts.length >= 2) {
-            final entry = parts[1].trim().replaceAll('"', '').replaceAll("'", '');
+            final entry = parts[1]
+                .trim()
+                .replaceAll('"', '')
+                .replaceAll("'", '');
             if (entry.isNotEmpty) {
               return entry;
             }
@@ -187,7 +183,9 @@ class DevCommand extends Command {
         }
 
         // End aim section if next top-level section starts
-        if (line.isNotEmpty && !line.startsWith(' ') && !line.startsWith('\t')) {
+        if (line.isNotEmpty &&
+            !line.startsWith(' ') &&
+            !line.startsWith('\t')) {
           inAimSection = false;
         }
       }
@@ -240,7 +238,10 @@ class DevCommand extends Command {
             final parts = trimmed.split(':');
             if (parts.length >= 2) {
               final key = parts[0].trim();
-              var value = parts.sublist(1).join(':').trim()
+              var value = parts
+                  .sublist(1)
+                  .join(':')
+                  .trim()
                   .replaceAll('"', '')
                   .replaceAll("'", '');
 

@@ -11,8 +11,8 @@ class ProcessManager {
   ProcessManager({
     required String entryPoint,
     required Map<String, String> environment,
-  })  : _entryPoint = entryPoint,
-        _environment = environment;
+  }) : _entryPoint = entryPoint,
+       _environment = environment;
 
   /// Start process
   Future<void> start() async {
@@ -69,8 +69,10 @@ class ProcessManager {
   Future<bool> _gracefulShutdown(Duration timeout) async {
     _currentProcess!.kill(ProcessSignal.sigterm);
 
-    final exitCode = await _currentProcess!.exitCode
-        .timeout(timeout, onTimeout: () => -1);
+    final exitCode = await _currentProcess!.exitCode.timeout(
+      timeout,
+      onTimeout: () => -1,
+    );
 
     return exitCode != -1;
   }

@@ -38,8 +38,7 @@ class FormData {
   /// ```dart
   /// final remember = form.get('remember', 'false'); // String?
   /// ```
-  String? get(String key, [String? defaultValue]) =>
-      _data[key] ?? defaultValue;
+  String? get(String key, [String? defaultValue]) => _data[key] ?? defaultValue;
 
   /// Checks if the form data contains the given [key].
   ///

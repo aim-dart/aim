@@ -38,16 +38,10 @@ void main() {
     test('POST request with JSON body', () async {
       app.post('/users', (c) async {
         final data = await c.req.json();
-        return c.json(
-          {'id': '1', 'name': data['name']},
-          statusCode: 201,
-        );
+        return c.json({'id': '1', 'name': data['name']}, statusCode: 201);
       });
 
-      final response = await client.post(
-        '/users',
-        body: {'name': 'Bob'},
-      );
+      final response = await client.post('/users', body: {'name': 'Bob'});
 
       expect(response, hasStatus(201));
       expect(response, isSuccessful());

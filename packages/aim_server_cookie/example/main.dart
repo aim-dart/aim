@@ -61,17 +61,24 @@ void main() async {
   // 基本的なCookieの設定
   app.get('/set-basic-cookie', (c) async {
     c.setCookie('basic_cookie', 'hello_world');
-    return c.json({'message': 'Basic cookie set!', 'cookie': 'basic_cookie=hello_world'});
+    return c.json({
+      'message': 'Basic cookie set!',
+      'cookie': 'basic_cookie=hello_world',
+    });
   });
 
   // セキュアなCookieの設定
   app.get('/set-secure-cookie', (c) async {
-    c.setCookie('session_id', 'abc123xyz', options: CookieOptions(
-      httpOnly: true,
-      secure: true,
-      sameSite: SameSite.strict,
-      path: '/',
-    ));
+    c.setCookie(
+      'session_id',
+      'abc123xyz',
+      options: CookieOptions(
+        httpOnly: true,
+        secure: true,
+        sameSite: SameSite.strict,
+        path: '/',
+      ),
+    );
     return c.json({
       'message': 'Secure cookie set!',
       'cookie': 'session_id=abc123xyz',
@@ -80,16 +87,17 @@ void main() async {
         'secure': true,
         'sameSite': 'Strict',
         'path': '/',
-      }
+      },
     });
   });
 
   // 有効期限付きCookieの設定
   app.get('/set-cookie-with-expiry', (c) async {
-    c.setCookie('temp_token', 'token_12345', options: CookieOptions(
-      maxAge: Duration(hours: 1),
-      path: '/',
-    ));
+    c.setCookie(
+      'temp_token',
+      'token_12345',
+      options: CookieOptions(maxAge: Duration(hours: 1), path: '/'),
+    );
     return c.json({
       'message': 'Cookie with 1 hour expiry set!',
       'cookie': 'temp_token=token_12345',
@@ -99,20 +107,23 @@ void main() async {
 
   // 複数のCookieの設定
   app.get('/set-multiple-cookies', (c) async {
-    c.setCookie('user_id', '12345', options: CookieOptions(
-      path: '/',
-      maxAge: Duration(days: 7),
-    ));
+    c.setCookie(
+      'user_id',
+      '12345',
+      options: CookieOptions(path: '/', maxAge: Duration(days: 7)),
+    );
 
-    c.setCookie('theme', 'dark', options: CookieOptions(
-      path: '/',
-      maxAge: Duration(days: 30),
-    ));
+    c.setCookie(
+      'theme',
+      'dark',
+      options: CookieOptions(path: '/', maxAge: Duration(days: 30)),
+    );
 
-    c.setCookie('language', 'ja', options: CookieOptions(
-      path: '/',
-      maxAge: Duration(days: 365),
-    ));
+    c.setCookie(
+      'language',
+      'ja',
+      options: CookieOptions(path: '/', maxAge: Duration(days: 365)),
+    );
 
     return c.json({
       'message': 'Multiple cookies set!',
@@ -120,7 +131,7 @@ void main() async {
         {'name': 'user_id', 'value': '12345', 'maxAge': '7 days'},
         {'name': 'theme', 'value': 'dark', 'maxAge': '30 days'},
         {'name': 'language', 'value': 'ja', 'maxAge': '365 days'},
-      ]
+      ],
     });
   });
 

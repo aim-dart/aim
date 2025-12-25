@@ -16,9 +16,9 @@ class HotReloader {
     required String entryPoint,
     required Map<String, String> environment,
     List<String>? watchPaths,
-  })  : _entryPoint = entryPoint,
-        _environment = environment,
-        _watchPaths = watchPaths ?? ['lib', 'bin'];
+  }) : _entryPoint = entryPoint,
+       _environment = environment,
+       _watchPaths = watchPaths ?? ['lib', 'bin'];
 
   /// Start hot reload
   Future<void> start() async {
