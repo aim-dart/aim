@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:aim_server/aim_server.dart';
 
 /// Create Aim application
