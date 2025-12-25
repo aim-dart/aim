@@ -38,6 +38,18 @@ jobs:
         working-directory: packages/aim_server
         run: dart test
 
+      - name: Run tests for aim_server_form
+        working-directory: packages/aim_server_form
+        run: dart test
+
+      - name: Run tests for aim_server_multipart
+        working-directory: packages/aim_server_multipart
+        run: dart test
+
+      - name: Run tests for aim_server_testing
+        working-directory: packages/aim_server_testing
+        run: dart test
+
       - name: Analyze aim_server
         run: dart analyze --fatal-infos
 
