@@ -1,3 +1,23 @@
+## 0.0.5
+
+### New Features
+- **Public `handle(Request)` method**: Added a new public API for handling requests without the HTTP layer
+  - Enables testing Aim applications without starting an actual HTTP server
+  - Executes the full request handling logic: routing, middleware, handlers, and error handling
+  - Primarily designed for use with `aim_server_testing` package
+
+### Use Case
+```dart
+final app = Aim();
+app.get('/users/:id', (c) => c.json({'id': c.param('id')}));
+
+final request = Request('GET', Uri.parse('http://localhost/users/123'));
+final response = await app.handle(request);
+// response.statusCode == 200
+```
+
+This new API simplifies testing and allows for direct request processing in scenarios where the HTTP layer is not needed.
+
 ## 0.0.4
 Fix README.md and pubspec description
 
