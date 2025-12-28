@@ -11,4 +11,5 @@ workspace:
   - packages/aim_server_form
   - packages/aim_server_multipart
   - packages/aim_server_static
+  - packages/aim_server_logger
   - examples/basic-sample
