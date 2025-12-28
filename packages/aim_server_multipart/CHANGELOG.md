@@ -59,7 +59,7 @@ Initial release of aim_server_multipart - Multipart form data parser for the Aim
 
 - Dart SDK: `^3.10.0`
 - Dependencies:
-  - `aim_server: ^0.0.5`
+  - `aim_server: ^0.0.6`
   - `mime: ^2.0.0`
 
 ### Security Considerations

@@ -108,5 +108,5 @@ Initial release of aim_server_testing - Testing utilities for the Aim framework.
   - Status check properties: `isSuccessful`, `isClientError`, `isServerError`
 
 ### Dependencies
-- `aim_server: 0.0.4`
+- `aim_server: ^0.0.6`
 - `test: ^1.25.6`

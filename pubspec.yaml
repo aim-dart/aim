@@ -12,4 +12,5 @@ workspace:
   - packages/aim_server_multipart
   - packages/aim_server_static
   - packages/aim_server_logger
+  - packages/aim_server_sse
   - examples/basic-sample
