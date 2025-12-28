@@ -58,6 +58,10 @@ jobs:
         working-directory: packages/aim_server_logger
         run: dart test
 
+      - name: Run tests for aim_server_sse
+        working-directory: packages/aim_server_sse
+        run: dart test
+
       - name: Analyze aim_server
         run: dart analyze --fatal-infos
 
