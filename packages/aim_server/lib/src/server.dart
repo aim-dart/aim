@@ -311,8 +311,18 @@ class Aim<E extends Env> {
         }
       });
 
+      // Disable buffering for real-time streaming (e.g., SSE)
+      final contentType = response.headers['content-type'];
+      if (contentType != null && contentType.contains('text/event-stream')) {
+        httpRequest.response.bufferOutput = false;
+      }
+
       // Stream the response body
-      await httpRequest.response.addStream(response.read());
+      // Use manual iteration + flush for real-time streaming (e.g., SSE)
+      await for (final chunk in response.read()) {
+        httpRequest.response.add(chunk);
+        await httpRequest.response.flush();
+      }
       await httpRequest.response.close();
     } catch (e) {
       print('Failed to send response: $e');

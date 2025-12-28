@@ -1,3 +1,21 @@
+## 0.0.6
+
+### Enhancements
+- **Real-time SSE streaming support**: Automatically disables buffering for Server-Sent Events (SSE) responses
+  - Detects `Content-Type: text/event-stream` and sets `bufferOutput = false` on the underlying `HttpResponse`
+  - Enables real-time event streaming without buffering delays
+  - Non-SSE responses continue to use buffering for optimal performance
+- **Streaming integration tests**: Added comprehensive integration tests for SSE streaming behavior
+  - Validates real-time event delivery with timestamp verification
+  - Ensures buffering behavior is correct for both SSE and non-SSE responses
+
+### Technical Details
+The server now automatically optimizes response buffering based on content type:
+- SSE responses (`text/event-stream`): Buffering disabled for real-time streaming
+- Other responses: Buffering enabled for performance
+
+This change is backward compatible and requires no code changes from users.
+
 ## 0.0.5
 
 ### New Features
