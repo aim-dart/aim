@@ -19,7 +19,7 @@ Production build and Docker support.
   - Updated README with production deployment instructions
   - Environment variable usage examples for native and Docker deployments
   - Security best practices for environment variable handling
-  - Simplified `pubspec.yaml` with `aim_server: ^0.0.5`
+  - Simplified `pubspec.yaml` with `aim_server: ^0.0.6`
 
 ### Commands
 

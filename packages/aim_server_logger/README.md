@@ -18,7 +18,7 @@ Add `aim_server_logger` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  aim_server: ^0.0.5
+  aim_server: ^0.0.6
   aim_server_logger: ^0.0.1
 ```
 

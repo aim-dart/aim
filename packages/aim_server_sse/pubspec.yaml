@@ -1,5 +1,5 @@
-name: aim_server_logger
-description: HTTP logging middleware for aim_server with request/response details and customizable output formats.
+name: aim_server_sse
+description: Server-Sent Events (SSE) support for aim_server with real-time streaming capabilities.
 version: 0.0.1
 repository: https://github.com/aim-dart/aim
 resolution: workspace
