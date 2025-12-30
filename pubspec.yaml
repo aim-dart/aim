@@ -13,4 +13,5 @@ workspace:
   - packages/aim_server_static
   - packages/aim_server_logger
   - packages/aim_server_sse
+  - packages/aim_server_jwt
   - examples/basic-sample
