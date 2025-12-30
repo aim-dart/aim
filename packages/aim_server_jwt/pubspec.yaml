@@ -1,5 +1,5 @@
 name: aim_server_jwt
-description:
+description: JWT authentication middleware for Aim framework. Provides stateless authentication with HS256 support, standard claims validation, and Bearer token verification.
 version: 0.0.1
 repository: https://github.com/aim-dart/aim
 resolution: workspace
