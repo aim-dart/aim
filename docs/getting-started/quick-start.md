@@ -35,7 +35,7 @@ Run your application:
 dart run bin/server.dart
 ```
 
-Visit [http://localhost:8080](http://localhost:8080) - you should see "Hello, Aim!"
+Visit `http://localhost:8080` - you should see "Hello, Aim!"
 
 ## Adding Routes
 

@@ -301,4 +301,4 @@ String generateSessionId() {
 
 - Learn about [JWT Authentication](/middleware/jwt) for stateless auth
 - Explore [Basic Auth](/middleware/basic-auth) for simple authentication
-- Read about [Security best practices](/guide/middleware#security)
+- Read about [Security best practices](/concepts/middleware#security)

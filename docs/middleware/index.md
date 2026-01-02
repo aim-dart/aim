@@ -231,6 +231,6 @@ Explore each middleware package for detailed documentation:
 
 ## Next Steps
 
-- Learn about [creating custom middleware](/guide/middleware)
+- Learn about [creating custom middleware](/concepts/middleware)
 - Explore specific middleware packages
-- Check out the [Context API](/guide/context) for request handling
+- Check out the [Context API](/concepts/context) for request handling

@@ -300,4 +300,4 @@ app.use(cors(CorsOptions(
 
 - Learn about [JWT Authentication](/middleware/jwt) for secure APIs
 - Explore [Logger](/middleware/logger) to debug CORS issues
-- Read about [Middleware](/guide/middleware) patterns
+- Read about [Middleware](/concepts/middleware) patterns

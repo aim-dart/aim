@@ -412,4 +412,4 @@ All 401 responses include an error message:
 
 - Learn about [Basic Auth](/middleware/basic-auth) for simpler authentication
 - Explore [Cookie middleware](/middleware/cookie) for session management
-- Read about [Middleware patterns](/guide/middleware)
+- Read about [Middleware patterns](/concepts/middleware)

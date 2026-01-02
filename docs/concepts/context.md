@@ -488,6 +488,6 @@ String generateId() {
 
 ## Next Steps
 
-- Learn about [Middleware](/guide/middleware) to process requests
+- Learn about [Middleware](/concepts/middleware) to process requests
 - Explore [Middleware Packages](/middleware/) for common functionality
 - Check out specific middleware like [JWT](/middleware/jwt) or [CORS](/middleware/cors)
