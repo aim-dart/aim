@@ -66,6 +66,10 @@ jobs:
         working-directory: packages/aim_server_jwt
         run: dart test
 
+      - name: Run tests for aim_server_basic_auth
+        working-directory: packages/aim_server_basic_auth
+        run: dart test
+
       - name: Analyze aim_server
         run: dart analyze --fatal-infos
 
