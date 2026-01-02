@@ -416,6 +416,6 @@ app.all('*', (c) async {
 
 ## Next Steps
 
-- Learn about [Middleware](/guide/middleware) to add cross-cutting concerns
-- Explore the [Context API](/guide/context) for request/response handling
+- Learn about [Middleware](/concepts/middleware) to add cross-cutting concerns
+- Explore the [Context API](/concepts/context) for request/response handling
 - Check out [Middleware Packages](/middleware/) for authentication, CORS, and more

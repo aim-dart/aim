@@ -386,6 +386,6 @@ Not supported:
 
 ## Next Steps
 
-- Learn about [WebSocket support](/middleware/websocket) (coming soon)
-- Explore [Middleware patterns](/guide/middleware)
-- Read about [Context streaming](/guide/context#stream-response)
+- Learn about WebSocket support (coming soon)
+- Explore [Middleware patterns](/concepts/middleware)
+- Read about [Context streaming](/concepts/context#stream-response)

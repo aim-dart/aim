@@ -329,4 +329,4 @@ app.post('/upload', (c) async {
 
 - Learn about [Form Data](/middleware/form) for simple forms
 - Explore [Static Files](/middleware/static) for serving uploads
-- Read about [File handling](/guide/context#file-response)
+- Read about [File handling](/concepts/context#file-response)

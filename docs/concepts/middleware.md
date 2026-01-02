@@ -408,6 +408,6 @@ app.use((c, next) async {
 
 ## Next Steps
 
-- Explore the [Context API](/guide/context) for request/response handling
+- Explore the [Context API](/concepts/context) for request/response handling
 - Browse [Middleware Packages](/middleware/) for ready-to-use middleware
 - Learn about specific middleware like [CORS](/middleware/cors) and [JWT](/middleware/jwt)

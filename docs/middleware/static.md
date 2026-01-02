@@ -291,4 +291,4 @@ curl -I http://localhost:8080/logo.png
 
 - Learn about [Multipart](/middleware/multipart) for file uploads
 - Explore [CORS](/middleware/cors) for cross-origin requests
-- Read about [Security best practices](/guide/middleware#security)
+- Read about [Security best practices](/concepts/middleware#security)

@@ -205,6 +205,6 @@ Output:
 
 ## Next Steps
 
-- Learn about [Middleware patterns](/guide/middleware)
-- Explore [Error handling](/guide/middleware#error-handling)
-- Read about [Performance monitoring](/guide/context#performance)
+- Learn about [Middleware patterns](/concepts/middleware)
+- Explore [Error handling](/concepts/middleware#error-handling)
+- Read about [Performance monitoring](/concepts/context#performance)
