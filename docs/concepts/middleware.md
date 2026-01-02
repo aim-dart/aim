@@ -1,0 +1,413 @@
+# Middleware
+
+Middleware functions are the building blocks of request processing in Aim. They run before your route handlers and can modify requests, responses, or execute side effects like logging.
+
+## What is Middleware?
+
+A middleware is a function that takes a `Context` and a `Next` function, and returns a `Future<void>`:
+
+```dart
+typedef Middleware<E extends Env> = Future<void> Function(
+  Context<E> c,
+  Next next,
+);
+```
+
+- **Context (`c`)**: Provides access to the request and response
+- **Next (`next`)**: Calls the next middleware or route handler in the chain
+
+## Basic Middleware
+
+Here's a simple logging middleware:
+
+```dart
+import 'package:aim_server/aim_server.dart';
+
+Future<void> simpleLogger(Context c, Next next) async {
+  print('<-- ${c.req.method} ${c.req.path}');
+  await next();
+  print('--> ${c.req.method} ${c.req.path}');
+}
+
+void main() async {
+  final app = Aim();
+
+  // Use the middleware
+  app.use(simpleLogger);
+
+  app.get('/', (c) async => c.text('Hello!'));
+
+  await app.serve(port: 8080);
+}
+```
+
+## Using Middleware
+
+Add middleware with the `use()` method:
+
+```dart
+final app = Aim();
+
+// Global middleware (applies to all routes)
+app.use(logger());
+app.use(cors());
+
+// Routes
+app.get('/', handler);
+```
+
+## Middleware Order
+
+Middleware executes in the order it's defined:
+
+```dart
+final app = Aim();
+
+app.use((c, next) async {
+  print('1. First middleware - before');
+  await next();
+  print('1. First middleware - after');
+});
+
+app.use((c, next) async {
+  print('2. Second middleware - before');
+  await next();
+  print('2. Second middleware - after');
+});
+
+app.get('/', (c) async {
+  print('3. Route handler');
+  return c.text('Hello!');
+});
+
+// Output:
+// 1. First middleware - before
+// 2. Second middleware - before
+// 3. Route handler
+// 2. Second middleware - after
+// 1. First middleware - after
+```
+
+## Calling Next
+
+The `next()` function passes control to the next middleware or route handler:
+
+```dart
+// ✅ Always call next() if you want the chain to continue
+app.use((c, next) async {
+  print('Before handler');
+  await next();
+  print('After handler');
+});
+
+// ✅ Return early without calling next() to stop the chain
+app.use((c, next) async {
+  if (!isAuthorized(c)) {
+    return c.json({'error': 'Unauthorized'}, statusCode: 401);
+    // next() is NOT called - chain stops here
+  }
+  return next();
+});
+```
+
+## Modifying Context
+
+Middleware can modify the context before passing it forward:
+
+```dart
+class MyEnv extends Env {
+  String? requestId;
+  String? userId;
+}
+
+void main() async {
+  final app = Aim<MyEnv>(
+    envFactory: () => MyEnv(),
+  );
+
+  // Add request ID
+  app.use((c, next) async {
+    c.variables.requestId = DateTime.now().millisecondsSinceEpoch.toString();
+    return next();
+  });
+
+  // Add user ID from header
+  app.use((c, next) async {
+    final userId = c.req.headers['x-user-id'];
+    c.variables.userId = userId;
+    return next();
+  });
+
+  app.get('/', (c) async {
+    return c.json({
+      'requestId': c.variables.requestId,
+      'userId': c.variables.userId,
+    });
+  });
+
+  await app.serve(port: 8080);
+}
+```
+
+## Setting Response Headers
+
+Set headers that will be included in the final response:
+
+```dart
+app.use((c, next) async {
+  c.header('X-Request-ID', generateId());
+  c.header('X-Powered-By', 'Aim');
+  return next();
+});
+```
+
+## Error Handling Middleware
+
+Catch and handle errors in a centralized way:
+
+```dart
+Future<void> errorHandler(Context c, Next next) async {
+  try {
+    await next();
+  } catch (error, stackTrace) {
+    print('Error: $error');
+    print('Stack: $stackTrace');
+
+    return c.json({
+      'error': 'Internal Server Error',
+      'message': error.toString(),
+    }, statusCode: 500);
+  }
+}
+
+void main() async {
+  final app = Aim();
+
+  // Add error handler first
+  app.use(errorHandler);
+
+  app.get('/error', (c) async {
+    throw Exception('Something went wrong!');
+  });
+
+  await app.serve(port: 8080);
+}
+```
+
+## Authentication Middleware
+
+Protect routes with authentication:
+
+```dart
+class AuthEnv extends Env {
+  String? userId;
+}
+
+Future<void> requireAuth(Context<AuthEnv> c, Next next) async {
+  final token = c.req.headers['authorization'];
+
+  if (token == null) {
+    return c.json({'error': 'Missing token'}, statusCode: 401);
+  }
+
+  // Verify token and extract user ID
+  final userId = await verifyToken(token);
+
+  if (userId == null) {
+    return c.json({'error': 'Invalid token'}, statusCode: 401);
+  }
+
+  c.variables.userId = userId;
+  return next();
+}
+
+void main() async {
+  final app = Aim<AuthEnv>(
+    envFactory: () => AuthEnv(),
+  );
+
+  // Public routes
+  app.post('/login', loginHandler);
+  app.post('/register', registerHandler);
+
+  // Protected routes
+  app.use(requireAuth);
+  app.get('/profile', profileHandler);
+  app.get('/dashboard', dashboardHandler);
+
+  await app.serve(port: 8080);
+}
+```
+
+## Conditional Middleware
+
+Apply middleware only to specific routes:
+
+```dart
+void main() async {
+  final app = Aim();
+
+  // Apply to all routes
+  app.use(logger());
+
+  // Public routes
+  app.get('/', homeHandler);
+  app.get('/about', aboutHandler);
+
+  // Admin routes with auth middleware
+  app.use((c, next) async {
+    if (c.req.path.startsWith('/admin')) {
+      return requireAuth(c, next);
+    }
+    return next();
+  });
+
+  app.get('/admin/dashboard', adminHandler);
+  app.get('/admin/users', usersHandler);
+
+  await app.serve(port: 8080);
+}
+```
+
+## Creating Reusable Middleware
+
+Middleware factories allow configuration:
+
+```dart
+// Middleware factory
+Middleware<E> timing<E extends Env>() {
+  return (c, next) async {
+    final stopwatch = Stopwatch()..start();
+    await next();
+    stopwatch.stop();
+    c.header('X-Response-Time', '${stopwatch.elapsedMilliseconds}ms');
+  };
+}
+
+// Usage
+final app = Aim();
+app.use(timing());
+```
+
+With parameters:
+
+```dart
+Middleware<E> ratelimit<E extends Env>({
+  required int maxRequests,
+  required Duration window,
+}) {
+  final requests = <String, List<DateTime>>{};
+
+  return (c, next) async {
+    final ip = c.req.headers['x-forwarded-for'] ?? 'unknown';
+    final now = DateTime.now();
+
+    requests[ip] ??= [];
+    requests[ip]!.removeWhere((t) => now.difference(t) > window);
+
+    if (requests[ip]!.length >= maxRequests) {
+      return c.json(
+        {'error': 'Rate limit exceeded'},
+        statusCode: 429,
+      );
+    }
+
+    requests[ip]!.add(now);
+    return next();
+  };
+}
+
+// Usage
+final app = Aim();
+app.use(ratelimit(maxRequests: 100, window: Duration(minutes: 1)));
+```
+
+## Built-in Middleware
+
+Aim provides official middleware packages:
+
+```dart
+import 'package:aim_server_logger/aim_server_logger.dart';
+import 'package:aim_server_cors/aim_server_cors.dart';
+import 'package:aim_server_jwt/aim_server_jwt.dart';
+
+final app = Aim<JwtEnv>(
+  envFactory: () => JwtEnv(
+    secret: 'your-secret-key',
+  ),
+);
+
+// Logger
+app.use(logger());
+
+// CORS
+app.use(cors(
+  origin: 'https://example.com',
+  allowMethods: ['GET', 'POST'],
+));
+
+// JWT Authentication
+app.use(jwt());
+```
+
+See the [Middleware Packages](/middleware/) section for all available middleware.
+
+## Best Practices
+
+1. **Order Matters**: Security/auth middleware should run early
+2. **Always Await**: Use `await next()` to ensure proper execution order
+3. **Early Return**: Return without calling `next()` to stop the chain
+4. **Type Safety**: Use custom `Env` classes for typed variables
+5. **Error Handling**: Wrap `next()` in try-catch for error handling
+6. **Single Responsibility**: Each middleware should do one thing well
+
+## Common Patterns
+
+### Request Timing
+
+```dart
+app.use((c, next) async {
+  final stopwatch = Stopwatch()..start();
+  await next();
+  print('Request took ${stopwatch.elapsedMilliseconds}ms');
+});
+```
+
+### Request/Response Logging
+
+```dart
+app.use((c, next) async {
+  print('${c.req.method} ${c.req.path}');
+  await next();
+  print('Response sent');
+});
+```
+
+### Header Injection
+
+```dart
+app.use((c, next) async {
+  c.header('X-API-Version', '1.0');
+  c.header('X-Request-ID', generateId());
+  return next();
+});
+```
+
+### Body Parsing
+
+```dart
+app.use((c, next) async {
+  if (c.req.headers['content-type']?.contains('application/json') ?? false) {
+    // Parse JSON body and store in context
+    final body = await c.req.json();
+    // Store for later use
+  }
+  return next();
+});
+```
+
+## Next Steps
+
+- Explore the [Context API](/guide/context) for request/response handling
+- Browse [Middleware Packages](/middleware/) for ready-to-use middleware
+- Learn about specific middleware like [CORS](/middleware/cors) and [JWT](/middleware/jwt)
