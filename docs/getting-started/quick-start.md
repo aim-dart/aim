@@ -1,3 +1,8 @@
+---
+title: Quick Start - Aim Framework
+description: Build your first Dart server application with Aim. Learn routing, middleware, and environment variables in minutes.
+---
+
 # Quick Start
 
 Build your first Aim application in minutes.

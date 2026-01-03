@@ -5,6 +5,26 @@ export default defineConfig({
   title: "Aim",
   description: "A lightweight, fast web framework for Dart",
   cleanUrls: true,
+
+  // SEO
+  head: [
+    ['meta', { name: 'keywords', content: 'Dart, web framework, serverside dart, Dart server, Dart backend, Dart HTTP, REST API, middleware, Dart フレームワーク, サーバーサイド Dart, ダート, Webフレームワーク' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:title', content: 'Aim - Lightweight Web Framework for Dart' }],
+    ['meta', { property: 'og:description', content: 'A lightweight, fast web framework for Dart. Build modern web applications with simplicity and performance.' }],
+    ['meta', { property: 'og:url', content: 'https://aim-dart.dev' }],
+    ['meta', { property: 'og:site_name', content: 'Aim Framework' }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:title', content: 'Aim - Lightweight Web Framework for Dart' }],
+    ['meta', { name: 'twitter:description', content: 'A lightweight, fast web framework for Dart. Build modern web applications with simplicity and performance.' }],
+    ['link', { rel: 'canonical', href: 'https://aim-dart.dev' }],
+  ],
+
+  // Sitemap
+  sitemap: {
+    hostname: 'https://aim-dart.dev'
+  },
+
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [

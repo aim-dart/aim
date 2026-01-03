@@ -1,6 +1,9 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
+title: Aim - Dart向け軽量Webフレームワーク | Serverside Dart Framework
+titleTemplate: サーバーサイドDartでモダンなWebアプリケーションを構築
+description: Dartのための軽量で高速なWebフレームワーク。シンプルなAPI、型安全、モジュラー設計。サーバーサイドDart、REST API、ミドルウェア、ホットリロード対応。
 
 hero:
   name: "Aim"

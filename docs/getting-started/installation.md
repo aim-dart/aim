@@ -1,3 +1,8 @@
+---
+title: Installation - Aim Framework
+description: Get started with Aim framework for Dart. Learn how to install and create your first serverside Dart application.
+---
+
 # Installation
 
 Get Aim installed and set up your development environment.
