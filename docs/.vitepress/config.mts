@@ -4,6 +4,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: "Aim",
   description: "A lightweight, fast web framework for Dart",
+  cleanUrls: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -79,6 +80,6 @@ export default defineConfig({
 
     search: {
       provider: 'local'
-    }
+    },
   }
 })
