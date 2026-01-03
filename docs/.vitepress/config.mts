@@ -95,7 +95,7 @@ export default defineConfig({
 
     footer: {
       message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2024-present Aim Contributors'
+      copyright: 'Copyright © 2025-present dosukoi-android & Aim Contributors.'
     },
 
     editLink: {
