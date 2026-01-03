@@ -1,4 +1,8 @@
-# Aim
+<div align="center">
+  <img src="docs/public/banner.png" alt="Aim – A lightweight, fast web framework for Dart" width="1536">
+</div>
+
+<hr />
 
 A lightweight, fast, and developer-friendly web framework for Dart.
 
