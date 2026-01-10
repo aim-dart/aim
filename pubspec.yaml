@@ -18,4 +18,3 @@ workspace:
   - packages/aim_orm_core
   - packages/aim_orm_postgres
   - examples/basic-sample
-  - examples/postgres-playground
