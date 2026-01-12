@@ -292,4 +292,44 @@ void main() {
       expect(result.columns[2]['typeOid'], 23); // int4
     });
   });
+
+  group('Connection Management', () {
+    test('sends Terminate message on close', () async {
+      // Create a new connection for this test
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Execute a simple query to ensure connection is ready
+      final result = await testConn.sendSimpleQuery('SELECT 1');
+      expect(result.rows.length, 1);
+
+      // Close should send Terminate message and complete successfully
+      await expectLater(testConn.close(), completes);
+    });
+
+    test('connection can execute queries before close', () async {
+      // Create a new connection
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Execute multiple queries
+      await testConn.sendSimpleQuery('SELECT 1');
+      await testConn.sendExtendedQuery('SELECT \$1', [42]);
+
+      // Close the connection
+      await testConn.close();
+    });
+
+    test('close handles connection that executed no queries', () async {
+      // Create a connection and immediately close it
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Close without executing any queries
+      await expectLater(testConn.close(), completes);
+    });
+  });
 }

@@ -47,7 +47,7 @@ void main() {
         PostgresAuthenticationType.fromCode(5),
         PostgresAuthenticationType.md5Password,
       );
-      expect(PostgresAuthenticationType.fromCode(10), PostgresAuthenticationType.scram);
+      expect(PostgresAuthenticationType.fromCode(10), PostgresAuthenticationType.sasl);
     });
 
     test('fromCode returns unknown for unrecognized codes', () {
@@ -59,7 +59,7 @@ void main() {
       expect(PostgresAuthenticationType.ok.code, 0);
       expect(PostgresAuthenticationType.cleartextPassword.code, 3);
       expect(PostgresAuthenticationType.md5Password.code, 5);
-      expect(PostgresAuthenticationType.scram.code, 10);
+      expect(PostgresAuthenticationType.sasl.code, 10);
     });
   });
 

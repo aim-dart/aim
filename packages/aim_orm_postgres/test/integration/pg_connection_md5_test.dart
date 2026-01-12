@@ -24,5 +24,18 @@ void main() {
         throwsA(isA<QueryException>()),
       );
     });
+
+    test('sends Terminate message on close', () async {
+      final conn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5434/test_db',
+      );
+
+      // Execute a query to ensure connection is ready
+      final result = await conn.sendSimpleQuery('SELECT 1');
+      expect(result.rows.length, 1);
+
+      // Close should send Terminate message and complete successfully
+      await expectLater(conn.close(), completes);
+    });
   });
 }

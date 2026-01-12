@@ -1,30 +1,64 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:aim_orm_postgres/src/util.dart';
 import 'package:crypto/crypto.dart';
 
+/// PostgreSQL wire protocol message types.
+///
+/// Each message type in the PostgreSQL protocol is identified by a single
+/// character code. This enum provides a type-safe way to work with these codes.
 enum PostgresMessageType {
+  /// Authentication request or response ('R')
   authentication('R'),
+
+  /// Server parameter status ('S')
   parameterStatus('S'),
+
+  /// Backend key data for cancellation ('K')
   backendKeyData('K'),
+
+  /// Ready for query ('Z')
   readyForQuery('Z'),
+
+  /// Error response ('E')
   errorResponse('E'),
+
+  /// Row description (column metadata) ('T')
   rowDescription('T'),
+
+  /// Data row ('D')
   dataRow('D'),
+
+  /// Command completion ('C')
   commandComplete('C'),
+
+  /// Parse command ('P')
   parse('P'),
+
+  /// Parse completion ('1')
   parseComplete('1'),
+
+  /// Bind completion ('2')
   bindComplete('2'),
+
+  /// No data available ('n')
   noData('n'),
+
+  /// Unknown message type ('?')
   unknown('?');
 
+  /// The single-character message type code
   final String code;
 
   const PostgresMessageType(this.code);
 
+  /// Creates a [PostgresMessageType] from a message type code.
+  ///
+  /// Returns [PostgresMessageType.unknown] if the code is not recognized.
   static PostgresMessageType fromCode(String code) {
     return PostgresMessageType.values.firstWhere(
       (e) => e.code == code,
@@ -33,14 +67,23 @@ enum PostgresMessageType {
   }
 }
 
-/// クエリ実行結果
+/// Result of a query execution.
+///
+/// Contains the column metadata and row data returned from a PostgreSQL query.
 class QueryResult {
+  /// Creates a query result with the given [columns] and [rows].
   QueryResult({required this.columns, required this.rows});
 
+  /// Column metadata including names, types, and other attributes.
   final List<Map<String, dynamic>> columns;
+
+  /// Row data as a list of lists, where each inner list represents a row.
   final List<List<dynamic>> rows;
 
-  /// 行データをMap形式に変換
+  /// Converts row data to a list of maps.
+  ///
+  /// Each map represents a row with column names as keys and cell values
+  /// as values.
   List<Map<String, dynamic>> toMaps() {
     return rows.map((row) {
       final map = <String, dynamic>{};
@@ -52,27 +95,60 @@ class QueryResult {
   }
 }
 
-/// クエリ実行エラー
+/// Exception thrown when a query execution fails.
 class QueryException implements Exception {
+  /// Creates a query exception with the given error [message].
   QueryException(this.message);
 
+  /// The error message from PostgreSQL.
   final String message;
 
   @override
   String toString() => 'QueryException: $message';
 }
 
+/// PostgreSQL authentication types.
+///
+/// Represents the various authentication methods supported by PostgreSQL.
 enum PostgresAuthenticationType {
+  /// Authentication successful (0)
   ok(0),
+
+  /// Cleartext password authentication (3)
   cleartextPassword(3),
+
+  /// MD5 password authentication (5)
   md5Password(5),
-  scram(10),
+
+  /// SASL authentication (10)
+  sasl(10),
+
+  /// SASL Continue (11)
+  saslContinue(11),
+
+  /// SASL Final (12)
+  saslFinal(12),
+
+  /// GSSAPI authentication (7)
+  gss(7),
+
+  /// GSSAPI continue (8)
+  gssContinue(8),
+
+  /// SSPI authentication (9)
+  sspi(9),
+
+  /// Unknown authentication type (-1)
   unknown(-1);
 
   const PostgresAuthenticationType(this.code);
 
+  /// The numeric authentication type code.
   final int code;
 
+  /// Creates a [PostgresAuthenticationType] from an authentication code.
+  ///
+  /// Returns [PostgresAuthenticationType.unknown] if the code is not recognized.
   static PostgresAuthenticationType fromCode(int code) {
     return PostgresAuthenticationType.values.firstWhere(
       (type) => type.code == code,
@@ -81,6 +157,59 @@ enum PostgresAuthenticationType {
   }
 }
 
+/// PostgreSQL SSL connection modes.
+///
+/// Defines the various SSL/TLS connection modes supported by PostgreSQL.
+enum PostgresSslMode {
+  /// No SSL connection
+  disable,
+
+  /// SSL if server supports it (currently behaves same as prefer)
+  allow,
+
+  /// SSL required, certificate verification skipped
+  require,
+
+  /// Prefer SSL, fallback to plaintext if not supported
+  prefer,
+
+  /// SSL required, verify CA certificate
+  verifyCa,
+
+  /// SSL required, verify CA certificate and hostname
+  verifyFull;
+
+  /// Creates a [PostgresSslMode] from a string representation.
+  ///
+  /// Valid values are: disable, allow, require, prefer, verify-ca, verify-full.
+  /// Throws an [Exception] if the mode string is not recognized.
+  static PostgresSslMode fromString(String mode) {
+    switch (mode.toLowerCase()) {
+      case 'disable':
+        return PostgresSslMode.disable;
+      case 'allow':
+        return PostgresSslMode.allow;
+      case 'require':
+        return PostgresSslMode.require;
+      case 'prefer':
+        return PostgresSslMode.prefer;
+      case 'verify-ca':
+        return PostgresSslMode.verifyCa;
+      case 'verify-full':
+        return PostgresSslMode.verifyFull;
+      default:
+        throw Exception('Unknown SSL mode: $mode');
+    }
+  }
+}
+
+/// Low-level PostgreSQL connection implementation.
+///
+/// This class handles the PostgreSQL wire protocol communication, including
+/// authentication, SSL/TLS, and query execution using both Simple and Extended
+/// Query protocols.
+///
+/// Most users should use [PostgresDatabase] instead of this class directly.
 class PostgresConnection {
   PostgresConnection._(
     this._uri,
@@ -94,20 +223,59 @@ class PostgresConnection {
   final StreamIterator<Uint8List> _iterator;
   final BytesBuilder _messageBuffer;
 
+  // SCRAM-SHA-256 authentication state
+  String? _clientNonce;
+  String? _clientFirstMessageBare;
+
+  /// Establishes a connection to a PostgreSQL database.
+  ///
+  /// The [connectionString] should be in the format:
+  /// `postgresql://username:password@host:port/database?sslmode=mode&sslrootcert=/path/to/ca.crt`
+  ///
+  /// Supported SSL modes: disable, allow, prefer, require, verify-ca, verify-full
+  ///
+  /// Example:
+  /// ```dart
+  /// final conn = await PostgresConnection.connect(
+  ///   'postgresql://user:pass@localhost:5432/mydb?sslmode=require',
+  /// );
+  /// ```
   static Future<PostgresConnection> connect(String connectionString) async {
     final uri = Uri.parse(connectionString);
     final socket = await Socket.connect(uri.host, uri.port);
     final iterator = StreamIterator<Uint8List>(socket);
     final messageBuffer = BytesBuilder();
 
-    final conn = PostgresConnection._(uri, socket, iterator, messageBuffer);
+    PostgresConnection conn = PostgresConnection._(
+      uri,
+      socket,
+      iterator,
+      messageBuffer,
+    );
+
+    final sslMode = uri.queryParameters['sslmode'] ?? 'disable';
+    final pgSslMode = PostgresSslMode.fromString(sslMode);
+    if (pgSslMode != PostgresSslMode.disable) {
+      final caFile = uri.queryParameters['sslrootcert'];
+      final secureSocket = await conn.enableSsl(pgSslMode, caFile: caFile);
+      conn = PostgresConnection._(
+        uri,
+        secureSocket,
+        StreamIterator<Uint8List>(secureSocket),
+        BytesBuilder(),
+      );
+    }
 
     await conn._authenticate();
 
     return conn;
   }
 
-  /// ReadyForQueryメッセージまでのメッセージシーケンスを受信（結果を返す用）
+  /// Receives messages until a ReadyForQuery message is received.
+  ///
+  /// Returns a list of all received messages, including the final
+  /// ReadyForQuery message. This is used to collect all response messages
+  /// for a query execution.
   Future<List<Uint8List>> _receiveUntilReady() async {
     final messages = <Uint8List>[];
 
@@ -165,15 +333,132 @@ class PostgresConnection {
     }
   }
 
+  /// Closes the connection to the PostgreSQL database.
+  ///
+  /// Sends a Terminate message to the server to gracefully close the connection,
+  /// then cancels the stream iterator and closes the underlying socket.
   Future<void> close() async {
-    await _iterator.cancel();
-    await _socket.close();
+    try {
+      final builder = BytesBuilder();
+      builder.addByte('X'.codeUnitAt(0));
+      builder.add(int32Bytes(4)); // Length of message
+      _socket.add(builder.toBytes());
+      await _socket.flush();
+    } catch (_) {
+      // Ignore errors during close
+    } finally {
+      await _iterator.cancel();
+      await _socket.close();
+    }
   }
 }
 
+/// SSL/TLS connection support for PostgreSQL.
+///
+/// This extension provides SSL/TLS handshake and certificate verification
+/// functionality for PostgreSQL connections.
+extension PostgresConnectionSsl on PostgresConnection {
+  /// Enables SSL/TLS encryption for the connection.
+  ///
+  /// Sends an SSL request to the PostgreSQL server and upgrades to a secure
+  /// connection if the server supports it. The behavior depends on [sslMode]:
+  ///
+  /// - [PostgresSslMode.disable]: No SSL (this method should not be called)
+  /// - [PostgresSslMode.allow]: SSL preferred (currently same as prefer)
+  /// - [PostgresSslMode.prefer]: Prefer SSL, fallback to plaintext
+  /// - [PostgresSslMode.require]: Require SSL, skip certificate verification
+  /// - [PostgresSslMode.verifyCa]: Require SSL with CA verification
+  /// - [PostgresSslMode.verifyFull]: Require SSL with CA and hostname verification
+  ///
+  /// The [caFile] parameter specifies the path to a CA certificate file for
+  /// certificate verification. Required when [sslMode] is verifyCa or verifyFull.
+  ///
+  /// Returns the upgraded [SecureSocket] or the original [Socket] if SSL is
+  /// not supported and [sslMode] allows plaintext fallback.
+  ///
+  /// Throws an [Exception] if:
+  /// - Server doesn't support SSL when [sslMode] requires it
+  /// - [caFile] is not provided when certificate verification is required
+  /// - SSL request is rejected by the server
+  Future<Socket> enableSsl(PostgresSslMode sslMode, {String? caFile}) async {
+    final builder = BytesBuilder();
+    builder.add(int32Bytes(8));
+    builder.add(int32Bytes(80877103));
+
+    _socket.add(builder.toBytes());
+    await _socket.flush();
+
+    final hasNext = await _iterator.moveNext();
+    if (!hasNext) {
+      throw Exception('No response from server for SSL request');
+    }
+
+    final response = _iterator.current;
+    if (response.isEmpty) {
+      throw Exception('SSL not supported by server');
+    }
+
+    if (response[0] == 'S'.codeUnitAt(0)) {
+      // Control certificate verification based on SSL mode
+      final shouldVerify =
+          sslMode == PostgresSslMode.verifyCa ||
+          sslMode == PostgresSslMode.verifyFull;
+
+      if (shouldVerify && caFile != null) {
+        // Enable CA certificate verification
+        // Note: verify-ca and verify-full currently behave the same (both verify hostname)
+        // because Dart's SecureSocket performs hostname verification by default when host is provided
+        final context = SecurityContext(withTrustedRoots: false);
+        context.setTrustedCertificates(caFile);
+
+        return await SecureSocket.secure(
+          _socket,
+          host: _uri.host,
+          context: context,
+        );
+      } else if (shouldVerify && caFile == null) {
+        // verify-ca/verify-full specified but no CA certificate provided
+        throw Exception('SSL mode $sslMode requires sslrootcert parameter');
+      } else {
+        // require/prefer/allow - skip certificate verification
+        // Note: allow is supposed to prefer plaintext but currently behaves same as prefer
+        return await SecureSocket.secure(
+          _socket,
+          host: _uri.host,
+          onBadCertificate: (_) => true,
+        );
+      }
+    }
+
+    if (response[0] == 'N'.codeUnitAt(0)) {
+      // SSL not supported by server
+      if (sslMode == PostgresSslMode.require ||
+          sslMode == PostgresSslMode.verifyCa ||
+          sslMode == PostgresSslMode.verifyFull) {
+        throw Exception('SSL required but not supported by server');
+      }
+      return _socket; // Continue with plaintext for prefer/allow
+    }
+
+    if (response[0] == 'E'.codeUnitAt(0)) {
+      throw Exception('SSL request rejected by server');
+    }
+
+    throw Exception('Unexpected response to SSL request: ${response[0]}');
+  }
+}
+
+/// Authentication support for PostgreSQL.
+///
+/// This extension provides authentication functionality including cleartext
+/// password and MD5 password authentication.
 extension PostgresConnectionAuthenticator on PostgresConnection {
+  /// Performs the authentication handshake with PostgreSQL.
+  ///
+  /// Sends a startup message and handles the authentication response from
+  /// the server. Supports cleartext and MD5 password authentication.
   Future<void> _authenticate() async {
-    // スタートアップメッセージ送信
+    // Send startup message
     final parts = _uri.userInfo.split(':');
     final username = parts[0];
 
@@ -200,7 +485,7 @@ extension PostgresConnectionAuthenticator on PostgresConnection {
     _socket.add(startupMessage.toBytes());
     await _socket.flush();
 
-    // ReadyForQueryまで受信しながら即座に処理（パスワード送信などが必要）
+    // Receive messages until ReadyForQuery (password may need to be sent)
     while (true) {
       final message = await _receiveMessage(_iterator, _messageBuffer);
 
@@ -208,13 +493,13 @@ extension PostgresConnectionAuthenticator on PostgresConnection {
         String.fromCharCode(message[0]),
       );
 
-      // エラーレスポンスの処理
+      // Handle error responses
       if (messageType == PostgresMessageType.errorResponse) {
         final errorMessage = _parseErrorResponse(message.sublist(5));
         throw QueryException(errorMessage);
       }
 
-      // 認証メッセージのみ処理（パスワード送信が必要）
+      // Handle authentication messages (password may be required)
       if (messageType == PostgresMessageType.authentication) {
         final payload = message.sublist(5);
         await _handleAuthentication(payload, _socket);
@@ -226,56 +511,73 @@ extension PostgresConnectionAuthenticator on PostgresConnection {
     }
   }
 
-  /// ErrorResponseメッセージからエラーメッセージを抽出
+  /// Extracts error message from ErrorResponse message.
+  ///
+  /// Parses the error response fields and returns the error message.
+  /// Prefers the 'M' (message) field, falls back to 'S' (severity).
   String _parseErrorResponse(Uint8List payload) {
     var offset = 0;
     final fields = <String, String>{};
 
-    // フィールドを順に解析（Byte1のタイプコード + Null終端文字列）
+    // Parse fields sequentially (Byte1 type code + null-terminated string)
     while (offset < payload.length && payload[offset] != 0) {
       final fieldType = String.fromCharCode(payload[offset]);
       offset++;
 
-      // Null終端文字列を探す
+      // Find null-terminated string
       final endIndex = payload.indexOf(0, offset);
       if (endIndex == -1) break;
 
       final fieldValue = utf8.decode(payload.sublist(offset, endIndex));
       fields[fieldType] = fieldValue;
 
-      offset = endIndex + 1; // Nullバイトの次へ
+      offset = endIndex + 1; // Move past null byte
     }
 
-    // 'M'フィールド（メッセージ）を優先、なければ'S'（Severity）を使用
+    // Prefer 'M' field (message), fallback to 'S' (severity)
     return fields['M'] ?? fields['S'] ?? 'Unknown error';
   }
 
+  /// Handles authentication based on the server's authentication request.
+  ///
+  /// Supports cleartext password, MD5 password, and SCRAM authentication.
   Future<void> _handleAuthentication(Uint8List payload, Socket socket) async {
     final authTypeCode = bytesToInt32(payload.sublist(0, 4));
     final authType = PostgresAuthenticationType.fromCode(authTypeCode);
 
     switch (authType) {
       case PostgresAuthenticationType.ok:
-        // 認証成功
+        // Authentication successful
         break;
       case PostgresAuthenticationType.cleartextPassword:
         await _sendCleartextPasswordMessage(_uri.userInfo.split(':')[1]);
         break;
       case PostgresAuthenticationType.md5Password:
-        final salt = payload.sublist(4, 8);
         await _sendMd5PasswordMessage(
           _uri.userInfo.split(':')[0],
           _uri.userInfo.split(':')[1],
-          salt,
+          payload,
         );
-      case PostgresAuthenticationType.scram:
-        // TODO: SCRAM実装
-        throw UnimplementedError('SCRAM authentication not yet supported');
+      case PostgresAuthenticationType.sasl:
+        await _sendSaslInitialResponse(payload);
+      case PostgresAuthenticationType.saslContinue:
+        await _sendSaslResponse(payload);
+      case PostgresAuthenticationType.saslFinal:
+        // Server sends final verification - we can optionally verify it
+        // For now, just accept it (authentication is complete)
+        break;
+      case PostgresAuthenticationType.gss:
+        throw UnimplementedError('GSSAPI authentication not yet supported');
+      case PostgresAuthenticationType.gssContinue:
+        throw UnimplementedError('GSSAPI continue not yet supported');
+      case PostgresAuthenticationType.sspi:
+        throw UnimplementedError('SSPI authentication not yet supported');
       case PostgresAuthenticationType.unknown:
         throw Exception('Unsupported authentication type: $authTypeCode');
     }
   }
 
+  /// Sends a cleartext password message to the server.
   Future<void> _sendCleartextPasswordMessage(String password) async {
     final builder = BytesBuilder();
 
@@ -293,10 +595,13 @@ extension PostgresConnectionAuthenticator on PostgresConnection {
     await _socket.flush();
   }
 
+  /// Sends an MD5 password message to the server.
+  ///
+  /// MD5 password = md5(md5(password + username) + salt)
   Future<void> _sendMd5PasswordMessage(
     String username,
     String password,
-    Uint8List salt,
+    Uint8List payload,
   ) async {
     final builder = BytesBuilder();
     builder.addByte('p'.codeUnitAt(0));
@@ -308,15 +613,16 @@ extension PostgresConnectionAuthenticator on PostgresConnection {
 
     final combined = BytesBuilder();
     combined.add(utf8.encode(innerHex));
+
+    final salt = payload.sublist(4, 8);
     combined.add(salt);
 
-    final outer = Uint8List.fromList(
-      md5.convert(combined.toBytes()).bytes,
-    );
+    final outer = Uint8List.fromList(md5.convert(combined.toBytes()).bytes);
     final md5Password = 'md5${bytesToHex(outer)}';
 
     final passwordBytes = utf8.encode(md5Password);
-    final messageLength = 4 + passwordBytes.length + 1; // length + password + null
+    final messageLength =
+        4 + passwordBytes.length + 1; // length + password + null
 
     builder.add(int32Bytes(messageLength));
     builder.add(passwordBytes);
@@ -325,11 +631,198 @@ extension PostgresConnectionAuthenticator on PostgresConnection {
     _socket.add(builder.toBytes());
     await _socket.flush();
   }
+
+  /// Sends a SASL initial response for SCRAM-SHA-256 authentication.
+  Future<void> _sendSaslInitialResponse(Uint8List payload) async {
+    final mechanisms = <String>[];
+    var offset = 4;
+
+    while (offset < payload.length) {
+      final endIndex = payload.indexOf(0, offset);
+      if (endIndex == -1 || endIndex == offset) break;
+
+      mechanisms.add(utf8.decode(payload.sublist(offset, endIndex)));
+      offset = endIndex + 1;
+    }
+
+    // Check for SCRAM-SHA-256 support
+    if (!mechanisms.any((m) => m.startsWith('SCRAM-SHA-256'))) {
+      throw Exception(
+        'SCRAM-SHA-256 not supported. Available: ${mechanisms.join(", ")}',
+      );
+    }
+
+    // Generate client nonce
+    final random = Random.secure();
+    final nonceBytes = List<int>.generate(18, (_) => random.nextInt(256));
+    _clientNonce = base64.encode(nonceBytes);
+
+    final username = _uri.userInfo.split(':')[0];
+    _clientFirstMessageBare = 'n=$username,r=$_clientNonce';
+    final clientFirstMessage = 'n,,$_clientFirstMessageBare';
+
+    final builder = BytesBuilder();
+    builder.addByte('p'.codeUnitAt(0));
+
+    final messagePayload = BytesBuilder();
+
+    // SASL mechanism name (null-terminated)
+    messagePayload.add(utf8.encode('SCRAM-SHA-256'));
+    messagePayload.addByte(0);
+
+    // Client first message length and data
+    final clientFirstBytes = utf8.encode(clientFirstMessage);
+    messagePayload.add(int32Bytes(clientFirstBytes.length));
+    messagePayload.add(clientFirstBytes);
+
+    final messageLength = 4 + messagePayload.length;
+    builder.add(int32Bytes(messageLength));
+    builder.add(messagePayload.toBytes());
+
+    _socket.add(builder.toBytes());
+    await _socket.flush();
+  }
+
+  /// Sends a SASL response for SCRAM-SHA-256 authentication.
+  Future<void> _sendSaslResponse(Uint8List payload) async {
+    final serverFirstMessage = utf8.decode(payload.sublist(4));
+
+    // Parse server-first-message: r=nonce,s=salt,i=iterations
+    final serverParams = _parseSaslMessage(serverFirstMessage);
+    final serverNonce = serverParams['r']!;
+    final salt = base64.decode(serverParams['s']!);
+    final iterations = int.parse(serverParams['i']!);
+
+    // Verify server nonce starts with client nonce
+    if (!serverNonce.startsWith(_clientNonce!)) {
+      throw Exception('Server nonce does not start with client nonce');
+    }
+
+    // Calculate client proof
+    final password = _uri.userInfo.split(':')[1];
+    final clientProof = _calculateClientProof(
+      password,
+      salt,
+      iterations,
+      _clientFirstMessageBare!,
+      serverFirstMessage,
+      serverNonce,
+    );
+
+    // Build client-final-message
+    final channelBinding = base64.encode(utf8.encode('n,,'));
+    final clientFinalMessageWithoutProof = 'c=$channelBinding,r=$serverNonce';
+    final clientFinalMessage = '$clientFinalMessageWithoutProof,p=$clientProof';
+
+    // Send SASL response
+    final builder = BytesBuilder();
+    builder.addByte('p'.codeUnitAt(0));
+
+    final messageBytes = utf8.encode(clientFinalMessage);
+    final messageLength = 4 + messageBytes.length;
+
+    builder.add(int32Bytes(messageLength));
+    builder.add(messageBytes);
+
+    _socket.add(builder.toBytes());
+    await _socket.flush();
+  }
+
+  /// Parses a SASL message into key-value pairs.
+  Map<String, String> _parseSaslMessage(String message) {
+    final result = <String, String>{};
+    for (final part in message.split(',')) {
+      if (part.length >= 2 && part[1] == '=') {
+        result[part[0]] = part.substring(2);
+      }
+    }
+    return result;
+  }
+
+  /// Calculates the client proof for SCRAM-SHA-256.
+  String _calculateClientProof(
+    String password,
+    List<int> salt,
+    int iterations,
+    String clientFirstMessageBare,
+    String serverFirstMessage,
+    String serverNonce,
+  ) {
+    // 1. SaltedPassword = PBKDF2(password, salt, iterations)
+    final saltedPassword = _pbkdf2Sha256(
+      utf8.encode(password),
+      salt,
+      iterations,
+    );
+
+    // 2. ClientKey = HMAC(SaltedPassword, "Client Key")
+    final clientKey = _hmacSha256(saltedPassword, utf8.encode('Client Key'));
+
+    // 3. StoredKey = SHA256(ClientKey)
+    final storedKey = sha256.convert(clientKey).bytes;
+
+    // 4. AuthMessage
+    final channelBinding = base64.encode(utf8.encode('n,,'));
+    final clientFinalWithoutProof = 'c=$channelBinding,r=$serverNonce';
+    final authMessage =
+        '$clientFirstMessageBare,$serverFirstMessage,$clientFinalWithoutProof';
+
+    // 5. ClientSignature = HMAC(StoredKey, AuthMessage)
+    final clientSignature = _hmacSha256(storedKey, utf8.encode(authMessage));
+
+    // 6. ClientProof = ClientKey XOR ClientSignature
+    final clientProof = List<int>.generate(
+      clientKey.length,
+      (i) => clientKey[i] ^ clientSignature[i],
+    );
+
+    return base64.encode(clientProof);
+  }
+
+  /// HMAC-SHA256 helper.
+  List<int> _hmacSha256(List<int> key, List<int> data) {
+    final hmac = Hmac(sha256, key);
+    return hmac.convert(data).bytes;
+  }
+
+  /// PBKDF2-HMAC-SHA256 implementation.
+  List<int> _pbkdf2Sha256(List<int> password, List<int> salt, int iterations) {
+    // PBKDF2 with HMAC-SHA256, generating 32 bytes (256 bits)
+    final blockCount = 1; // For SHA256, we need 1 block of 32 bytes
+    final result = <int>[];
+
+    for (var block = 1; block <= blockCount; block++) {
+      // U1 = HMAC(password, salt || INT(block))
+      final blockBytes = BytesBuilder();
+      blockBytes.add(salt);
+      blockBytes.add(int32Bytes(block));
+
+      var u = _hmacSha256(password, blockBytes.toBytes());
+      final t = List<int>.from(u);
+
+      // U2 through Uc
+      for (var i = 1; i < iterations; i++) {
+        u = _hmacSha256(password, u);
+        for (var j = 0; j < t.length; j++) {
+          t[j] ^= u[j];
+        }
+      }
+
+      result.addAll(t);
+    }
+
+    return result.sublist(0, 32); // Return 32 bytes for SHA256
+  }
 }
 
-/// メッセージパーシング用の共通関数
+/// Message parsing utilities for PostgreSQL wire protocol.
+///
+/// This extension provides functionality to parse PostgreSQL protocol messages
+/// including RowDescription and DataRow messages.
 extension PostgresConnectionMessageParser on PostgresConnection {
-  /// メッセージシーケンスからクエリ結果を抽出
+  /// Extracts query results from a sequence of messages.
+  ///
+  /// Parses RowDescription and DataRow messages to construct a [QueryResult].
   QueryResult parseQueryResult(List<Uint8List> messages) {
     List<Map<String, dynamic>>? columns;
     final rows = <List<dynamic>>[];
@@ -353,10 +846,10 @@ extension PostgresConnectionMessageParser on PostgresConnection {
         case PostgresMessageType.bindComplete:
         case PostgresMessageType.noData:
         case PostgresMessageType.readyForQuery:
-          // これらは無視
+          // Ignore these messages
           break;
         default:
-          // その他のメッセージは無視
+          // Ignore other messages
           break;
       }
     }
@@ -364,43 +857,46 @@ extension PostgresConnectionMessageParser on PostgresConnection {
     return QueryResult(columns: columns ?? [], rows: rows);
   }
 
-  /// RowDescriptionメッセージをパース
+  /// Parses a RowDescription message.
+  ///
+  /// Returns a list of column metadata maps containing name, type, and other
+  /// attributes for each column in the result set.
   List<Map<String, dynamic>> parseRowDescription(Uint8List payload) {
     var offset = 0;
 
-    // カラム数
+    // Number of columns
     final fieldCount = bytesToInt16(payload.sublist(offset, offset + 2));
     offset += 2;
 
     final columns = <Map<String, dynamic>>[];
 
     for (var i = 0; i < fieldCount; i++) {
-      // カラム名（null終端）
+      // Column name (null-terminated)
       final nameEnd = payload.indexOf(0, offset);
       final name = utf8.decode(payload.sublist(offset, nameEnd));
       offset = nameEnd + 1;
 
-      // テーブルOID（4バイト）
+      // Table OID (4 bytes)
       final tableOid = bytesToInt32(payload.sublist(offset, offset + 4));
       offset += 4;
 
-      // カラム属性番号（2バイト）
+      // Column attribute number (2 bytes)
       final columnAttr = bytesToInt16(payload.sublist(offset, offset + 2));
       offset += 2;
 
-      // 型OID（4バイト）
+      // Type OID (4 bytes)
       final typeOid = bytesToInt32(payload.sublist(offset, offset + 4));
       offset += 4;
 
-      // 型サイズ（2バイト）
+      // Type size (2 bytes)
       final typeSize = bytesToInt16(payload.sublist(offset, offset + 2));
       offset += 2;
 
-      // 型修飾子（4バイト）
+      // Type modifier (4 bytes)
       final typeMod = bytesToInt32(payload.sublist(offset, offset + 4));
       offset += 4;
 
-      // フォーマットコード（2バイト）
+      // Format code (2 bytes)
       final formatCode = bytesToInt16(payload.sublist(offset, offset + 2));
       offset += 2;
 
@@ -418,26 +914,29 @@ extension PostgresConnectionMessageParser on PostgresConnection {
     return columns;
   }
 
-  /// DataRowメッセージをパース
+  /// Parses a DataRow message.
+  ///
+  /// Returns a list of column values. NULL values are represented as null.
+  /// Non-null values are decoded as UTF-8 strings.
   List<dynamic> parseDataRow(Uint8List payload) {
     var offset = 0;
 
-    // カラム数
+    // Number of columns
     final columnCount = bytesToInt16(payload.sublist(offset, offset + 2));
     offset += 2;
 
     final values = <dynamic>[];
 
     for (var i = 0; i < columnCount; i++) {
-      // 値の長さ
+      // Value length
       final valueLength = bytesToInt32(payload.sublist(offset, offset + 4));
       offset += 4;
 
       if (valueLength == -1) {
-        // NULL値
+        // NULL value
         values.add(null);
       } else {
-        // 値のデータ（テキスト形式）
+        // Value data (text format)
         final valueBytes = payload.sublist(offset, offset + valueLength);
         final value = utf8.decode(valueBytes);
         values.add(value);
@@ -449,8 +948,15 @@ extension PostgresConnectionMessageParser on PostgresConnection {
   }
 }
 
+/// Simple Query Protocol implementation.
+///
+/// This extension provides functionality to execute queries using PostgreSQL's
+/// Simple Query Protocol (no parameter binding).
 extension PostgresConnectionSimpleQuery on PostgresConnection {
-  /// クエリを実行して結果を返す
+  /// Executes a query and returns the result.
+  ///
+  /// Uses the Simple Query Protocol without parameter binding. For queries
+  /// with parameters, use [sendExtendedQuery] instead.
   Future<QueryResult> sendSimpleQuery(String sql) async {
     final builder = BytesBuilder();
     builder.addByte('Q'.codeUnitAt(0));
@@ -465,63 +971,70 @@ extension PostgresConnectionSimpleQuery on PostgresConnection {
     _socket.add(builder.toBytes());
     await _socket.flush();
 
-    // メッセージを受信
+    // Receive messages
     final messages = await _receiveUntilReady();
 
-    // 結果をパース
+    // Parse result
     return parseQueryResult(messages);
   }
 }
 
+/// Extended Query Protocol implementation.
+///
+/// This extension provides functionality to execute parameterized queries using
+/// PostgreSQL's Extended Query Protocol with parameter binding.
 extension PostgresConnectionExtendedQuery on PostgresConnection {
-  /// Extended Query Protocolでクエリを実行（パラメータ化クエリ）
+  /// Executes a parameterized query using Extended Query Protocol.
+  ///
+  /// The [sql] string should use $1, $2, etc. for parameter placeholders.
+  /// The [parameters] list contains the values to bind to these placeholders.
   Future<QueryResult> sendExtendedQuery(
     String sql,
     List<dynamic> parameters,
   ) async {
-    // 1. Parse メッセージ送信
+    // 1. Send Parse message
     await _sendParse(sql, parameters.length);
 
-    // 2. Bind メッセージ送信
+    // 2. Send Bind message
     await _sendBind(parameters);
 
-    // 3. Describe メッセージ送信（Portal）
+    // 3. Send Describe message (Portal)
     await _sendDescribe('P');
 
-    // 4. Execute メッセージ送信
+    // 4. Send Execute message
     await _sendExecute();
 
-    // 5. Sync メッセージ送信
+    // 5. Send Sync message
     await _sendSync();
 
-    // 6. ReadyForQueryまでメッセージを受信
+    // 6. Receive messages until ReadyForQuery
     final messages = await _receiveUntilReady();
 
-    // 7. 結果をパース
+    // 7. Parse result
     return parseQueryResult(messages);
   }
 
-  /// Parse メッセージ送信
+  /// Sends a Parse message.
   Future<void> _sendParse(String sql, int paramCount) async {
     final builder = BytesBuilder();
 
-    // メッセージタイプ 'P'
+    // Message type 'P'
     builder.addByte('P'.codeUnitAt(0));
 
-    // ペイロード構築
+    // Build payload
     final payload = BytesBuilder();
 
-    // Prepared statement名（unnamed = ""）
+    // Prepared statement name (unnamed = "")
     payload.addByte(0);
 
-    // SQLクエリ（null終端）
+    // SQL query (null-terminated)
     payload.add(utf8.encode(sql));
     payload.addByte(0);
 
-    // パラメータ型OIDの数（0 = サーバーが推測）
+    // Number of parameter type OIDs (0 = server infers types)
     payload.add(int16Bytes(0));
 
-    // メッセージ長（4バイト自身を含む）
+    // Message length (includes 4 bytes for length field itself)
     final messageLength = 4 + payload.length;
     builder.add(int32Bytes(messageLength));
     builder.add(payload.toBytes());
@@ -530,33 +1043,33 @@ extension PostgresConnectionExtendedQuery on PostgresConnection {
     await _socket.flush();
   }
 
-  /// Bind メッセージ送信
+  /// Sends a Bind message.
   Future<void> _sendBind(List<dynamic> parameters) async {
     final builder = BytesBuilder();
 
-    // メッセージタイプ 'B'
+    // Message type 'B'
     builder.addByte('B'.codeUnitAt(0));
 
-    // ペイロード構築
+    // Build payload
     final payload = BytesBuilder();
 
-    // Portal名（unnamed = ""）
+    // Portal name (unnamed = "")
     payload.addByte(0);
 
-    // Prepared statement名（unnamed = ""）
+    // Prepared statement name (unnamed = "")
     payload.addByte(0);
 
-    // パラメータフォーマットコード数（すべてテキスト形式 = 0）
+    // Parameter format code count (all text format = 0)
     payload.add(int16Bytes(0));
 
-    // パラメータ値の数
+    // Number of parameter values
     payload.add(int16Bytes(parameters.length));
 
-    // 各パラメータ値
+    // Each parameter value
     for (final param in parameters) {
       final encoded = _encodeParameter(param);
       if (encoded == null) {
-        // NULL値
+        // NULL value
         payload.add(int32Bytes(-1));
       } else {
         payload.add(int32Bytes(encoded.length));
@@ -564,10 +1077,10 @@ extension PostgresConnectionExtendedQuery on PostgresConnection {
       }
     }
 
-    // 結果カラムフォーマットコード数（すべてテキスト形式 = 0）
+    // Result column format code count (all text format = 0)
     payload.add(int16Bytes(0));
 
-    // メッセージ長
+    // Message length
     final messageLength = 4 + payload.length;
     builder.add(int32Bytes(messageLength));
     builder.add(payload.toBytes());
@@ -576,23 +1089,23 @@ extension PostgresConnectionExtendedQuery on PostgresConnection {
     await _socket.flush();
   }
 
-  /// Describe メッセージ送信
+  /// Sends a Describe message.
   Future<void> _sendDescribe(String type) async {
     final builder = BytesBuilder();
 
-    // メッセージタイプ 'D'
+    // Message type 'D'
     builder.addByte('D'.codeUnitAt(0));
 
-    // ペイロード
+    // Payload
     final payload = BytesBuilder();
 
     // 'S' = Statement, 'P' = Portal
     payload.addByte(type.codeUnitAt(0));
 
-    // 名前（unnamed = ""）
+    // Name (unnamed = "")
     payload.addByte(0);
 
-    // メッセージ長
+    // Message length
     final messageLength = 4 + payload.length;
     builder.add(int32Bytes(messageLength));
     builder.add(payload.toBytes());
@@ -601,23 +1114,23 @@ extension PostgresConnectionExtendedQuery on PostgresConnection {
     await _socket.flush();
   }
 
-  /// Execute メッセージ送信
+  /// Sends an Execute message.
   Future<void> _sendExecute() async {
     final builder = BytesBuilder();
 
-    // メッセージタイプ 'E'
+    // Message type 'E'
     builder.addByte('E'.codeUnitAt(0));
 
-    // ペイロード
+    // Payload
     final payload = BytesBuilder();
 
-    // Portal名（unnamed = ""）
+    // Portal name (unnamed = "")
     payload.addByte(0);
 
-    // 最大行数（0 = 無制限）
+    // Maximum number of rows (0 = unlimited)
     payload.add(int32Bytes(0));
 
-    // メッセージ長
+    // Message length
     final messageLength = 4 + payload.length;
     builder.add(int32Bytes(messageLength));
     builder.add(payload.toBytes());
@@ -626,21 +1139,24 @@ extension PostgresConnectionExtendedQuery on PostgresConnection {
     await _socket.flush();
   }
 
-  /// Sync メッセージ送信
+  /// Sends a Sync message.
   Future<void> _sendSync() async {
     final builder = BytesBuilder();
 
-    // メッセージタイプ 'S'
+    // Message type 'S'
     builder.addByte('S'.codeUnitAt(0));
 
-    // メッセージ長（ペイロードなし）
+    // Message length (no payload)
     builder.add(int32Bytes(4));
 
     _socket.add(builder.toBytes());
     await _socket.flush();
   }
 
-  /// パラメータをテキスト形式にエンコード
+  /// Encodes a parameter value to text format.
+  ///
+  /// Returns null for null values. Supports int, double, String, bool, and
+  /// DateTime types. DateTime values are encoded as ISO 8601 strings.
   Uint8List? _encodeParameter(dynamic value) {
     if (value == null) {
       return null;
@@ -657,10 +1173,10 @@ extension PostgresConnectionExtendedQuery on PostgresConnection {
     } else if (value is bool) {
       stringValue = value ? 't' : 'f';
     } else if (value is DateTime) {
-      // ISO 8601形式
+      // ISO 8601 format
       stringValue = value.toUtc().toIso8601String();
     } else {
-      // フォールバック: toString()
+      // Fallback: toString()
       stringValue = value.toString();
     }
 
