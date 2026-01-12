@@ -1,4 +1,4 @@
-import 'package:aim_orm_postgres/src/pg_database.dart';
+import 'package:aim_postgres/src/pg_database.dart';
 
 void main() async {
   final db = await PostgresDatabase.connect(

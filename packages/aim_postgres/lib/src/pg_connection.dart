@@ -4,7 +4,8 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:aim_orm_postgres/src/util.dart';
+import 'package:aim_postgres/src/types/notice_message.dart';
+import 'package:aim_postgres/src/util.dart';
 import 'package:crypto/crypto.dart';
 
 /// PostgreSQL wire protocol message types.
@@ -47,6 +48,9 @@ enum PostgresMessageType {
 
   /// No data available ('n')
   noData('n'),
+
+  /// Notice response ('N')
+  noticeResponse('N'),
 
   /// Unknown message type ('?')
   unknown('?');
@@ -231,6 +235,11 @@ class PostgresConnection {
   int? _processId;
   Uint8List? _secretKey;
 
+  // NoticeResponse stream
+  final StreamController<NoticeMessage> _noticeController =
+      StreamController<NoticeMessage>.broadcast();
+  Stream<NoticeMessage> get noticeMessage => _noticeController.stream;
+
   /// Establishes a connection to a PostgreSQL database.
   ///
   /// The [connectionString] should be in the format:
@@ -291,6 +300,12 @@ class PostgresConnection {
         String.fromCharCode(message[0]),
       );
 
+      if (messageType == PostgresMessageType.noticeResponse) {
+        final notice = NoticeMessage.fromPayload(message.sublist(5));
+        _noticeController.add(notice);
+        continue;
+      }
+
       if (messageType == PostgresMessageType.readyForQuery) {
         break;
       }
@@ -298,6 +313,7 @@ class PostgresConnection {
 
     return messages;
   }
+
 
   Future<Uint8List> _receiveMessage(
     StreamIterator<Uint8List> iterator,
@@ -336,13 +352,13 @@ class PostgresConnection {
       return message;
     }
   }
-  
+
   /// Cancel query in progress.
   Future<void> cancelQuery() async {
     if (_processId == null || _secretKey == null) {
       throw Exception('Cannot cancel query: no backend key data available');
     }
-    
+
     final cancelSocket = await Socket.connect(_uri.host, _uri.port);
     try {
       final builder = BytesBuilder();
@@ -381,6 +397,7 @@ class PostgresConnection {
     } finally {
       await _iterator.cancel();
       await _socket.close();
+      await _noticeController.close();
     }
   }
 }

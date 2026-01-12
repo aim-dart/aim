@@ -1,4 +1,4 @@
-import 'package:aim_orm_postgres/src/pg_connection.dart';
+import 'package:aim_postgres/src/pg_connection.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,4 +1,4 @@
-name: aim_orm_postgres
+name: aim_database
 description:
 version: 0.0.1
 repository: https://github.com/aim-dart/aim
@@ -8,10 +8,6 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  aim_orm_core:
-    path: ../aim_orm_core
-  crypto: ^3.0.7
-
 
 dev_dependencies:
   lints: ^6.0.0

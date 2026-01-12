@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:aim_orm_postgres/src/util.dart';
+import 'package:aim_postgres/src/util.dart';
 import 'package:test/test.dart';
 
 void main() {

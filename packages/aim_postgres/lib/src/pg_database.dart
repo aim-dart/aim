@@ -1,5 +1,5 @@
-import 'package:aim_orm_core/aim_orm_core.dart';
-import 'package:aim_orm_postgres/src/pg_connection.dart';
+import 'package:aim_database/aim_database.dart';
+import 'package:aim_postgres/src/pg_connection.dart';
 
 /// PostgreSQL database implementation.
 ///

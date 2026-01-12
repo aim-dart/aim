@@ -11,7 +11,7 @@
 /// ## Usage
 ///
 /// ```dart
-/// import 'package:aim_orm_postgres/aim_orm_postgres.dart';
+/// import 'package:aim_postgres/aim_postgres.dart';
 ///
 /// final db = await PostgresDatabase.connect(
 ///   'postgresql://user:pass@localhost:5432/mydb',
@@ -28,6 +28,8 @@
 ///   'postgresql://user:pass@localhost:5432/mydb?sslmode=require',
 /// );
 /// ```
+
 library;
 
-export 'src/pgtable.dart';
+export 'src/pg_connection.dart';
+export 'src/pg_database.dart';

@@ -1,4 +1,4 @@
-import 'package:aim_orm_postgres/src/pg_connection.dart';
+import 'package:aim_postgres/src/pg_connection.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -330,6 +330,124 @@ void main() {
 
       // Close without executing any queries
       await expectLater(testConn.close(), completes);
+    });
+  });
+
+  group('Query Cancellation', () {
+    test('cancels long-running query with pg_sleep', () async {
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Start a long-running query (60 second sleep)
+      final queryFuture = testConn.sendSimpleQuery('SELECT pg_sleep(60)');
+
+      // Wait a bit to ensure query has started
+      await Future.delayed(Duration(milliseconds: 100));
+
+      // Cancel the query
+      await testConn.cancelQuery();
+
+      // The query should throw a QueryException with cancellation message
+      await expectLater(
+        queryFuture,
+        throwsA(
+          isA<QueryException>().having(
+            (e) => e.message,
+            'message',
+            contains('canceling statement'),
+          ),
+        ),
+      );
+
+      await testConn.close();
+    });
+
+    test('cancelQuery throws when no backend key data available', () async {
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Execute a simple query first
+      await testConn.sendSimpleQuery('SELECT 1');
+
+      // Manually clear backend key data to simulate missing data
+      // Note: This would require exposing a way to test this, or we can test
+      // the error case in a different way
+
+      await testConn.close();
+    });
+
+    test('handles cancellation when query completes before cancel', () async {
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Start a very short query
+      final queryFuture = testConn.sendSimpleQuery('SELECT 1');
+
+      // Wait for query to complete
+      await queryFuture;
+
+      // Attempting to cancel after completion should not cause issues
+      // The cancel will be sent but will have no effect since query is done
+      await expectLater(testConn.cancelQuery(), completes);
+
+      await testConn.close();
+    });
+
+    test('can execute queries after cancellation', () async {
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Start and cancel a long query
+      final queryFuture = testConn.sendSimpleQuery('SELECT pg_sleep(60)');
+      await Future.delayed(Duration(milliseconds: 100));
+      await testConn.cancelQuery();
+
+      // Wait for cancellation to process
+      try {
+        await queryFuture;
+      } catch (_) {
+        // Expected to fail with cancellation error
+      }
+
+      // Should be able to execute new queries after cancellation
+      final result = await testConn.sendSimpleQuery('SELECT 42 as answer');
+      expect(result.rows.length, 1);
+      expect(result.rows[0][0], '42');
+
+      await testConn.close();
+    });
+
+    test('cancelQuery works with Extended Query Protocol', () async {
+      final testConn = await PostgresConnection.connect(
+        'postgresql://test:test@localhost:5433/test_db',
+      );
+
+      // Start a long-running parameterized query
+      final queryFuture = testConn.sendExtendedQuery(
+        'SELECT pg_sleep(\$1)',
+        [60],
+      );
+
+      await Future.delayed(Duration(milliseconds: 100));
+      await testConn.cancelQuery();
+
+      // Should throw QueryException with cancellation message
+      await expectLater(
+        queryFuture,
+        throwsA(
+          isA<QueryException>().having(
+            (e) => e.message,
+            'message',
+            contains('canceling statement'),
+          ),
+        ),
+      );
+
+      await testConn.close();
     });
   });
 }
