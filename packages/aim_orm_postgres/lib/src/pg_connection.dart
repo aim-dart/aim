@@ -227,6 +227,10 @@ class PostgresConnection {
   String? _clientNonce;
   String? _clientFirstMessageBare;
 
+  // Backend key data for cancellation (not yet used)
+  int? _processId;
+  Uint8List? _secretKey;
+
   /// Establishes a connection to a PostgreSQL database.
   ///
   /// The [connectionString] should be in the format:
@@ -330,6 +334,34 @@ class PostgresConnection {
       }
 
       return message;
+    }
+  }
+  
+  /// Cancel query in progress.
+  Future<void> cancelQuery() async {
+    if (_processId == null || _secretKey == null) {
+      throw Exception('Cannot cancel query: no backend key data available');
+    }
+    
+    final cancelSocket = await Socket.connect(_uri.host, _uri.port);
+    try {
+      final builder = BytesBuilder();
+      final payload = BytesBuilder();
+
+      payload.add(int32Bytes(80877102));
+      payload.add(int32Bytes(_processId!));
+      payload.add(_secretKey!);
+
+      final messageLength = 4 + payload.length;
+      builder.add(int32Bytes(messageLength));
+      builder.add(payload.toBytes());
+
+      cancelSocket.add(builder.toBytes());
+      await cancelSocket.flush();
+    } catch (_) {
+      rethrow;
+    } finally {
+      await cancelSocket.close();
     }
   }
 
@@ -503,6 +535,11 @@ extension PostgresConnectionAuthenticator on PostgresConnection {
       if (messageType == PostgresMessageType.authentication) {
         final payload = message.sublist(5);
         await _handleAuthentication(payload, _socket);
+      }
+
+      if (messageType == PostgresMessageType.backendKeyData) {
+        _processId = bytesToInt32(message.sublist(5, 9));
+        _secretKey = message.sublist(9);
       }
 
       if (messageType == PostgresMessageType.readyForQuery) {
