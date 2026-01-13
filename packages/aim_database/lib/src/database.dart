@@ -5,7 +5,10 @@ abstract class Database {
     List<dynamic>? args,
   });
 
-  Future<int> execute(String sql, [List<dynamic>? parameters]);
+  Future<int> execute(String sql, {
+    Map<String, dynamic>? params,
+    List<dynamic>? args,
+  });
 
   Future<T> transaction<T>(Future<T> Function(Transaction tx) fn);
 
@@ -14,9 +17,13 @@ abstract class Database {
 
 abstract class Transaction {
   Future<List<Map<String, dynamic>>> query(
-    String sql, [
-    List<dynamic>? parameters,
-  ]);
+    String sql, {
+        Map<String, dynamic>? params,
+        List<dynamic>? args,
+      });
 
-  Future<int> execute(String sql, [List<dynamic>? parameters]);
+  Future<int> execute(String sql, {
+    Map<String, dynamic>? params,
+    List<dynamic>? args,
+  });
 }

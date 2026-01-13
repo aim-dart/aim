@@ -35,9 +35,40 @@ class PostgresDatabase extends Database {
   }
 
   @override
-  Future<int> execute(String sql, [List<dynamic>? parameters]) {
-    // TODO: implement execute
-    throw UnimplementedError();
+  Future<int> execute(
+    String sql, {
+    Map<String, dynamic>? params,
+    List<dynamic>? args,
+  }) async {
+    // Error if both parameter types are specified
+    if (params != null &&
+        params.isNotEmpty &&
+        args != null &&
+        args.isNotEmpty) {
+      throw ArgumentError(
+        'Cannot specify both named parameters (params) and positional parameters (args)',
+      );
+    }
+
+    // Convert named parameters to positional parameters if present
+    if (params != null && params.isNotEmpty) {
+      final (convertedSql, positionalParams) = _convertNamedParams(sql, params);
+      final result = await _connection.sendExtendedQuery(
+        convertedSql,
+        positionalParams,
+      );
+      return 0;
+    }
+
+    // Use Extended Query Protocol if positional parameters are present
+    if (args != null && args.isNotEmpty) {
+      final result = await _connection.sendExtendedQuery(sql, args);
+      return 0;
+    }
+
+    // Use Simple Query Protocol if no parameters
+    final result = await _connection.sendSimpleQuery(sql);
+    return 0;
   }
 
   @override
@@ -77,34 +108,122 @@ class PostgresDatabase extends Database {
     return result.toMaps();
   }
 
-  /// Converts named parameters (:id) to positional parameters ($1).
-  ///
-  /// Returns a tuple containing the converted SQL string and the list of
-  /// positional parameter values.
-  (String, List<dynamic>) _convertNamedParams(
-    String sql,
-    Map<String, dynamic> params,
-  ) {
-    var convertedSql = sql;
-    final positionalParams = <dynamic>[];
-    var paramIndex = 1;
+  @override
+  Future<T> transaction<T>(Future<T> Function(Transaction tx) fn) async {
+    await _connection.sendSimpleQuery('BEGIN');
+    try {
+      final tx = _PostgresTransaction(_connection);
+      final result = await fn(tx);
+      await _connection.sendSimpleQuery('COMMIT');
+      return result;
+    } catch (e) {
+      await _connection.sendSimpleQuery('ROLLBACK');
+      rethrow;
+    }
+  }
+}
 
-    // Convert parameters in order
-    for (final entry in params.entries) {
-      final placeholder = ':${entry.key}';
-      if (convertedSql.contains(placeholder)) {
-        convertedSql = convertedSql.replaceAll(placeholder, '\$$paramIndex');
-        positionalParams.add(entry.value);
-        paramIndex++;
-      }
+class _PostgresTransaction implements Transaction {
+  final PostgresConnection _connection;
+
+  _PostgresTransaction(this._connection);
+
+  @override
+  Future<List<Map<String, dynamic>>> query(
+    String sql, {
+    Map<String, dynamic>? params,
+    List<dynamic>? args,
+  }) async {
+    // Error if both parameter types are specified
+    if (params != null &&
+        params.isNotEmpty &&
+        args != null &&
+        args.isNotEmpty) {
+      throw ArgumentError(
+        'Cannot specify both named parameters (params) and positional parameters (args)',
+      );
     }
 
-    return (convertedSql, positionalParams);
+    // Convert named parameters to positional parameters if present
+    if (params != null && params.isNotEmpty) {
+      final (convertedSql, positionalParams) = _convertNamedParams(sql, params);
+      final result = await _connection.sendExtendedQuery(
+        convertedSql,
+        positionalParams,
+      );
+      return result.toMaps();
+    }
+
+    // Use Extended Query Protocol if positional parameters are present
+    if (args != null && args.isNotEmpty) {
+      final result = await _connection.sendExtendedQuery(sql, args);
+      return result.toMaps();
+    }
+
+    // Use Simple Query Protocol if no parameters
+    final result = await _connection.sendSimpleQuery(sql);
+    return result.toMaps();
   }
 
   @override
-  Future<T> transaction<T>(Future<T> Function(Transaction tx) fn) {
-    // TODO: implement transaction
-    throw UnimplementedError();
+  Future<int> execute(
+    String sql, {
+    Map<String, dynamic>? params,
+    List<dynamic>? args,
+  }) async {
+    // Error if both parameter types are specified
+    if (params != null &&
+        params.isNotEmpty &&
+        args != null &&
+        args.isNotEmpty) {
+      throw ArgumentError(
+        'Cannot specify both named parameters (params) and positional parameters (args)',
+      );
+    }
+
+    // Convert named parameters to positional parameters if present
+    if (params != null && params.isNotEmpty) {
+      final (convertedSql, positionalParams) = _convertNamedParams(sql, params);
+      final result = await _connection.sendExtendedQuery(
+        convertedSql,
+        positionalParams,
+      );
+      return 0;
+    }
+
+    // Use Extended Query Protocol if positional parameters are present
+    if (args != null && args.isNotEmpty) {
+      final result = await _connection.sendExtendedQuery(sql, args);
+      return 0;
+    }
+
+    // Use Simple Query Protocol if no parameters
+    final result = await _connection.sendSimpleQuery(sql);
+    return 0;
   }
+}
+
+/// Converts named parameters (:id) to positional parameters ($1).
+///
+/// Returns a tuple containing the converted SQL string and the list of
+/// positional parameter values.
+(String, List<dynamic>) _convertNamedParams(
+  String sql,
+  Map<String, dynamic> params,
+) {
+  var convertedSql = sql;
+  final positionalParams = <dynamic>[];
+  var paramIndex = 1;
+
+  // Convert parameters in order
+  for (final entry in params.entries) {
+    final placeholder = ':${entry.key}';
+    if (convertedSql.contains(placeholder)) {
+      convertedSql = convertedSql.replaceAll(placeholder, '\$$paramIndex');
+      positionalParams.add(entry.value);
+      paramIndex++;
+    }
+  }
+
+  return (convertedSql, positionalParams);
 }

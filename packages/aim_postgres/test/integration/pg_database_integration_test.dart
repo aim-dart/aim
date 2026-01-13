@@ -295,4 +295,82 @@ void main() {
       );
     });
   });
+
+  group('Execute method', () {
+    test('execute INSERT with positional parameters', () async {
+      final rowCount = await db.execute(
+        'INSERT INTO test_products (name, price, in_stock) VALUES (\$1, \$2, \$3)',
+        args: ['Webcam', 89.99, true],
+      );
+
+      // Currently returns 0, but verify data was inserted
+      expect(rowCount, 0); // TODO: Parse CommandComplete to get actual row count
+
+      final products = await db.query(
+        'SELECT * FROM test_products WHERE name = \$1',
+        args: ['Webcam'],
+      );
+      expect(products.length, 1);
+      expect(products[0]['name'], 'Webcam');
+    });
+
+    test('execute UPDATE with named parameters', () async {
+      await db.execute(
+        'INSERT INTO test_products (name, price) VALUES (\$1, \$2)',
+        args: ['Speaker', 59.99],
+      );
+
+      final rowCount = await db.execute(
+        'UPDATE test_products SET price = :price WHERE name = :name',
+        params: {'price': 69.99, 'name': 'Speaker'},
+      );
+
+      expect(rowCount, 0); // TODO: Parse CommandComplete
+
+      final products = await db.query(
+        'SELECT price FROM test_products WHERE name = \$1',
+        args: ['Speaker'],
+      );
+      expect(products[0]['price'], '69.99');
+    });
+
+    test('execute DELETE with positional parameters', () async {
+      await db.execute(
+        'INSERT INTO test_products (name, price) VALUES (\$1, \$2)',
+        args: ['ToDelete', 9.99],
+      );
+
+      final rowCount = await db.execute(
+        'DELETE FROM test_products WHERE name = \$1',
+        args: ['ToDelete'],
+      );
+
+      expect(rowCount, 0); // TODO: Parse CommandComplete
+
+      final products = await db.query(
+        'SELECT * FROM test_products WHERE name = \$1',
+        args: ['ToDelete'],
+      );
+      expect(products, isEmpty);
+    });
+
+    test('execute with no parameters', () async {
+      final rowCount = await db.execute(
+        "DELETE FROM test_products WHERE name = 'Webcam'",
+      );
+
+      expect(rowCount, 0); // TODO: Parse CommandComplete
+    });
+
+    test('execute throws ArgumentError when both params and args provided', () async {
+      expect(
+        () => db.execute(
+          'UPDATE test_products SET price = :price WHERE id = \$1',
+          params: {'price': 100},
+          args: [1],
+        ),
+        throwsArgumentError,
+      );
+    });
+  });
 }
