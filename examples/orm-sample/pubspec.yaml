@@ -1,0 +1,26 @@
+name: orm_sample
+description: A sample command-line application.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+resolution: workspace
+
+environment:
+  sdk: ^3.10.7
+
+# Add regular dependencies here.
+dependencies:
+  path: ^1.9.0
+  aim_orm_postgres:
+    path: ../../packages/aim_orm_postgres
+  aim_orm:
+    path: ../../packages/aim_orm
+
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
+  aim_orm_codegen:
+    path: ../../packages/aim_orm_codegen
+  build_runner: ^2.10.5
+
