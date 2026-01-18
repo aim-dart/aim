@@ -63,14 +63,6 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     }
 
     for (final field in fields) {
-      final expression = field.expression;
-      if (expression is MethodInvocation) {
-        final methodName = expression.methodName.name;
-        print('Field: ${field.name}, Method: $methodName');
-      }
-    }
-
-    for (final field in fields) {
       final record = analyzeField(field.name, field.expression);
       print(
         'Field: ${record.fieldName}, Type: ${record.columnType}, '
@@ -78,239 +70,21 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
         'Nullable: ${record.isNullable}, VarcharLength: ${record.varcharLength}',
       );
     }
+    final records = fields.map((field) {
+      final record = analyzeField(field.name, field.expression);
+      return record;
+    }).toList();
 
     final buffer = StringBuffer();
     generateExtensionForTable(buffer, tableName);
     generateQueryBuilder(buffer, tableName);
-    buffer.writeln('typedef UserRow = ({int id, String name, String email});');
+    generateSelectRowBuilder(buffer, tableName, records);
+    generateSelectBuilder(buffer, tableName, records);
+    generateSelectConfig(buffer, tableName);
+    generateInsertBuilder(buffer, tableName, records);
+    generateUpdateBuilder(buffer, tableName, records);
+    generateDeleteBuilder(buffer, tableName, records);
 
-    final preset = """
-class UsersSelectBuilder extends QueryFuture<List<UserRow>>
-    with FutureMixin<List<UserRow>> {
-  final PostgresDatabase db;
-  final UsersSelectConfig config;
-
-  UsersSelectBuilder(this.db, this.config);
-
-  @override
-  Future<List<UserRow>> execute() {
-    final sqlBuffer = StringBuffer('SELECT * FROM users');
-    final params = <String, dynamic>{};
-
-    if (config.where.isNotEmpty) {
-      sqlBuffer.write(' WHERE ');
-      final whereClauses = <String>[];
-
-      for (var i = 0; i < config.where.length; i++) {
-        final condition = config.where[i];
-        whereClauses.add(condition.toSql(i));
-        params.addAll(condition.toParams(i));
-      }
-
-      sqlBuffer.write(whereClauses.join(' AND '));
-    }
-
-    if (config.limit != null) {
-      sqlBuffer.write(' LIMIT \${config.limit}');
-    }
-
-    if (config.offset != null) {
-      sqlBuffer.write(' OFFSET \${config.offset}');
-    }
-
-    final sql = sqlBuffer.toString();
-    return db.query(sql, params: params).then((result) {
-      return result.map((row) {
-        return (
-          id: int.parse(row['id'] as String),
-          name: row['name'] as String,
-          email: row['email'] as String,
-        );
-      }).toList();
-    });
-  }
-
-  UsersSelectBuilder where({Condition? id, Condition? name, Condition? email}) {
-    final newConditions = [...config.where];
-    if (id != null) newConditions.add(id);
-    if (name != null) newConditions.add(name);
-    if (email != null) newConditions.add(email);
-
-    return UsersSelectBuilder(
-      db,
-      UsersSelectConfig(
-        where: newConditions,
-        limit: config.limit,
-        offset: config.offset,
-      ),
-    );
-  }
-
-  UsersSelectBuilder limit(int limit) {
-    return UsersSelectBuilder(
-      db,
-      UsersSelectConfig(
-        where: config.where,
-        limit: limit,
-        offset: config.offset,
-      ),
-    );
-  }
-
-  UsersSelectBuilder offset(int offset) {
-    return UsersSelectBuilder(
-      db,
-      UsersSelectConfig(
-        where: config.where,
-        limit: config.limit,
-        offset: offset,
-      ),
-    );
-  }
-}
-
-class UsersSelectConfig {
-  final List<Condition> where;
-  final int? limit;
-  final int? offset;
-
-  UsersSelectConfig({
-    required List<Condition>? where,
-    required this.limit,
-    required this.offset,
-  }) : where = where ?? [];
-
-  @override
-  String toString() {
-    return 'UsersSelectConfig(where: \$where, limit: \$limit, offset: \$offset)';
-  }
-}
-
-class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
-  final ({int id, String name, String email})? _values;
-
-  UsersInsertBuilder(this.db, {({String email, int id, String name})? values})
-    : _values = values;
-
-  UsersInsertBuilder values(({int id, String name, String email}) user) {
-    return UsersInsertBuilder(db, values: user);
-  }
-
-  @override
-  Future<int> execute() {
-    if (_values == null) {
-      throw StateError('No values set');
-    }
-    final sql =
-        'INSERT INTO users (id, name, email) VALUES (:id, :name, :email)';
-    final params = {
-      'id': _values.id,
-      'name': _values.name,
-      'email': _values.email,
-    };
-    return db.execute(sql, params: params);
-  }
-}
-
-class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
-  final ({String? name, String? email})? _values;
-  final List<Condition> _where;
-
-  UsersUpdateBuilder(this.db, [this._values, List<Condition>? where])
-    : _where = where ?? [];
-
-  // SET句（更新するカラムを指定）
-  UsersUpdateBuilder set({String? name, String? email}) {
-    return UsersUpdateBuilder(db, (name: name, email: email), _where);
-  }
-
-  // WHERE句（SelectBuilderと同じ仕組み）
-  UsersUpdateBuilder where({Condition? id, Condition? name, Condition? email}) {
-    final newConditions = [..._where];
-    if (id != null) newConditions.add(id);
-    if (name != null) newConditions.add(name);
-    if (email != null) newConditions.add(email);
-    return UsersUpdateBuilder(db, _values, newConditions);
-  }
-
-  @override
-  Future<int> execute() {
-    if (_values == null) throw StateError('No values set');
-
-    // SET句の構築
-    final updates = <String>[];
-    final params = <String, dynamic>{};
-
-    if (_values.name != null) {
-      updates.add('name = :set_name');
-      params['set_name'] = _values.name;
-    }
-    if (_values.email != null) {
-      updates.add('email = :set_email');
-      params['set_email'] = _values.email;
-    }
-
-    if (updates.isEmpty) throw StateError('No fields to update');
-
-    final sqlBuffer = StringBuffer('UPDATE users SET \${updates.join(', ')}');
-
-    // WHERE句の構築
-    if (_where.isNotEmpty) {
-      sqlBuffer.write(' WHERE ');
-      final whereClauses = <String>[];
-      for (var i = 0; i < _where.length; i++) {
-        final condition = _where[i];
-        whereClauses.add(condition.toSql(i));
-        params.addAll(condition.toParams(i));
-      }
-      sqlBuffer.write(whereClauses.join(' AND '));
-    }
-
-    return db.execute(sqlBuffer.toString(), params: params);
-  }
-}
-
-class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
-  final List<Condition> _where;
-
-  UsersDeleteBuilder(this.db, [List<Condition>? where]) : _where = where ?? [];
-
-  // WHERE句（SelectBuilderと同じ仕組み）
-  UsersDeleteBuilder where({Condition? id, Condition? name, Condition? email}) {
-    final newConditions = [..._where];
-    if (id != null) newConditions.add(id);
-    if (name != null) newConditions.add(name);
-    if (email != null) newConditions.add(email);
-    return UsersDeleteBuilder(db, newConditions);
-  }
-
-  @override
-  Future<int> execute() {
-    final sqlBuffer = StringBuffer('DELETE FROM users');
-    final params = <String, dynamic>{};
-
-    // WHERE句の構築
-    if (_where.isNotEmpty) {
-      sqlBuffer.write(' WHERE ');
-      final whereClauses = <String>[];
-      for (var i = 0; i < _where.length; i++) {
-        final condition = _where[i];
-        whereClauses.add(condition.toSql(i));
-        params.addAll(condition.toParams(i));
-      }
-      sqlBuffer.write(whereClauses.join(' AND '));
-    }
-
-    return db.execute(sqlBuffer.toString(), params: params);
-  }
-}
-
-    """;
-
-    buffer.writeln(preset);
     return buffer.toString();
   }
 
@@ -355,6 +129,381 @@ class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
     buffer.writeln();
   }
 
+  void generateSelectRowBuilder(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> fields,
+  ) {
+    buffer.writeln('typedef ${capitalize(tableName)}Row = ({');
+    buffer.writeln(
+      fields
+          .map((f) => '${columnTypeToDartType(f.columnType)} ${f.fieldName}')
+          .join(','),
+    );
+    buffer.writeln('});');
+    buffer.writeln();
+  }
+
+  void generateSelectBuilder(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> fields,
+  ) {
+    buffer.writeln(
+      'class ${capitalize(tableName)}SelectBuilder extends QueryFuture<List<${capitalize(tableName)}Row>> with FutureMixin<List<${capitalize(tableName)}Row>> {',
+    );
+    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln('  final ${capitalize(tableName)}SelectConfig config;');
+    buffer.writeln();
+    buffer.writeln(
+      '  ${capitalize(tableName)}SelectBuilder(this.db, this.config);',
+    );
+    buffer.writeln();
+    buffer.writeln('  @override');
+    buffer.writeln('  Future<List<${capitalize(tableName)}Row>> execute() {');
+    buffer.writeln(
+      '    final sqlBuffer = StringBuffer(\'SELECT * FROM $tableName\');',
+    );
+    buffer.writeln('    final params = <String, dynamic>{};');
+    buffer.writeln();
+    buffer.writeln('    if (config.where.isNotEmpty) {');
+    buffer.writeln('      sqlBuffer.write(\' WHERE \');');
+    buffer.writeln('      final whereClauses = <String>[];');
+    buffer.writeln();
+    buffer.writeln('      for (var i = 0; i < config.where.length; i++) {');
+    buffer.writeln('        final condition = config.where[i];');
+    buffer.writeln('        whereClauses.add(condition.toSql(i));');
+    buffer.writeln('        params.addAll(condition.toParams(i));');
+    buffer.writeln('      }');
+    buffer.writeln();
+    buffer.writeln('      sqlBuffer.write(whereClauses.join(\' AND \'));');
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln('    if (config.limit != null) {');
+    buffer.writeln('      sqlBuffer.write(\' LIMIT \${config.limit}\');');
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln('    if (config.offset != null) {');
+    buffer.writeln('      sqlBuffer.write(\' OFFSET \${config.offset}\');');
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln('    final sql = sqlBuffer.toString();');
+    buffer.writeln('    return db.query(sql, params: params).then((result) {');
+    buffer.writeln('      return result.map((row) {');
+    buffer.writeln('        return (');
+    for (final field in fields) {
+      if (field.columnType == 'integer') {
+        buffer.writeln(
+          '  ${field.fieldName}: int.parse(row[\'${field.columnName}\'] as String),',
+        );
+      } else if (field.columnType == 'varchar' || field.columnType == 'text') {
+        buffer.writeln(
+          '  ${field.fieldName}: row[\'${field.columnName}\'] as String,',
+        );
+      } else if (field.columnType == 'timestamp') {
+        buffer.writeln(
+          '  ${field.fieldName}: DateTime.parse(row[\'${field.columnName}\'] as String),',
+        );
+      } else {
+        buffer.writeln('  ${field.fieldName}: row[\'${field.columnName}\'],');
+      }
+    }
+    buffer.writeln('        );');
+    buffer.writeln('      }).toList();');
+    buffer.writeln('    });');
+    buffer.writeln('  }');
+    buffer.writeln();
+
+    buffer.writeln('  ${capitalize(tableName)}SelectBuilder where({');
+    for (final field in fields) {
+      buffer.writeln('    Condition? ${field.fieldName},');
+    }
+    buffer.writeln('  }) {');
+    buffer.writeln('    final newConditions = [...config.where];');
+    for (final field in fields) {
+      buffer.writeln('    if (${field.fieldName} != null) ');
+      buffer.writeln('      newConditions.add(${field.fieldName});');
+    }
+    buffer.writeln();
+    buffer.writeln('    return ${capitalize(tableName)}SelectBuilder(');
+    buffer.writeln('      db,');
+    buffer.writeln('      ${capitalize(tableName)}SelectConfig(');
+    buffer.writeln('        where: newConditions,');
+    buffer.writeln('        limit: config.limit,');
+    buffer.writeln('        offset: config.offset,');
+    buffer.writeln('      ),');
+    buffer.writeln('    );');
+    buffer.writeln('  }');
+    buffer.writeln();
+
+    buffer.writeln(
+      '  ${capitalize(tableName)}SelectBuilder limit(int limit) {',
+    );
+    buffer.writeln('    return ${capitalize(tableName)}SelectBuilder(');
+    buffer.writeln('      db,');
+    buffer.writeln('      ${capitalize(tableName)}SelectConfig(');
+    buffer.writeln('        where: config.where,');
+    buffer.writeln('        limit: limit,');
+    buffer.writeln('        offset: config.offset,');
+    buffer.writeln('      ),');
+    buffer.writeln('    );');
+    buffer.writeln('  }');
+    buffer.writeln();
+
+    buffer.writeln(
+      '  ${capitalize(tableName)}SelectBuilder offset(int offset) {',
+    );
+    buffer.writeln('    return ${capitalize(tableName)}SelectBuilder(');
+    buffer.writeln('      db,');
+    buffer.writeln('      ${capitalize(tableName)}SelectConfig(');
+    buffer.writeln('        where: config.where,');
+    buffer.writeln('        limit: config.limit,');
+    buffer.writeln('        offset: offset,');
+    buffer.writeln('      ),');
+    buffer.writeln('    );');
+    buffer.writeln('  }');
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
+  void generateSelectConfig(StringBuffer buffer, String tableName) {
+    buffer.writeln('class ${capitalize(tableName)}SelectConfig {');
+    buffer.writeln('  final List<Condition> where;');
+    buffer.writeln('  final int? limit;');
+    buffer.writeln('  final int? offset;');
+    buffer.writeln();
+    buffer.writeln('  ${capitalize(tableName)}SelectConfig({');
+    buffer.writeln('    required List<Condition>? where,');
+    buffer.writeln('    required this.limit,');
+    buffer.writeln('    required this.offset,');
+    buffer.writeln('  }) : where = where ?? [];');
+    buffer.writeln();
+    buffer.writeln('  @override');
+    buffer.writeln('  String toString() {');
+    buffer.writeln(
+      "    return '${capitalize(tableName)}SelectConfig(where: \$where, limit: \$limit, offset: \$offset)';",
+    );
+    buffer.writeln('  }');
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
+  void generateInsertBuilder(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> fields,
+  ) {
+    buffer.writeln(
+      'class ${capitalize(tableName)}InsertBuilder extends QueryFuture<int> with FutureMixin<int> {',
+    );
+    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln(
+      '  final ({${fields.map((r) => '${columnTypeToDartType(r.columnType)} ${r.fieldName}').join(', ')}})? _values;',
+    );
+    buffer.writeln();
+    buffer.writeln(
+      '  ${capitalize(tableName)}InsertBuilder(this.db, {({${fields.map((r) => '${columnTypeToDartType(r.columnType)} ${r.fieldName}').join(', ')}})? values})',
+    );
+    buffer.writeln('    : _values = values;');
+    buffer.writeln();
+    buffer.writeln(
+      '  ${capitalize(tableName)}InsertBuilder values(({${fields.map((r) => '${columnTypeToDartType(r.columnType)} ${r.fieldName}').join(', ')}}) record) {',
+    );
+    buffer.writeln(
+      '    return ${capitalize(tableName)}InsertBuilder(db, values: record);',
+    );
+    buffer.writeln('  }');
+    buffer.writeln();
+    buffer.writeln('  @override');
+    buffer.writeln('  Future<int> execute() {');
+    buffer.writeln('    if (_values == null) {');
+    buffer.writeln("      throw StateError('No values set');");
+    buffer.writeln('    }');
+    final columnNames = fields.map((r) => r.columnName).toList();
+    buffer.writeln(
+      "    final sql = 'INSERT INTO $tableName (${columnNames.join(', ')}) "
+      "VALUES (${columnNames.map((name) => ':$name').join(', ')})';",
+    );
+    buffer.writeln('    final params = {');
+    for (final field in fields) {
+      buffer.writeln("      '${field.columnName}': _values.${field.fieldName},");
+    }
+    buffer.writeln('    };');
+    buffer.writeln('    return db.execute(sql, params: params);');
+    buffer.writeln('  }');
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
+  void generateUpdateBuilder(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> fields,
+  ) {
+    buffer.writeln(
+      'class ${capitalize(tableName)}UpdateBuilder extends QueryFuture<int> with FutureMixin<int> {',
+    );
+    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln(
+      '  final ({${fields.map((r) => '${columnTypeToDartType(r.columnType)}? ${r.fieldName}').join(', ')}})? _values;',
+    );
+    buffer.writeln('  final List<Condition> _where;');
+    buffer.writeln();
+    buffer.writeln(
+      '  ${capitalize(tableName)}UpdateBuilder(this.db, {({${fields.map((r) => '${columnTypeToDartType(r.columnType)}? ${r.fieldName}').join(', ')}})? values, List<Condition>? where})',
+    );
+    buffer.writeln('    : _where = where ?? []');
+    buffer.writeln('  , _values = values;');
+    buffer.writeln();
+    buffer.writeln('  // SET句（更新するカラムを指定）');
+    buffer.writeln('  ${capitalize(tableName)}UpdateBuilder set(({');
+    for (final record in fields) {
+      buffer.writeln(
+        '    ${columnTypeToDartType(record.columnType)}? ${record.fieldName},',
+      );
+    }
+    buffer.writeln('  }) values) {');
+    buffer.writeln(
+      '    return ${capitalize(tableName)}UpdateBuilder(db, values: values, where: _where);',
+    );
+    buffer.writeln('  }');
+    buffer.writeln();
+    buffer.writeln('  // WHERE句（SelectBuilderと同じ仕組み）');
+    buffer.writeln('  ${capitalize(tableName)}UpdateBuilder where({');
+    for (final record in fields) {
+      buffer.writeln('    Condition? ${record.fieldName},');
+    }
+    buffer.writeln('  }) {');
+    buffer.writeln('    final newConditions = [..._where];');
+    for (final record in fields) {
+      buffer.writeln('    if (${record.fieldName} != null) ');
+      buffer.writeln('      newConditions.add(${record.fieldName});');
+    }
+    buffer.writeln(
+      '    return ${capitalize(tableName)}UpdateBuilder(db, values: _values, where: newConditions);',
+    );
+    buffer.writeln('  }');
+    buffer.writeln();
+    buffer.writeln('  @override');
+    buffer.writeln('  Future<int> execute() {');
+    buffer.writeln(
+      '    if (_values == null) throw StateError(\'No values set\');',
+    );
+    buffer.writeln();
+    buffer.writeln('    // SET句の構築');
+    buffer.writeln('    final updates = <String>[];');
+    buffer.writeln('    final params = <String, dynamic>{};');
+    for (final record in fields) {
+      buffer.writeln('    if (_values.${record.fieldName} != null) {');
+      buffer.writeln(
+        "      updates.add('${record.columnName} = :set_${record.columnName}');",
+      );
+      buffer.writeln(
+        '      params[\'set_${record.columnName}\'] = _values.${record.fieldName};',
+      );
+      buffer.writeln('    }');
+    }
+    buffer.writeln();
+    buffer.writeln(
+      '    if (updates.isEmpty) throw StateError(\'No fields to update\');',
+    );
+    buffer.writeln();
+    buffer.writeln(
+      "    final sqlBuffer = StringBuffer('UPDATE $tableName SET \${updates.join(', ')}');",
+    );
+    buffer.writeln();
+    buffer.writeln('    // WHERE句の構築');
+    buffer.writeln('    if (_where.isNotEmpty) {');
+    buffer.writeln("      sqlBuffer.write(' WHERE ');");
+    buffer.writeln('      final whereClauses = <String>[];');
+    buffer.writeln('      for (var i = 0; i < _where.length; i++) {');
+    buffer.writeln('        final condition = _where[i];');
+    buffer.writeln('        whereClauses.add(condition.toSql(i));');
+    buffer.writeln('        params.addAll(condition.toParams(i));');
+    buffer.writeln('      }');
+    buffer.writeln("      sqlBuffer.write(whereClauses.join(' AND '));");
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln(
+      '    return db.execute(sqlBuffer.toString(), params: params);',
+    );
+    buffer.writeln('  }');
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
+  void generateDeleteBuilder(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> fields,
+  ) {
+    buffer.writeln(
+      'class ${capitalize(tableName)}DeleteBuilder extends QueryFuture<int> with FutureMixin<int> {',
+    );
+    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln('  final List<Condition> _where;');
+    buffer.writeln();
+    buffer.writeln(
+      '  ${capitalize(tableName)}DeleteBuilder(this.db, [List<Condition>? where]) : _where = where ?? [];',
+    );
+    buffer.writeln();
+    buffer.writeln('  // WHERE句（SelectBuilderと同じ仕組み）');
+    buffer.writeln('  ${capitalize(tableName)}DeleteBuilder where({');
+    for (final record in fields) {
+      buffer.writeln('    Condition? ${record.fieldName},');
+    }
+    buffer.writeln('  }) {');
+    buffer.writeln('    final newConditions = [..._where];');
+    for (final record in fields) {
+      buffer.writeln('    if (${record.fieldName} != null) ');
+      buffer.writeln('      newConditions.add(${record.fieldName});');
+    }
+    buffer.writeln(
+      '    return ${capitalize(tableName)}DeleteBuilder(db, newConditions);',
+    );
+    buffer.writeln('  }');
+    buffer.writeln();
+    buffer.writeln('  @override');
+    buffer.writeln('  Future<int> execute() {');
+    buffer.writeln(
+      "    final sqlBuffer = StringBuffer('DELETE FROM $tableName');",
+    );
+    buffer.writeln('    final params = <String, dynamic>{};');
+    buffer.writeln();
+    buffer.writeln('    // WHERE句の構築');
+    buffer.writeln('    if (_where.isNotEmpty) {');
+    buffer.writeln("      sqlBuffer.write(' WHERE ');");
+    buffer.writeln('      final whereClauses = <String>[];');
+    buffer.writeln('      for (var i = 0; i < _where.length; i++) {');
+    buffer.writeln('        final condition = _where[i];');
+    buffer.writeln('        whereClauses.add(condition.toSql(i));');
+    buffer.writeln('        params.addAll(condition.toParams(i));');
+    buffer.writeln('      }');
+    buffer.writeln("      sqlBuffer.write(whereClauses.join(' AND '));");
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln(
+      '    return db.execute(sqlBuffer.toString(), params: params);',
+    );
+    buffer.writeln('  }');
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
+  String columnTypeToDartType(String columnType) {
+    switch (columnType) {
+      case 'integer':
+        return 'int';
+      case 'varchar':
+      case 'text':
+        return 'String';
+      case 'timestamp':
+        return 'DateTime';
+      default:
+        return 'dynamic';
+    }
+  }
+
   void analyzeMethodChain(Expression expression) {
     if (expression is MethodInvocation) {
       final methodName = expression.methodName.name;
@@ -371,19 +520,12 @@ class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
     }
   }
 
-  ({
-    String fieldName,
-    String columnType, // 'integer', 'varchar' など
-    bool isPrimaryKey,
-    bool isUnique,
-    bool isNullable,
-    int? varcharLength,
-  })
-  analyzeField(String fieldName, Expression expression) {
+  AnalyzedField analyzeField(String fieldName, Expression expression) {
     bool isPrimaryKey = false;
     bool isUnique = false;
     bool isNullable = false;
     String? columnType;
+    String? columnName;
     int? varcharLength;
 
     // メソッドチェーンを全部集める
@@ -404,12 +546,22 @@ class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
           methodName == 'timestamp') {
         columnType = methodName;
 
-        // varcharの引数を取得
-        if (methodName == 'varchar' &&
-            method.argumentList.arguments.isNotEmpty) {
-          final arg = method.argumentList.arguments.first;
-          if (arg is IntegerLiteral) {
-            varcharLength = arg.value;
+        // 第一引数からカラム名を取得
+        if (method.argumentList.arguments.isNotEmpty) {
+          final firstArg = method.argumentList.arguments.first;
+          if (firstArg is SimpleStringLiteral) {
+            columnName = firstArg.value; // 'created_at' を取得
+          }
+        }
+
+        // varcharの場合、名前付きパラメータ 'length' を取得
+        if (methodName == 'varchar') {
+          for (final arg in method.argumentList.arguments) {
+            if (arg is NamedExpression && arg.name.label.name == 'length') {
+              if (arg.expression is IntegerLiteral) {
+                varcharLength = (arg.expression as IntegerLiteral).value;
+              }
+            }
           }
         }
       } else if (methodName == 'primaryKey') {
@@ -424,6 +576,7 @@ class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
     return (
       fieldName: fieldName,
       columnType: columnType ?? 'unknown',
+      columnName: columnName ?? fieldName,
       isPrimaryKey: isPrimaryKey,
       isUnique: isUnique,
       isNullable: isNullable,
@@ -431,6 +584,16 @@ class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
     );
   }
 }
+
+typedef AnalyzedField = ({
+  String fieldName,
+  String columnType, // 'integer', 'varchar' など
+  String columnName,
+  bool isPrimaryKey,
+  bool isUnique,
+  bool isNullable,
+  int? varcharLength,
+});
 
 class RecordVisitor extends RecursiveAstVisitor<void> {
   final String targetName;

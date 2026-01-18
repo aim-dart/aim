@@ -11,6 +11,16 @@ final users = (
   id: integer('id').primaryKey(),
   name: varchar('name', length: 255),
   email: varchar('email', length: 255).unique(),
+  createdAt: timestamp('created_at').withDefault(DateTime.now()),
+);
+
+@PgTable('posts')
+final posts = (
+  id: integer('id').primaryKey(),
+  userId: integer('user_id'),
+  title: varchar('title', length: 255),
+  content: text('content'),
+  createdAt: timestamp('created_at').withDefault(DateTime.now()),
 );
 
 void main() async {
