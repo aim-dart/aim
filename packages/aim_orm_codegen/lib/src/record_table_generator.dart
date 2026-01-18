@@ -62,14 +62,6 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       }
     }
 
-    for (final field in fields) {
-      final record = analyzeField(field.name, field.expression);
-      print(
-        'Field: ${record.fieldName}, Type: ${record.columnType}, '
-        'PrimaryKey: ${record.isPrimaryKey}, Unique: ${record.isUnique}, '
-        'Nullable: ${record.isNullable}, VarcharLength: ${record.varcharLength}',
-      );
-    }
     final records = fields.map((field) {
       final record = analyzeField(field.name, field.expression);
       return record;
@@ -136,9 +128,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
   ) {
     buffer.writeln('typedef ${capitalize(tableName)}Row = ({');
     buffer.writeln(
-      fields
-          .map((f) => '${columnTypeToDartType(f.columnType)} ${f.fieldName}')
-          .join(','),
+      fields.map((f) => '${f.returnType} ${f.fieldName}').join(','),
     );
     buffer.writeln('});');
     buffer.writeln();
@@ -192,20 +182,32 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln('      return result.map((row) {');
     buffer.writeln('        return (');
     for (final field in fields) {
-      if (field.columnType == 'integer') {
-        buffer.writeln(
-          '  ${field.fieldName}: int.parse(row[\'${field.columnName}\'] as String),',
-        );
-      } else if (field.columnType == 'varchar' || field.columnType == 'text') {
-        buffer.writeln(
-          '  ${field.fieldName}: row[\'${field.columnName}\'] as String,',
-        );
-      } else if (field.columnType == 'timestamp') {
-        buffer.writeln(
-          '  ${field.fieldName}: DateTime.parse(row[\'${field.columnName}\'] as String),',
-        );
-      } else {
-        buffer.writeln('  ${field.fieldName}: row[\'${field.columnName}\'],');
+      switch (field.columnMapper) {
+        case PgColumnMapper.integer:
+        case PgColumnMapper.serial:
+          buffer.writeln(
+            '  ${field.fieldName}: int.parse(row[\'${field.columnName}\'] as String),',
+          );
+          break;
+        case PgColumnMapper.varchar:
+        case PgColumnMapper.text:
+        case PgColumnMapper.uuid:
+          buffer.writeln(
+            '  ${field.fieldName}: row[\'${field.columnName}\'] as String,',
+          );
+          break;
+        case PgColumnMapper.timestamp:
+          buffer.writeln(
+            '  ${field.fieldName}: DateTime.parse(row[\'${field.columnName}\'] as String),',
+          );
+          break;
+        case PgColumnMapper.jsonb:
+          buffer.writeln(
+            '  ${field.fieldName}: row[\'${field.columnName}\'] as Map<String, dynamic>,',
+          );
+          break;
+        case PgColumnMapper.unknown:
+          buffer.writeln('  ${field.fieldName}: row[\'${field.columnName}\'],');
       }
     }
     buffer.writeln('        );');
@@ -298,16 +300,16 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     );
     buffer.writeln('  final PostgresDatabase db;');
     buffer.writeln(
-      '  final ({${fields.map((r) => '${columnTypeToDartType(r.columnType)} ${r.fieldName}').join(', ')}})? _values;',
+      '  final ({${fields.map((r) => '${r.returnType} ${r.fieldName}').join(', ')}})? _values;',
     );
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder(this.db, {({${fields.map((r) => '${columnTypeToDartType(r.columnType)} ${r.fieldName}').join(', ')}})? values})',
+      '  ${capitalize(tableName)}InsertBuilder(this.db, {({${fields.map((r) => '${r.returnType} ${r.fieldName}').join(', ')}})? values})',
     );
     buffer.writeln('    : _values = values;');
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder values(({${fields.map((r) => '${columnTypeToDartType(r.columnType)} ${r.fieldName}').join(', ')}}) record) {',
+      '  ${capitalize(tableName)}InsertBuilder values(({${fields.map((r) => '${r.returnType} ${r.fieldName}').join(', ')}}) record) {',
     );
     buffer.writeln(
       '    return ${capitalize(tableName)}InsertBuilder(db, values: record);',
@@ -326,7 +328,9 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     );
     buffer.writeln('    final params = {');
     for (final field in fields) {
-      buffer.writeln("      '${field.columnName}': _values.${field.fieldName},");
+      buffer.writeln(
+        "      '${field.columnName}': _values.${field.fieldName},",
+      );
     }
     buffer.writeln('    };');
     buffer.writeln('    return db.execute(sql, params: params);');
@@ -345,12 +349,12 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     );
     buffer.writeln('  final PostgresDatabase db;');
     buffer.writeln(
-      '  final ({${fields.map((r) => '${columnTypeToDartType(r.columnType)}? ${r.fieldName}').join(', ')}})? _values;',
+      '  final ({${fields.map((r) => '${r.returnType}? ${r.fieldName}').join(', ')}})? _values;',
     );
     buffer.writeln('  final List<Condition> _where;');
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}UpdateBuilder(this.db, {({${fields.map((r) => '${columnTypeToDartType(r.columnType)}? ${r.fieldName}').join(', ')}})? values, List<Condition>? where})',
+      '  ${capitalize(tableName)}UpdateBuilder(this.db, {({${fields.map((r) => '${r.returnType}? ${r.fieldName}').join(', ')}})? values, List<Condition>? where})',
     );
     buffer.writeln('    : _where = where ?? []');
     buffer.writeln('  , _values = values;');
@@ -358,9 +362,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln('  // SET句（更新するカラムを指定）');
     buffer.writeln('  ${capitalize(tableName)}UpdateBuilder set(({');
     for (final record in fields) {
-      buffer.writeln(
-        '    ${columnTypeToDartType(record.columnType)}? ${record.fieldName},',
-      );
+      buffer.writeln('    ${record.returnType}? ${record.fieldName},');
     }
     buffer.writeln('  }) values) {');
     buffer.writeln(
@@ -490,20 +492,6 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln();
   }
 
-  String columnTypeToDartType(String columnType) {
-    switch (columnType) {
-      case 'integer':
-        return 'int';
-      case 'varchar':
-      case 'text':
-        return 'String';
-      case 'timestamp':
-        return 'DateTime';
-      default:
-        return 'dynamic';
-    }
-  }
-
   void analyzeMethodChain(Expression expression) {
     if (expression is MethodInvocation) {
       final methodName = expression.methodName.name;
@@ -526,6 +514,8 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     bool isNullable = false;
     String? columnType;
     String? columnName;
+    PgColumnMapper? columnMapper;
+    String? returnType;
     int? varcharLength;
 
     // メソッドチェーンを全部集める
@@ -540,11 +530,11 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     for (final method in methods.reversed) {
       final methodName = method.methodName.name;
 
-      if (methodName == 'integer' ||
-          methodName == 'varchar' ||
-          methodName == 'text' ||
-          methodName == 'timestamp') {
-        columnType = methodName;
+      final column = PgColumnMapper.match(methodName);
+      if (column != null) {
+        columnMapper = column;
+        columnType = column.name;
+        returnType = column.dartType;
 
         // 第一引数からカラム名を取得
         if (method.argumentList.arguments.isNotEmpty) {
@@ -573,10 +563,13 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       }
     }
 
+    print('Analyzed field: $fieldName, type: $columnType, returnType: $returnType, columnMapper: $columnMapper');
     return (
       fieldName: fieldName,
       columnType: columnType ?? 'unknown',
       columnName: columnName ?? fieldName,
+      returnType: returnType ?? 'dynamic',
+      columnMapper: columnMapper ?? PgColumnMapper.unknown,
       isPrimaryKey: isPrimaryKey,
       isUnique: isUnique,
       isNullable: isNullable,
@@ -589,6 +582,8 @@ typedef AnalyzedField = ({
   String fieldName,
   String columnType, // 'integer', 'varchar' など
   String columnName,
+  String returnType, // 'int', 'String' など
+  PgColumnMapper columnMapper,
   bool isPrimaryKey,
   bool isUnique,
   bool isNullable,
@@ -617,4 +612,60 @@ class RecordVisitor extends RecursiveAstVisitor<void> {
 String capitalize(String s) {
   if (s.isEmpty) return s;
   return s[0].toUpperCase() + s.substring(1);
+}
+
+enum PgColumnMapper {
+  integer('int'),
+  varchar('String'),
+  text('String'),
+  timestamp('DateTime'),
+  serial('int'),
+  jsonb('Map<String, dynamic>'),
+  uuid('String'),
+  unknown('dynamic');
+
+  // 未対応（共通カラム型 - aim_orm）
+  // bigint('int'),           // BIGINT - 大きな整数
+  // smallint('int'),         // SMALLINT - 小さな整数
+  // decimal('double'),       // DECIMAL/NUMERIC - 精密な数値（金額など）
+  // double('double'),        // DOUBLE PRECISION/FLOAT
+  // boolean('bool'),         // BOOLEAN/BOOL
+  // date('DateTime'),        // DATE - 日付のみ
+  // time('Duration'),        // TIME - 時刻のみ
+  // blob('Uint8List'),       // BYTEA/BLOB - バイナリデータ
+  // json('Map<String, dynamic>'), // JSON
+
+  // 未対応（PostgreSQL固有 - aim_orm_postgres）
+  // bigserial('int'),        // BIGSERIAL
+  // timestamptz('DateTime'), // TIMESTAMP WITH TIME ZONE
+  // timetz('Duration'),      // TIME WITH TIME ZONE
+  // array('List<dynamic>'),  // ARRAY[]
+  // inet('String'),          // INET - IPアドレス
+  // cidr('String'),          // CIDR
+  // macaddr('String'),       // MACADDR
+  // money('double'),         // MONEY
+  // xml('String'),           // XML
+  // hstore('Map<String, String>'), // HSTORE
+
+  final String dartType;
+
+  const PgColumnMapper(this.dartType);
+
+  static String? toDartType(String columnType) {
+    for (final mapper in PgColumnMapper.values) {
+      if (mapper.name == columnType) {
+        return mapper.dartType;
+      }
+    }
+    return null;
+  }
+
+  static PgColumnMapper? match(String value) {
+    for (final mapper in PgColumnMapper.values) {
+      if (mapper.name == value) {
+        return mapper;
+      }
+    }
+    return null;
+  }
 }

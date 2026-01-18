@@ -36,7 +36,7 @@ class UsersQueryBuilder {
   }
 }
 
-typedef UsersRow = ({int id, String name, String email, DateTime createdAt});
+typedef UsersRow = ({String id, String name, String email, DateTime createdAt});
 
 class UsersSelectBuilder extends QueryFuture<List<UsersRow>>
     with FutureMixin<List<UsersRow>> {
@@ -75,7 +75,7 @@ class UsersSelectBuilder extends QueryFuture<List<UsersRow>>
     return db.query(sql, params: params).then((result) {
       return result.map((row) {
         return (
-          id: int.parse(row['id'] as String),
+          id: row['id'] as String,
           name: row['name'] as String,
           email: row['email'] as String,
           createdAt: DateTime.parse(row['created_at'] as String),
@@ -148,15 +148,15 @@ class UsersSelectConfig {
 
 class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresDatabase db;
-  final ({int id, String name, String email, DateTime createdAt})? _values;
+  final ({String id, String name, String email, DateTime createdAt})? _values;
 
   UsersInsertBuilder(
     this.db, {
-    ({int id, String name, String email, DateTime createdAt})? values,
+    ({String id, String name, String email, DateTime createdAt})? values,
   }) : _values = values;
 
   UsersInsertBuilder values(
-    ({int id, String name, String email, DateTime createdAt}) record,
+    ({String id, String name, String email, DateTime createdAt}) record,
   ) {
     return UsersInsertBuilder(db, values: record);
   }
@@ -180,19 +180,20 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
 
 class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresDatabase db;
-  final ({int? id, String? name, String? email, DateTime? createdAt})? _values;
+  final ({String? id, String? name, String? email, DateTime? createdAt})?
+  _values;
   final List<Condition> _where;
 
   UsersUpdateBuilder(
     this.db, {
-    ({int? id, String? name, String? email, DateTime? createdAt})? values,
+    ({String? id, String? name, String? email, DateTime? createdAt})? values,
     List<Condition>? where,
   }) : _where = where ?? [],
        _values = values;
 
   // SET句（更新するカラムを指定）
   UsersUpdateBuilder set(
-    ({int? id, String? name, String? email, DateTime? createdAt}) values,
+    ({String? id, String? name, String? email, DateTime? createdAt}) values,
   ) {
     return UsersUpdateBuilder(db, values: values, where: _where);
   }

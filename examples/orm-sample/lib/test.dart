@@ -8,7 +8,7 @@ part 'test.g.dart';
 
 @PgTable('users')
 final users = (
-  id: integer('id').primaryKey(),
+  id: uuid('id').primaryKey(),
   name: varchar('name', length: 255),
   email: varchar('email', length: 255).unique(),
   createdAt: timestamp('created_at').withDefault(DateTime.now()),
