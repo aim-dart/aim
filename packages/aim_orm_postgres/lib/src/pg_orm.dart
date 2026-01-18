@@ -7,17 +7,6 @@ class PgOrm {
     return PgOrm();
   }
 
-  PgOrm select() {
-    return this;
-  }
-
-  PgOrm from(PgTable table) {
-    return this;
-  }
-
-  Future<String> execute() async {
-    return 'Executed';
-  }
 }
 
 Future<PgOrm> aimDb() => PgOrm.connect();

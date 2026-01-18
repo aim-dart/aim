@@ -396,7 +396,7 @@ class PostgresConnection {
       // Ignore errors during close
     } finally {
       await _iterator.cancel();
-      await _socket.close();
+      _socket.destroy();
       await _noticeController.close();
     }
   }

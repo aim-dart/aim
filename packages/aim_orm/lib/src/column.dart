@@ -1,3 +1,5 @@
+import 'package:aim_orm/src/query_builder/condition.dart';
+
 abstract class Column<T, Self> {
   final String name;
   final bool isNullable;
@@ -5,8 +7,8 @@ abstract class Column<T, Self> {
   final bool isUnique;
   final T? defaultValue;
 
-  const Column(
-    this.name, {
+  const Column({
+    required this.name,
     this.isNullable = false,
     this.isPrimaryKey = false,
     this.isUnique = false,
@@ -14,7 +16,6 @@ abstract class Column<T, Self> {
   });
 
   Self copyWith({
-    String? name,
     bool? isPrimaryKey,
     bool? isNullable,
     bool? isUnique,
@@ -30,11 +31,27 @@ abstract class Column<T, Self> {
   Self nullable() => copyWith(isNullable: true);
 
   Self withDefault(T value) => copyWith(defaultValue: value);
+
+  Condition eq(int value) => Condition(name, ConditionOperator.equal, value);
+
+  Condition gt(int value) =>
+      Condition(name, ConditionOperator.greaterThan, value);
+
+  Condition lt(int value) => Condition(name, ConditionOperator.lessThan, value);
+
+  Condition gte(int value) =>
+      Condition(name, ConditionOperator.greaterThanOrEqual, value);
+
+  Condition lte(int value) =>
+      Condition(name, ConditionOperator.lessThanOrEqual, value);
+
+  Condition inList(List<int> values) =>
+      Condition(name, ConditionOperator.inList, values);
 }
 
 class IntegerColumn extends Column<int, IntegerColumn> {
-  const IntegerColumn(
-    super.name, {
+  const IntegerColumn({
+    required super.name,
     super.isPrimaryKey,
     super.isNullable,
     super.isUnique,
@@ -43,13 +60,12 @@ class IntegerColumn extends Column<int, IntegerColumn> {
 
   @override
   IntegerColumn copyWith({
-    String? name,
     bool? isPrimaryKey,
     bool? isNullable,
     bool? isUnique,
     int? defaultValue,
   }) => IntegerColumn(
-    name ?? this.name,
+    name: name,
     isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
     isNullable: isNullable ?? this.isNullable,
     isUnique: isUnique ?? this.isUnique,
@@ -61,10 +77,11 @@ class IntegerColumn extends Column<int, IntegerColumn> {
 }
 
 class VarcharColumn extends Column<String, VarcharColumn> {
-  final int length;
+  final int? length;
 
   const VarcharColumn({
-    required this.length,
+    required super.name,
+    this.length,
     super.isPrimaryKey,
     super.isNullable,
     super.isUnique,
@@ -79,6 +96,7 @@ class VarcharColumn extends Column<String, VarcharColumn> {
     String? defaultValue,
     int? length,
   }) => VarcharColumn(
+    name: name,
     length: length ?? this.length,
     isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
     isNullable: isNullable ?? this.isNullable,
@@ -92,6 +110,7 @@ class VarcharColumn extends Column<String, VarcharColumn> {
 
 class TextColumn extends Column<String, TextColumn> {
   const TextColumn({
+    required super.name,
     super.isPrimaryKey,
     super.isNullable,
     super.isUnique,
@@ -105,6 +124,7 @@ class TextColumn extends Column<String, TextColumn> {
     bool? isUnique,
     String? defaultValue,
   }) => TextColumn(
+    name: name,
     isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
     isNullable: isNullable ?? this.isNullable,
     isUnique: isUnique ?? this.isUnique,
@@ -119,6 +139,7 @@ class TimestampColumn extends Column<DateTime, TimestampColumn>  {
   final bool defaultNow;
 
   const TimestampColumn({
+    required super.name,
     this.defaultNow = false,
     super.isPrimaryKey,
     super.isNullable,
@@ -127,6 +148,7 @@ class TimestampColumn extends Column<DateTime, TimestampColumn>  {
   });
 
   TimestampColumn withDefaultNow() => TimestampColumn(
+    name: name,
     defaultNow: true,
     isPrimaryKey: isPrimaryKey,
     isNullable: isNullable,
@@ -141,6 +163,7 @@ class TimestampColumn extends Column<DateTime, TimestampColumn>  {
     DateTime? defaultValue,
   }) =>
       TimestampColumn(
+        name: name,
         defaultNow: defaultNow,
         isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
         isNullable: isNullable ?? this.isNullable,

@@ -2,6 +2,7 @@ import 'package:aim_orm/aim_orm.dart';
 
 class SerialColumn extends Column<String, SerialColumn> {
   const SerialColumn({
+    required super.name,
     super.isPrimaryKey,
     super.isNullable,
     super.isUnique,
@@ -14,6 +15,7 @@ class SerialColumn extends Column<String, SerialColumn> {
     bool? isUnique,
     String? defaultValue,
   }) => SerialColumn(
+    name: name,
     isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
     isNullable: isNullable ?? this.isNullable,
     isUnique: isUnique ?? this.isUnique,
@@ -25,6 +27,7 @@ class SerialColumn extends Column<String, SerialColumn> {
 
 class JsonbColumn<T> extends Column<T, JsonbColumn<T>> {
   const JsonbColumn({
+    required super.name,
     super.isPrimaryKey,
     super.isNullable,
     super.isUnique,
@@ -39,6 +42,7 @@ class JsonbColumn<T> extends Column<T, JsonbColumn<T>> {
     T? defaultValue,
   }) =>
       JsonbColumn<T>(
+        name: name,
         isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
         isNullable: isNullable ?? this.isNullable,
         isUnique: isUnique ?? this.isUnique,
@@ -51,6 +55,7 @@ class JsonbColumn<T> extends Column<T, JsonbColumn<T>> {
 
 class UuidColumn extends Column<String, UuidColumn> {
   const UuidColumn({
+    required super.name,
     super.isPrimaryKey,
     super.isNullable,
     super.isUnique,
@@ -65,6 +70,7 @@ class UuidColumn extends Column<String, UuidColumn> {
     String? defaultValue,
   }) =>
       UuidColumn(
+        name: name,
         isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
         isNullable: isNullable ?? this.isNullable,
         isUnique: isUnique ?? this.isUnique,
