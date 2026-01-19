@@ -53,7 +53,7 @@ class PostgresDatabase extends Database {
     // Convert named parameters to positional parameters if present
     if (params != null && params.isNotEmpty) {
       final (convertedSql, positionalParams) = _convertNamedParams(sql, params);
-      final result = await _connection.sendExtendedQuery(
+      await _connection.sendExtendedQuery(
         convertedSql,
         positionalParams,
       );
@@ -62,12 +62,12 @@ class PostgresDatabase extends Database {
 
     // Use Extended Query Protocol if positional parameters are present
     if (args != null && args.isNotEmpty) {
-      final result = await _connection.sendExtendedQuery(sql, args);
+      await _connection.sendExtendedQuery(sql, args);
       return 0;
     }
 
     // Use Simple Query Protocol if no parameters
-    final result = await _connection.sendSimpleQuery(sql);
+    await _connection.sendSimpleQuery(sql);
     return 0;
   }
 
@@ -184,7 +184,7 @@ class _PostgresTransaction implements Transaction {
     // Convert named parameters to positional parameters if present
     if (params != null && params.isNotEmpty) {
       final (convertedSql, positionalParams) = _convertNamedParams(sql, params);
-      final result = await _connection.sendExtendedQuery(
+      await _connection.sendExtendedQuery(
         convertedSql,
         positionalParams,
       );
@@ -193,12 +193,12 @@ class _PostgresTransaction implements Transaction {
 
     // Use Extended Query Protocol if positional parameters are present
     if (args != null && args.isNotEmpty) {
-      final result = await _connection.sendExtendedQuery(sql, args);
+      await _connection.sendExtendedQuery(sql, args);
       return 0;
     }
 
     // Use Simple Query Protocol if no parameters
-    final result = await _connection.sendSimpleQuery(sql);
+    await _connection.sendSimpleQuery(sql);
     return 0;
   }
 }

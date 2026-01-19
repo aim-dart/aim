@@ -1,1 +1,0 @@
-final tableRegistry = <Object, String>{};

@@ -1,4 +1,3 @@
-import 'package:aim_orm_postgres/aim_orm_postgres.dart';
 import 'package:aim_postgres/aim_postgres.dart';
 
 class PgOrm {

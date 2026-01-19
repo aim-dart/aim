@@ -161,7 +161,6 @@ void main() {
           // エラーを発生させる
           throw Exception('Simulated error');
         });
-        fail('Should have thrown an exception');
       } catch (e) {
         expect(e.toString(), contains('Simulated error'));
       }
