@@ -108,6 +108,9 @@ export default defineConfig({
     logo: '/logo.png',
 
     nav: [
+      { text: 'Server', link: '/server/', activeMatch: '/server/' },
+      { text: 'Database', link: '/database/', activeMatch: '/database/' },
+      { text: 'CLI', link: '/cli/', activeMatch: '/cli/' },
       {
         text: 'v0.0.6',
         items: [
@@ -117,52 +120,107 @@ export default defineConfig({
       }
     ],
 
-    sidebar: [
-      {
-        text: 'Getting Started',
-        collapsed: false,
-        items: [
-          { text: 'Installation', link: '/getting-started/installation' },
-          { text: 'Quick Start', link: '/getting-started/quick-start' },
-          { text: 'CLI Reference', link: '/getting-started/cli-reference' }
-        ]
-      },
-      {
-        text: 'Concepts',
-        collapsed: false,
-        items: [
-          { text: 'Routing', link: '/concepts/routing' },
-          { text: 'Middleware', link: '/concepts/middleware' },
-          { text: 'Context', link: '/concepts/context' },
-          { text: 'Request/Response', link: '/concepts/request-response' }
-        ]
-      },
-      {
-        text: 'Guides',
-        collapsed: false,
-        items: [
-          { text: 'Testing', link: '/guides/testing' },
-          { text: 'Best Practices', link: '/guides/best-practices' },
-          { text: 'FAQ', link: '/guides/faq' }
-        ]
-      },
-      {
-        text: 'Middleware',
-        collapsed: false,
-        items: [
-          { text: 'Overview', link: '/middleware/' },
-          { text: 'CORS', link: '/middleware/cors' },
-          { text: 'Cookie', link: '/middleware/cookie' },
-          { text: 'Form', link: '/middleware/form' },
-          { text: 'Multipart', link: '/middleware/multipart' },
-          { text: 'Static Files', link: '/middleware/static' },
-          { text: 'Logger', link: '/middleware/logger' },
-          { text: 'SSE', link: '/middleware/sse' },
-          { text: 'JWT Auth', link: '/middleware/jwt' },
-          { text: 'Basic Auth', link: '/middleware/basic-auth' }
-        ]
-      }
-    ],
+    sidebar: {
+      // Server セクション (aim_server + aim_server_*)
+      '/server/': [
+        {
+          text: 'Getting Started',
+          collapsed: false,
+          items: [
+            { text: 'Introduction', link: '/server/' },
+            { text: 'Installation', link: '/server/installation' },
+            { text: 'Quick Start', link: '/server/quick-start' }
+          ]
+        },
+        {
+          text: 'Core Concepts',
+          collapsed: false,
+          items: [
+            { text: 'Context', link: '/server/concepts/context' },
+            { text: 'Routing', link: '/server/concepts/routing' },
+            { text: 'Middleware', link: '/server/concepts/middleware' },
+            { text: 'Request & Response', link: '/server/concepts/request-response' }
+          ]
+        },
+        {
+          text: 'Authentication',
+          collapsed: false,
+          items: [
+            { text: 'JWT', link: '/server/auth/jwt' },
+            { text: 'Basic Auth', link: '/server/auth/basic-auth' }
+          ]
+        },
+        {
+          text: 'Middleware',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/server/middleware/' },
+            { text: 'CORS', link: '/server/middleware/cors' },
+            { text: 'Cookie', link: '/server/middleware/cookie' },
+            { text: 'Form Data', link: '/server/middleware/form' },
+            { text: 'File Upload', link: '/server/middleware/multipart' },
+            { text: 'Static Files', link: '/server/middleware/static' },
+            { text: 'Logger', link: '/server/middleware/logger' },
+            { text: 'SSE', link: '/server/middleware/sse' }
+          ]
+        },
+        {
+          text: 'Guides',
+          collapsed: false,
+          items: [
+            { text: 'Testing', link: '/server/guides/testing' },
+            { text: 'Best Practices', link: '/server/guides/best-practices' },
+            { text: 'FAQ', link: '/server/guides/faq' }
+          ]
+        }
+      ],
+
+      // Database セクション (aim_database + aim_postgres + aim_orm)
+      '/database/': [
+        {
+          text: 'Getting Started',
+          collapsed: false,
+          items: [
+            { text: 'Introduction', link: '/database/' },
+            { text: 'Installation', link: '/database/installation' }
+          ]
+        },
+        {
+          text: 'Drivers',
+          collapsed: false,
+          items: [
+            { text: 'PostgreSQL', link: '/database/drivers/postgres' }
+          ]
+        },
+        {
+          text: 'ORM',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/database/orm/' },
+            { text: 'Schema', link: '/database/orm/schema' },
+            { text: 'SELECT', link: '/database/orm/select' },
+            { text: 'INSERT', link: '/database/orm/insert' },
+            { text: 'UPDATE', link: '/database/orm/update' },
+            { text: 'DELETE', link: '/database/orm/delete' },
+            { text: 'Code Generation', link: '/database/orm/codegen' }
+          ]
+        }
+      ],
+
+      // CLI セクション (aim_cli)
+      '/cli/': [
+        {
+          text: 'CLI',
+          collapsed: false,
+          items: [
+            { text: 'Introduction', link: '/cli/' },
+            { text: 'Installation', link: '/cli/installation' },
+            { text: 'Commands', link: '/cli/commands' },
+            { text: 'Configuration', link: '/cli/configuration' }
+          ]
+        }
+      ]
+    },
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/aim-dart/aim' }

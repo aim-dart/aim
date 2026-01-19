@@ -1,34 +1,41 @@
 ---
-# https://vitepress.dev/reference/default-theme-home-page
 layout: home
-title: Aim - Dart向け軽量Webフレームワーク | Serverside Dart Framework
-titleTemplate: サーバーサイドDartでモダンなWebアプリケーションを構築
-description: Dartのための軽量で高速なWebフレームワーク。シンプルなAPI、型安全、モジュラー設計。サーバーサイドDart、REST API、ミドルウェア、ホットリロード対応。
+title: Aim - Modular Dart Ecosystem
+titleTemplate: Server, Database, ORM - Use What You Need
+description: A modular ecosystem for Dart. Web server, database, ORM, and CLI tools as independent packages. Pick only what you need.
 
 hero:
   name: "Aim"
-  text: "A lightweight, fast web framework for Dart"
-  tagline: Build modern web applications with simplicity and performance
+  text: "Modular ecosystem for Dart"
+  tagline: Web server, database, ORM - use what you need
   actions:
     - theme: brand
-      text: Get Started
-      link: /getting-started/installation
+      text: Server
+      link: /server/
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/aim-dart/aim
+      text: Database
+      link: /database/
+    - theme: alt
+      text: CLI
+      link: /cli/
 
 features:
-  - title: ⚡ Fast & Lightweight
-    details: Minimal overhead with optimized routing and request handling. Built for performance from the ground up.
-  - title: 🎯 Type-Safe
-    details: Leverages Dart's type system for compile-time safety. Custom Env classes provide type-safe context variables.
-  - title: 🧩 Modular
-    details: Rich ecosystem of middleware packages. Use only what you need - CORS, cookies, JWT, SSE, and more.
-  - title: 🔄 Hot Reload
-    details: Built-in development server with file watching and automatic reloading for fast iteration.
-  - title: 🛠️ Developer Friendly
-    details: Intuitive Context API inspired by Hono. Clear error messages and comprehensive testing utilities.
-  - title: 📦 Production Ready
-    details: Battle-tested middleware for authentication, logging, static files, and real-time features.
+  - icon: 🌐
+    title: Web Server
+    details: Lightweight, fast web framework with Context API, routing, middleware, and authentication.
+    link: /server/
+    linkText: Get Started
+  - icon: 🗄️
+    title: Database
+    details: Native PostgreSQL driver with SSL/TLS, transactions, and type-safe ORM. Works independently without web server.
+    link: /database/
+    linkText: Get Started
+  - icon: ⚡
+    title: CLI Tools
+    details: Development tools with project scaffolding, hot reload, and production builds.
+    link: /cli/
+    linkText: Get Started
+  - icon: 🧩
+    title: Modular
+    details: Use what you need. Each package works independently - add only what your project requires.
 ---
-
