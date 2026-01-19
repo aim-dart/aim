@@ -1,3 +1,12 @@
+---
+title: Middleware Overview - Aim Framework
+description: Official middleware packages for Aim. CORS, JWT auth, cookies, logging, file uploads, SSE, and more for Dart server applications.
+head:
+  - - meta
+    - name: keywords
+      content: Dart middleware, CORS, JWT authentication, cookies, logging, file upload, SSE, Aim middleware packages
+---
+
 # Middleware Overview
 
 Aim provides a rich ecosystem of official middleware packages for common web application needs. Each package is published separately, allowing you to include only what you need.

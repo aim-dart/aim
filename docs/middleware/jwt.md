@@ -1,3 +1,12 @@
+---
+title: JWT Authentication - Aim Framework
+description: Stateless JWT authentication for Dart APIs. HS256 signing, token verification, claims validation, and path exclusion.
+head:
+  - - meta
+    - name: keywords
+      content: Dart JWT, JSON Web Token, JWT authentication, stateless auth, token verification, Aim JWT middleware
+---
+
 # JWT Authentication
 
 JSON Web Token (JWT) authentication middleware for stateless authentication.

@@ -1,3 +1,12 @@
+---
+title: Form Data Middleware - Aim Framework
+description: Parse HTML form data in Dart. Handle application/x-www-form-urlencoded POST requests with ease.
+head:
+  - - meta
+    - name: keywords
+      content: Dart form data, form parsing, x-www-form-urlencoded, HTML forms, Aim form middleware
+---
+
 # Form Data
 
 Parse `application/x-www-form-urlencoded` form data.

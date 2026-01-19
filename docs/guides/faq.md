@@ -1,3 +1,12 @@
+---
+title: FAQ - Aim Framework
+description: Frequently asked questions about Aim. Installation, routing, middleware, authentication, deployment, and troubleshooting.
+head:
+  - - meta
+    - name: keywords
+      content: Aim FAQ, Dart framework questions, installation help, troubleshooting, Aim support
+---
+
 # FAQ
 
 Frequently asked questions about Aim.

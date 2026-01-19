@@ -1,3 +1,12 @@
+---
+title: Static Files Middleware - Aim Framework
+description: Serve static files securely in Dart. HTML, CSS, JavaScript, images with MIME types, caching, and SPA support.
+head:
+  - - meta
+    - name: keywords
+      content: Dart static files, serve static, MIME types, SPA support, Aim static middleware
+---
+
 # Static Files
 
 Serve static files (HTML, CSS, JavaScript, images, etc.) with built-in security.

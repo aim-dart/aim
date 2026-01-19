@@ -1,3 +1,12 @@
+---
+title: Cookie Middleware - Aim Framework
+description: Secure cookie management for Dart servers. HttpOnly, Secure, SameSite, and expiration settings for safe session handling.
+head:
+  - - meta
+    - name: keywords
+      content: Dart cookie, HttpOnly, Secure cookie, SameSite, session management, Aim cookie middleware
+---
+
 # Cookie
 
 Secure cookie management middleware.

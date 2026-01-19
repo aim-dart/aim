@@ -1,3 +1,12 @@
+---
+title: Logger Middleware - Aim Framework
+description: HTTP request and response logging for Dart. Custom formatters, performance tracking, and JSON logging support.
+head:
+  - - meta
+    - name: keywords
+      content: Dart HTTP logging, request logging, response logging, performance monitoring, Aim logger middleware
+---
+
 # Logger
 
 HTTP request/response logging middleware.

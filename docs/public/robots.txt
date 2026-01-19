@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://aim-dart.dev/sitemap.xml
+
+# Crawl-delay (optional, for polite crawlers)
+Crawl-delay: 1

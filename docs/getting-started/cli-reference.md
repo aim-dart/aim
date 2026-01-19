@@ -1,3 +1,12 @@
+---
+title: CLI Reference - Aim Framework
+description: Complete Aim CLI guide. Create projects, run dev server with hot reload, build for production, and configure environments.
+head:
+  - - meta
+    - name: keywords
+      content: Aim CLI, Dart CLI, hot reload, dev server, production build, environment configuration
+---
+
 # CLI Reference
 
 Complete guide to the Aim CLI tool.

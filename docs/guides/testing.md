@@ -1,3 +1,12 @@
+---
+title: Testing Guide - Aim Framework
+description: Test Aim applications with official utilities. TestClient, response helpers, authentication testing, and best practices.
+head:
+  - - meta
+    - name: keywords
+      content: Dart testing, unit test, integration test, TestClient, Aim testing, Dart server testing
+---
+
 # Testing
 
 Learn how to test your Aim applications with the official testing utilities.
