@@ -14,7 +14,7 @@ dependencies:
     path: ../aim_orm
   aim_orm_postgres:
     path: ../aim_orm_postgres
-  analyzer: ^9.0.0
+  analyzer: 10.0.1
   build: ^4.0.4
   source_gen: ^4.1.1
 
