@@ -9,8 +9,7 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  aim_database:
-    path: ../aim_database
+  aim_database: ^0.0.1
 
 dev_dependencies:
   lints: ^6.0.0

@@ -9,8 +9,7 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  aim_database:
-    path: ../aim_database
+  aim_database: ^0.0.1
   aim_orm:
     path: ../aim_orm
   aim_orm_postgres:
