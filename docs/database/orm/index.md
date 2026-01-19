@@ -29,6 +29,7 @@ The following features are planned but not yet implemented:
 - **Relations** - 1:1, 1:N, N:N relations and eager loading
 - **Transactions** - ORM-level transaction support
 - **Migrations** - Schema migrations
+- **SQLite** - Flutter support with SQLite driver
 
 ## Packages
 
