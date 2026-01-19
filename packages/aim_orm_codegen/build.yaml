@@ -1,0 +1,15 @@
+builders:
+#  table:
+#    import: "package:aim_orm_codegen/builder.dart"
+#    builder_factories: [ "tableBuilder" ]
+#    build_extensions: { ".dart": [ ".aim_table.g.part" ] }
+#    build_to: cache
+#    auto_apply: dependents
+#    applies_builders: [ "source_gen|combining_builder" ]
+  recordPgTable:
+    import: "package:aim_orm_codegen/builder.dart"
+    builder_factories: [ "recordPgTableBuilder" ]
+    build_extensions: { ".dart": [ ".aim_record_table.g.part" ] }
+    build_to: cache
+    auto_apply: dependents
+    applies_builders: [ "source_gen|combining_builder" ]

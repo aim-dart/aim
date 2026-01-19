@@ -15,4 +15,10 @@ workspace:
   - packages/aim_server_sse
   - packages/aim_server_jwt
   - packages/aim_server_basic_auth
+  - packages/aim_database
+  - packages/aim_postgres
+  - packages/aim_orm
+  - packages/aim_orm_codegen
+  - packages/aim_orm_postgres
   - examples/basic-sample
+  - examples/orm-sample

@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aim_orm_postgres_test
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      - "-c"
+      - "log_statement=all"              # 全てのSQL文をログ
+      - "-c"
+      - "log_connections=on"             # 接続をログ
+      - "-c"
+      - "log_disconnections=on"          # 切断をログ
+      - "-c"
+      - "log_duration=on"                # クエリ実行時間をログ
+      - "-c"
+      - "log_line_prefix=%t [%p]: user=%u,db=%d,client=%h " # ログプレフィックス
+
+volumes:
+  pg_data:
