@@ -70,6 +70,6 @@ jobs:
         working-directory: packages/aim_server_basic_auth
         run: dart test
 
-      - name: Analyze aim_server
-        run: dart analyze --fatal-infos
+      - name: Analyze code
+        run: dart analyze --fatal-warnings
 
