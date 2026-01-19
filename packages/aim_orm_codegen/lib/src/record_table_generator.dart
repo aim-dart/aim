@@ -69,6 +69,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
 
     final buffer = StringBuffer();
     generateExtensionForTable(buffer, tableName);
+    generateTransactionExtensionForTable(buffer, tableName);
     generateQueryBuilder(buffer, tableName);
     generateSelectRowBuilder(buffer, tableName, records);
     generateSelectBuilder(buffer, tableName, records);
@@ -90,10 +91,23 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln();
   }
 
+  void generateTransactionExtensionForTable(
+    StringBuffer buffer,
+    String tableName,
+  ) {
+    final className = '${capitalize(tableName)}QueryBuilder';
+    buffer.writeln(
+      'extension Postgres${capitalize(tableName)}TransactionX on PostgresTransaction {',
+    );
+    buffer.writeln('  $className get $tableName => $className(this);');
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
   void generateQueryBuilder(StringBuffer buffer, String tableName) {
     buffer.writeln('// Query Builder for table: $tableName');
     buffer.writeln('class ${capitalize(tableName)}QueryBuilder {');
-    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln('  final PostgresQueryable db;');
     buffer.writeln();
     buffer.writeln('  ${capitalize(tableName)}QueryBuilder(this.db);');
     buffer.writeln();
@@ -142,7 +156,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln(
       'class ${capitalize(tableName)}SelectBuilder extends QueryFuture<List<${capitalize(tableName)}Row>> with FutureMixin<List<${capitalize(tableName)}Row>> {',
     );
-    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln('  final PostgresQueryable db;');
     buffer.writeln('  final ${capitalize(tableName)}SelectConfig config;');
     buffer.writeln();
     buffer.writeln(
@@ -298,7 +312,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln(
       'class ${capitalize(tableName)}InsertBuilder extends QueryFuture<int> with FutureMixin<int> {',
     );
-    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln('  final PostgresQueryable db;');
     buffer.writeln(
       '  final ({${fields.map((r) => '${r.returnType} ${r.fieldName}').join(', ')}})? _values;',
     );
@@ -347,7 +361,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln(
       'class ${capitalize(tableName)}UpdateBuilder extends QueryFuture<int> with FutureMixin<int> {',
     );
-    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln('  final PostgresQueryable db;');
     buffer.writeln(
       '  final ({${fields.map((r) => '${r.returnType}? ${r.fieldName}').join(', ')}})? _values;',
     );
@@ -442,7 +456,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln(
       'class ${capitalize(tableName)}DeleteBuilder extends QueryFuture<int> with FutureMixin<int> {',
     );
-    buffer.writeln('  final PostgresDatabase db;');
+    buffer.writeln('  final PostgresQueryable db;');
     buffer.writeln('  final List<Condition> _where;');
     buffer.writeln();
     buffer.writeln(

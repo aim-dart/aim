@@ -10,9 +10,13 @@ extension PostgresUsersDatabaseX on PostgresDatabase {
   UsersQueryBuilder get users => UsersQueryBuilder(this);
 }
 
+extension PostgresUsersTransactionX on PostgresTransaction {
+  UsersQueryBuilder get users => UsersQueryBuilder(this);
+}
+
 // Query Builder for table: users
 class UsersQueryBuilder {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
 
   UsersQueryBuilder(this.db);
 
@@ -40,7 +44,7 @@ typedef UsersRow = ({String id, String name, String email, DateTime createdAt});
 
 class UsersSelectBuilder extends QueryFuture<List<UsersRow>>
     with FutureMixin<List<UsersRow>> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final UsersSelectConfig config;
 
   UsersSelectBuilder(this.db, this.config);
@@ -147,7 +151,7 @@ class UsersSelectConfig {
 }
 
 class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final ({String id, String name, String email, DateTime createdAt})? _values;
 
   UsersInsertBuilder(
@@ -179,7 +183,7 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
 }
 
 class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final ({String? id, String? name, String? email, DateTime? createdAt})?
   _values;
   final List<Condition> _where;
@@ -258,7 +262,7 @@ class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
 }
 
 class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final List<Condition> _where;
 
   UsersDeleteBuilder(this.db, [List<Condition>? where]) : _where = where ?? [];
@@ -303,9 +307,13 @@ extension PostgresPostsDatabaseX on PostgresDatabase {
   PostsQueryBuilder get posts => PostsQueryBuilder(this);
 }
 
+extension PostgresPostsTransactionX on PostgresTransaction {
+  PostsQueryBuilder get posts => PostsQueryBuilder(this);
+}
+
 // Query Builder for table: posts
 class PostsQueryBuilder {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
 
   PostsQueryBuilder(this.db);
 
@@ -339,7 +347,7 @@ typedef PostsRow = ({
 
 class PostsSelectBuilder extends QueryFuture<List<PostsRow>>
     with FutureMixin<List<PostsRow>> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final PostsSelectConfig config;
 
   PostsSelectBuilder(this.db, this.config);
@@ -449,7 +457,7 @@ class PostsSelectConfig {
 }
 
 class PostsInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final ({
     int id,
     int userId,
@@ -491,7 +499,7 @@ class PostsInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
 }
 
 class PostsUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final ({
     int? id,
     int? userId,
@@ -596,7 +604,7 @@ class PostsUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
 }
 
 class PostsDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
-  final PostgresDatabase db;
+  final PostgresQueryable db;
   final List<Condition> _where;
 
   PostsDeleteBuilder(this.db, [List<Condition>? where]) : _where = where ?? [];
