@@ -1,12 +1,26 @@
 import 'package:aim_database/aim_database.dart';
 import 'package:aim_postgres/src/pg_connection.dart';
 
+
+abstract interface class PostgresQueryable {
+  Future<List<Map<String, dynamic>>> query(
+      String sql, {
+        Map<String, dynamic>? params,
+        List<dynamic>? args,
+      });
+
+  Future<int> execute(String sql, {
+    Map<String, dynamic>? params,
+    List<dynamic>? args,
+  });
+}
+
 /// PostgreSQL database implementation.
 ///
 /// This class provides a high-level API for interacting with PostgreSQL
 /// databases. It wraps a [PostgresConnection] and implements the [Database]
 /// interface from aim_orm_core.
-class PostgresDatabase extends Database {
+class PostgresDatabase extends Database implements PostgresQueryable {
   final PostgresConnection _connection;
 
   PostgresDatabase._(this._connection);
@@ -109,10 +123,10 @@ class PostgresDatabase extends Database {
   }
 
   @override
-  Future<T> transaction<T>(Future<T> Function(Transaction tx) fn) async {
+  Future<T> transaction<T>(Future<T> Function(PostgresTransaction tx) fn) async {
     await _connection.sendSimpleQuery('BEGIN');
     try {
-      final tx = _PostgresTransaction(_connection);
+      final tx = PostgresTransaction(_connection);
       final result = await fn(tx);
       await _connection.sendSimpleQuery('COMMIT');
       return result;
@@ -123,10 +137,10 @@ class PostgresDatabase extends Database {
   }
 }
 
-class _PostgresTransaction implements Transaction {
+class PostgresTransaction implements Transaction, PostgresQueryable {
   final PostgresConnection _connection;
 
-  _PostgresTransaction(this._connection);
+  PostgresTransaction(this._connection);
 
   @override
   Future<List<Map<String, dynamic>>> query(

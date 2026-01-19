@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:aim_orm/aim_orm.dart';
 import 'package:aim_orm_postgres/aim_orm_postgres.dart';
 import 'package:aim_postgres/aim_postgres.dart';
+import 'package:uuid/uuid.dart';
 
 part 'test.g.dart';
 
@@ -34,5 +35,22 @@ void main() async {
     print(row);
   }
 
-  await db.users.delete().where(id: users.id.eq(4));
+  await db.transaction((tx) async {
+    final sameUuid = Uuid().v4();
+    await tx.users.insert().values((
+      id: sameUuid,
+      name: 'user1',
+      email: 'user1@example.com',
+      createdAt: DateTime.now(),
+    ));
+
+    await tx.users.insert().values((
+      id: Uuid().v4(),
+      name: 'user2',
+      email: 'user2@example.com',
+      createdAt: DateTime.now(),
+    ));
+  });
+
+  await db.close();
 }
