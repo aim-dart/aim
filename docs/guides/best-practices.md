@@ -1,3 +1,12 @@
+---
+title: Best Practices - Aim Framework
+description: Production-ready Dart server guidelines. Project structure, error handling, security, performance, logging, and deployment tips.
+head:
+  - - meta
+    - name: keywords
+      content: Dart best practices, production deployment, error handling, security, performance, Aim best practices
+---
+
 # Best Practices
 
 Guidelines and recommendations for building production-ready Aim applications.

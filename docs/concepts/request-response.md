@@ -1,3 +1,12 @@
+---
+title: Request & Response - Aim Framework
+description: Handle HTTP requests and responses in Aim. JSON, text, HTML, file downloads, streams, and headers in Dart server applications.
+head:
+  - - meta
+    - name: keywords
+      content: Dart HTTP request, HTTP response, JSON response, file download, streaming, headers, Aim request response
+---
+
 # Request & Response
 
 Learn how to handle HTTP requests and generate responses in Aim.

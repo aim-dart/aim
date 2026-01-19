@@ -1,3 +1,12 @@
+---
+title: Middleware - Aim Framework
+description: Master middleware patterns in Aim. Learn to create authentication, logging, error handling, and custom middleware for Dart server applications.
+head:
+  - - meta
+    - name: keywords
+      content: Dart middleware, authentication middleware, logging middleware, error handling, Dart server, Aim middleware
+---
+
 # Middleware
 
 Middleware functions are the building blocks of request processing in Aim. They run before your route handlers and can modify requests, responses, or execute side effects like logging.

@@ -1,3 +1,12 @@
+---
+title: Context API - Aim Framework
+description: Deep dive into Aim's Context API. Handle requests, responses, headers, and type-safe environment variables in Dart server applications.
+head:
+  - - meta
+    - name: keywords
+      content: Dart Context API, request handling, response methods, environment variables, type-safe, Aim context
+---
+
 # Context
 
 The `Context` object is the heart of Aim. It provides access to the request, response, and environment variables for each HTTP request.

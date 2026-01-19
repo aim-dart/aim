@@ -1,3 +1,12 @@
+---
+title: Routing - Aim Framework
+description: Learn about Aim's flexible routing system. Path parameters, wildcards, route groups, and RESTful API patterns for Dart server applications.
+head:
+  - - meta
+    - name: keywords
+      content: Dart routing, path parameters, wildcards, route groups, REST API, Dart server, Aim routing
+---
+
 # Routing
 
 Aim provides a simple and flexible routing system that supports path parameters, wildcards, and HTTP method-based routing.

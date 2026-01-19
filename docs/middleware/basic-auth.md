@@ -1,3 +1,12 @@
+---
+title: Basic Authentication - Aim Framework
+description: HTTP Basic Authentication for Dart. RFC 7617 compliant, realm configuration, and custom verification functions.
+head:
+  - - meta
+    - name: keywords
+      content: Dart Basic Auth, HTTP authentication, RFC 7617, username password auth, Aim basic auth middleware
+---
+
 # Basic Authentication
 
 HTTP Basic Authentication middleware (RFC 7617 compliant).

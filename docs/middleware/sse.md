@@ -1,3 +1,12 @@
+---
+title: SSE Middleware - Aim Framework
+description: Server-Sent Events for real-time streaming in Dart. Live feeds, notifications, and progress updates with auto-reconnect.
+head:
+  - - meta
+    - name: keywords
+      content: Dart SSE, Server-Sent Events, real-time streaming, live updates, event streaming, Aim SSE middleware
+---
+
 # Server-Sent Events (SSE)
 
 Real-time server-to-client event streaming using Server-Sent Events.

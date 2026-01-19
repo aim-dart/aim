@@ -1,3 +1,12 @@
+---
+title: Multipart & File Upload - Aim Framework
+description: Handle file uploads in Dart. Parse multipart/form-data, validate files, and implement secure upload endpoints.
+head:
+  - - meta
+    - name: keywords
+      content: Dart file upload, multipart form data, file validation, upload handler, Aim multipart middleware
+---
+
 # Multipart Form Data
 
 Handle file uploads and multipart form data (`multipart/form-data`).

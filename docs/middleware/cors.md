@@ -1,3 +1,12 @@
+---
+title: CORS Middleware - Aim Framework
+description: Handle cross-origin requests in Dart. Configure origins, credentials, headers, and preflight caching for secure API development.
+head:
+  - - meta
+    - name: keywords
+      content: Dart CORS, cross-origin, preflight, Access-Control-Allow-Origin, Aim CORS middleware
+---
+
 # CORS
 
 Cross-Origin Resource Sharing (CORS) middleware for handling cross-origin HTTP requests.
