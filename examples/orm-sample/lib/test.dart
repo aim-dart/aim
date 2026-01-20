@@ -13,6 +13,7 @@ final users = (
   name: varchar('name', length: 100).unique().indexed(),
   email: varchar('email', length: 255).unique().indexed(),
   age: integer('age').nullable(),
+  gender: varchar('gender').nullable(),
   createdAt: timestamp('created_at').withDefault(DateTime.now()),
 );
 

@@ -6,7 +6,10 @@ void main(List<String> arguments) async {
     ..addCommand(CreateCommand())
     ..addCommand(DevCommand())
     ..addCommand(BuildCommand())
-    ..addCommand(DbGenerateCommand());
+    ..addCommand(DbGenerateCommand())
+    ..addCommand(DbMigrateCommand())
+    ..addCommand(DbRollbackCommand())
+    ..addCommand(DbStatusCommand());
 
   try {
     await runner.run(arguments);
