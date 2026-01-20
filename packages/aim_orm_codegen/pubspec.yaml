@@ -1,6 +1,6 @@
 name: aim_orm_codegen
 description: Code generation for aim_orm using build_runner. Generates type-safe query builders from table definitions.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/aim-dart/aim
 resolution: workspace
 
@@ -8,9 +8,9 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  aim_database: ^0.1.0
-  aim_orm: ^0.1.0
-  aim_orm_postgres: ^0.1.0
+  aim_database: ^0.1.1
+  aim_orm: ^0.1.1
+  aim_orm_postgres: ^0.1.1
   analyzer: ^10.0.1
   build: ^4.0.4
   source_gen: ^4.2.0

@@ -1,3 +1,8 @@
+## 0.1.1
+
+See [Release Notes](https://github.com/aim-dart/aim/releases/tag/0.1.1)
+
+
 ## 0.1.0
 
 See [Release Notes](https://github.com/aim-dart/aim/releases/tag/v0.1.0)

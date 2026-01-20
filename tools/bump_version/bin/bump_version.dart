@@ -121,7 +121,7 @@ void _updateChangelog(Directory packageDir, String newVersion) {
   final changelogFile = File('${packageDir.path}/CHANGELOG.md');
   final newEntry = '''## $newVersion
 
-See [Release Notes]($_repoUrl/releases/tag/v$newVersion)
+See [Release Notes]($_repoUrl/releases/tag/$newVersion)
 ''';
 
   if (changelogFile.existsSync()) {
