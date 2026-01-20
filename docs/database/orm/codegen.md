@@ -27,7 +27,24 @@ dev_dependencies:
   aim_orm_codegen: ^0.0.1
 ```
 
-### 2. Define Schema
+### 2. Configure Schema Path
+
+Specify your schema file location in `pubspec.yaml`:
+
+```yaml
+# pubspec.yaml
+aim:
+  database:
+    schema: lib/schema.dart
+```
+
+This tells the code generator and migration tools where to find your table definitions.
+
+::: tip
+If not specified, the default path is `lib/schema.dart`.
+:::
+
+### 3. Define Schema
 
 Create a file with your table definitions:
 
@@ -57,7 +74,7 @@ final posts = (
 );
 ```
 
-### 3. Run Code Generation
+### 4. Run Code Generation
 
 ```bash
 # One-time build

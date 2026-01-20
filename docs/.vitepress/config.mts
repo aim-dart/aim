@@ -203,6 +203,7 @@ export default defineConfig({
             { text: 'UPDATE', link: '/database/orm/update' },
             { text: 'DELETE', link: '/database/orm/delete' },
             { text: 'Transactions', link: '/database/orm/transactions' },
+            { text: 'Migrations', link: '/database/orm/migrations' },
             { text: 'Code Generation', link: '/database/orm/codegen' }
           ]
         }
