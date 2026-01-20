@@ -8,8 +8,8 @@ const aimPackagePrefixes = ['aim_'];
 
 void main(List<String> args) {
   if (args.isEmpty) {
-    stderr.writeln('Usage: dart run bump_version <version>');
-    stderr.writeln('Example: dart run bump_version 0.1.0');
+    stderr.writeln('Usage: dart run release:bump <version>');
+    stderr.writeln('Example: dart run release:bump 0.1.0');
     exit(1);
   }
 

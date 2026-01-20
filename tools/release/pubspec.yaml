@@ -1,5 +1,5 @@
-name: bump_version
-description: A tool to bump version across all aim packages.
+name: release
+description: Release tools for Aim packages (bump, publish, create release).
 publish_to: none
 resolution: workspace
 
