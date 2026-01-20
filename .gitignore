@@ -48,3 +48,4 @@ CLAUDE.local.md
 .claude/
 
 /scripts/
+.mcp.json
