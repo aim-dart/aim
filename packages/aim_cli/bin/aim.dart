@@ -7,7 +7,8 @@ void main(List<String> arguments) async {
     ..addCommand(DevCommand())
     ..addCommand(BuildCommand())
     ..addCommand(DbGenerateCommand())
-    ..addCommand(DbMigrateCommand());
+    ..addCommand(DbMigrateCommand())
+    ..addCommand(DbRollbackCommand());
 
   try {
     await runner.run(arguments);
