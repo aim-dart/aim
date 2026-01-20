@@ -22,4 +22,4 @@ workspace:
   - packages/aim_orm_postgres
   - examples/basic-sample
   - examples/orm-sample
-  - tools/bump_version
+  - tools/release
