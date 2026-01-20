@@ -5,6 +5,7 @@ import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
 
 class DbGenerateCommand extends Command<void> {
   @override
@@ -1011,39 +1012,16 @@ String _toSnakeCase(String input) {
   return result.toLowerCase();
 }
 
-/// Extract aim.schema from pubspec.yaml content
+/// Extract aim.database.schema from pubspec.yaml content
 String? _extractAimSchema(String content) {
-  final lines = content.split('\n');
-  bool inAimSection = false;
+  final yaml = loadYaml(content);
+  if (yaml is! YamlMap) return null;
 
-  for (var i = 0; i < lines.length; i++) {
-    final line = lines[i];
+  final aim = yaml['aim'];
+  if (aim is! YamlMap) return null;
 
-    // Start of aim: section
-    if (line.trim().startsWith('aim:')) {
-      inAimSection = true;
-      continue;
-    }
+  final database = aim['database'];
+  if (database is! YamlMap) return null;
 
-    // Look for schema in aim section
-    if (inAimSection) {
-      if (line.startsWith('  schema:') || line.startsWith('    schema:')) {
-        final parts = line.split(':');
-        if (parts.length >= 2) {
-          final schema =
-              parts[1].trim().replaceAll('"', '').replaceAll("'", '');
-          if (schema.isNotEmpty) {
-            return schema;
-          }
-        }
-      }
-
-      // End aim section if next top-level section starts
-      if (line.isNotEmpty && !line.startsWith(' ') && !line.startsWith('\t')) {
-        inAimSection = false;
-      }
-    }
-  }
-
-  return null;
+  return database['schema'] as String?;
 }
