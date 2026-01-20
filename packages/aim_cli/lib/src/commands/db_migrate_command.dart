@@ -93,11 +93,16 @@ class DbMigrateCommand extends Command<void> {
         final content = await file.readAsString();
         final checksum = _calculateChecksum(content);
 
+        // UP/DOWNセクションを分離
+        final sections = _parseMigrationSections(content);
+        final upSql = sections.up;
+        final downSql = sections.down;
+
         print('  Applying: $name');
 
         try {
-          // 複数のSQL文を分割して実行
-          final statements = _splitStatements(content);
+          // UP SQLを実行
+          final statements = _splitStatements(upSql);
           for (final stmt in statements) {
             if (stmt.trim().isNotEmpty) {
               await db.execute(stmt);
@@ -109,8 +114,28 @@ class DbMigrateCommand extends Command<void> {
           print('  ❌ Failed: $name');
           print('  Error: $e');
           print('');
+
+          // DOWN SQLでロールバックを試みる
+          if (downSql != null && downSql.trim().isNotEmpty) {
+            print('  🔄 Attempting rollback...');
+            try {
+              final downStatements = _splitStatements(downSql);
+              for (final stmt in downStatements) {
+                if (stmt.trim().isNotEmpty) {
+                  await db.execute(stmt);
+                }
+              }
+              print('  ✅ Rollback successful');
+            } catch (rollbackError) {
+              print('  ⚠️  Rollback failed: $rollbackError');
+              print('  Manual intervention may be required.');
+            }
+          } else {
+            print('  ⚠️  No DOWN section found for rollback.');
+          }
+
+          print('');
           print('Migration stopped. Please fix the error and retry.');
-          // TODO: ロールバック対応
           exit(1);
         }
       }
@@ -241,4 +266,40 @@ class DbMigrateCommand extends Command<void> {
       params: {'name': name, 'checksum': checksum},
     );
   }
+
+  /// マイグレーションファイルをUP/DOWNセクションに分離
+  _MigrationSections _parseMigrationSections(String content) {
+    // -- UP と -- DOWN のマーカーを探す
+    final upMatch = RegExp(r'^--\s*UP\s*$', multiLine: true).firstMatch(content);
+    final downMatch =
+        RegExp(r'^--\s*DOWN\s*$', multiLine: true).firstMatch(content);
+
+    if (upMatch == null) {
+      // UPセクションがない場合、全体をUPとして扱う（後方互換性）
+      return _MigrationSections(up: content, down: null);
+    }
+
+    String upSql;
+    String? downSql;
+
+    if (downMatch != null && downMatch.start > upMatch.end) {
+      // UPとDOWN両方ある場合
+      upSql = content.substring(upMatch.end, downMatch.start).trim();
+      downSql = content.substring(downMatch.end).trim();
+    } else {
+      // UPのみの場合
+      upSql = content.substring(upMatch.end).trim();
+      downSql = null;
+    }
+
+    return _MigrationSections(up: upSql, down: downSql);
+  }
+}
+
+/// マイグレーションのUP/DOWNセクション
+class _MigrationSections {
+  final String up;
+  final String? down;
+
+  _MigrationSections({required this.up, this.down});
 }
