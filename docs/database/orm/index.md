@@ -9,10 +9,6 @@ head:
 
 # ORM
 
-::: warning Coming Soon
-aim_orm is currently under development. This documentation is a preview of planned features.
-:::
-
 Type-safe ORM for Dart using code generation.
 
 ## Why aim_orm?
@@ -27,8 +23,6 @@ Type-safe ORM for Dart using code generation.
 The following features are planned but not yet implemented:
 
 - **Relations** - 1:1, 1:N, N:N relations and eager loading
-- **Transactions** - ORM-level transaction support
-- **Migrations** - Schema migrations
 - **SQLite** - Flutter support with SQLite driver
 
 ## Packages
@@ -105,4 +99,5 @@ void main() async {
 - [INSERT](/database/orm/insert) - Insert data
 - [UPDATE](/database/orm/update) - Update data
 - [DELETE](/database/orm/delete) - Delete data
+- [Transactions](/database/orm/transactions) - Atomic operations
 - [Code Generation](/database/orm/codegen) - Setup and generated code

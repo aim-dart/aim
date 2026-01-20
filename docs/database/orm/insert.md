@@ -94,4 +94,5 @@ Future<void> createPost({
 
 - [UPDATE](/database/orm/update) - Update data
 - [DELETE](/database/orm/delete) - Delete data
+- [Transactions](/database/orm/transactions) - Atomic operations
 - [SELECT](/database/orm/select) - Query data

@@ -202,6 +202,7 @@ export default defineConfig({
             { text: 'INSERT', link: '/database/orm/insert' },
             { text: 'UPDATE', link: '/database/orm/update' },
             { text: 'DELETE', link: '/database/orm/delete' },
+            { text: 'Transactions', link: '/database/orm/transactions' },
             { text: 'Code Generation', link: '/database/orm/codegen' }
           ]
         }

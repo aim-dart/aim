@@ -98,6 +98,7 @@ await db.users.delete().where(id: users.id.eq('user-123'));
 
 ## Next Steps
 
+- [Transactions](/database/orm/transactions) - Atomic operations
 - [SELECT](/database/orm/select) - Query data
 - [INSERT](/database/orm/insert) - Insert data
 - [UPDATE](/database/orm/update) - Update data

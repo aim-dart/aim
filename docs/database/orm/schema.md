@@ -162,4 +162,5 @@ typedef PostsRow = ({
 
 - [SELECT](/database/orm/select) - Query data
 - [INSERT](/database/orm/insert) - Insert data
+- [Transactions](/database/orm/transactions) - Atomic operations
 - [Code Generation](/database/orm/codegen) - Generated code details
