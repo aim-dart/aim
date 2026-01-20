@@ -28,3 +28,5 @@ dev_dependencies:
     path: ../../packages/aim_orm_codegen
   build_runner: ^2.10.5
 
+aim:
+  schema: lib/test.dart

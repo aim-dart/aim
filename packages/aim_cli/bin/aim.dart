@@ -5,7 +5,8 @@ void main(List<String> arguments) async {
   final runner = CommandRunner('aim', 'Command-line tool for Aim framework')
     ..addCommand(CreateCommand())
     ..addCommand(DevCommand())
-    ..addCommand(BuildCommand());
+    ..addCommand(BuildCommand())
+    ..addCommand(DbGenerateCommand());
 
   try {
     await runner.run(arguments);

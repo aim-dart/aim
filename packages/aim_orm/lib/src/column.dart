@@ -47,7 +47,19 @@ abstract class Column<T, Self> {
 
   Condition inList(List<int> values) =>
       Condition(name, ConditionOperator.inList, values);
+
+  Self indexed() => copyWith();
+
+  Self references<R>(
+    Column<T, R> Function() target, {
+    OnDeleteAction? onDelete,
+    OnUpdateAction? onUpdate,
+  }) => copyWith();
 }
+
+enum OnDeleteAction { cascade, setNull, restrict, setDefault }
+
+enum OnUpdateAction { cascade, setNull, restrict, setDefault }
 
 class IntegerColumn extends Column<int, IntegerColumn> {
   const IntegerColumn({
@@ -135,7 +147,7 @@ class TextColumn extends Column<String, TextColumn> {
   String toSql() => 'TEXT';
 }
 
-class TimestampColumn extends Column<DateTime, TimestampColumn>  {
+class TimestampColumn extends Column<DateTime, TimestampColumn> {
   final bool defaultNow;
 
   const TimestampColumn({
@@ -161,15 +173,14 @@ class TimestampColumn extends Column<DateTime, TimestampColumn>  {
     bool? isNullable,
     bool? isUnique,
     DateTime? defaultValue,
-  }) =>
-      TimestampColumn(
-        name: name,
-        defaultNow: defaultNow,
-        isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
-        isNullable: isNullable ?? this.isNullable,
-        isUnique: isUnique ?? this.isUnique,
-        defaultValue: defaultValue ?? this.defaultValue,
-      );
+  }) => TimestampColumn(
+    name: name,
+    defaultNow: defaultNow,
+    isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
+    isNullable: isNullable ?? this.isNullable,
+    isUnique: isUnique ?? this.isUnique,
+    defaultValue: defaultValue ?? this.defaultValue,
+  );
 
   @override
   String toSql() => 'TIMESTAMP';

@@ -1,0 +1,112 @@
+{
+  "tables": [
+    {
+      "name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "isPrimaryKey": true,
+          "isUnique": false,
+          "isNullable": false
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "isPrimaryKey": false,
+          "isUnique": true,
+          "isNullable": false,
+          "varcharLength": 100
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "isPrimaryKey": false,
+          "isUnique": true,
+          "isNullable": false,
+          "varcharLength": 255
+        },
+        {
+          "name": "age",
+          "type": "integer",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false,
+          "defaultValue": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "name"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "email"
+          ],
+          "unique": false
+        }
+      ],
+      "foreignKeys": []
+    },
+    {
+      "name": "posts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isPrimaryKey": true,
+          "isUnique": false,
+          "isNullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false
+        },
+        {
+          "name": "title",
+          "type": "varchar",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false,
+          "varcharLength": 255
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false,
+          "defaultValue": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [],
+      "foreignKeys": [
+        {
+          "column": "user_id",
+          "referencesTable": "users",
+          "referencesColumn": "id"
+        }
+      ]
+    }
+  ]
+}

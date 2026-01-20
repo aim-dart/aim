@@ -10,15 +10,16 @@ part 'test.g.dart';
 @PgTable('users')
 final users = (
   id: uuid('id').primaryKey(),
-  name: varchar('name', length: 255),
-  email: varchar('email', length: 255).unique(),
+  name: varchar('name', length: 100).unique().indexed(),
+  email: varchar('email', length: 255).unique().indexed(),
+  age: integer('age').nullable(),
   createdAt: timestamp('created_at').withDefault(DateTime.now()),
 );
 
 @PgTable('posts')
 final posts = (
   id: integer('id').primaryKey(),
-  userId: integer('user_id'),
+  userId: uuid('user_id').references(() => users.id),
   title: varchar('title', length: 255),
   content: text('content'),
   createdAt: timestamp('created_at').withDefault(DateTime.now()),
