@@ -100,4 +100,5 @@ void main() async {
 - [UPDATE](/database/orm/update) - Update data
 - [DELETE](/database/orm/delete) - Delete data
 - [Transactions](/database/orm/transactions) - Atomic operations
+- [Migrations](/database/orm/migrations) - Database migrations with CLI
 - [Code Generation](/database/orm/codegen) - Setup and generated code

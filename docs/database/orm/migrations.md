@@ -1,0 +1,411 @@
+---
+title: Migrations - Aim ORM
+description: Database migrations with Aim CLI. Auto-generate migration SQL from schema changes, apply and rollback migrations.
+head:
+  - - meta
+    - name: keywords
+      content: Dart migrations, database migrations, aim_cli, schema diff, SQL generation
+---
+
+# Migrations
+
+Aim CLI provides powerful database migration tools that automatically generate SQL from your schema changes.
+
+## Overview
+
+The migration workflow:
+
+1. **Define schema** - Write your table definitions using Dart Records
+2. **Generate migration** - `aim db:generate` detects changes and creates SQL
+3. **Apply migration** - `aim db:migrate` runs the SQL against your database
+4. **Rollback if needed** - `aim db:rollback` reverts changes
+
+## Setup
+
+### 1. Configure Database
+
+Add database configuration to your `pubspec.yaml`:
+
+```yaml
+name: my_app
+
+dependencies:
+  aim_server: ^0.1.0
+  aim_orm: ^0.1.0
+  aim_orm_postgres: ^0.1.0
+  aim_postgres: ^0.1.0
+
+aim:
+  database:
+    url: ${DATABASE_URL:postgresql://localhost:5432/mydb}
+    schema: lib/schema.dart  # Path to your schema file
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `url` | Database connection URL | Required |
+| `schema` | Path to schema definitions | `lib/schema.dart` |
+
+Or set database URL via environment variable:
+
+```bash
+export DATABASE_URL="postgresql://user:pass@localhost:5432/mydb"
+```
+
+### 2. Create Schema File
+
+Create `lib/schema.dart`:
+
+```dart
+import 'package:aim_orm/aim_orm.dart';
+import 'package:aim_orm_postgres/aim_orm_postgres.dart';
+
+part 'schema.g.dart';
+
+@PgTable('users')
+final users = (
+  id: uuid('id').primaryKey(),
+  email: varchar('email', length: 255).unique(),
+  name: varchar('name', length: 255),
+  createdAt: timestamp('created_at').withDefaultNow(),
+);
+
+@PgTable('posts')
+final posts = (
+  id: uuid('id').primaryKey(),
+  userId: uuid('user_id'),
+  title: varchar('title', length: 255),
+  content: text('content').nullable(),
+  publishedAt: timestamp('published_at').nullable(),
+  createdAt: timestamp('created_at').withDefaultNow(),
+);
+```
+
+## Generating Migrations
+
+### Basic Usage
+
+```bash
+aim db:generate
+```
+
+This compares your current schema with the last migration and generates SQL for the differences.
+
+### With Custom Name
+
+```bash
+aim db:generate --name add_posts_table
+```
+
+### Output
+
+Migrations are created in the `migrations/` directory:
+
+```
+migrations/
+├── 20250121_100000_initial.sql
+├── 20250121_110000_add_posts_table.sql
+└── 20250121_120000_add_indexes.sql
+```
+
+### Migration File Format
+
+Each migration file contains both UP and DOWN sections:
+
+```sql
+-- UP
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE posts (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  content TEXT,
+  published_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- DOWN
+DROP TABLE posts;
+DROP TABLE users;
+```
+
+## Detected Changes
+
+`aim db:generate` automatically detects:
+
+### Table Operations
+- **CREATE TABLE** - New table definitions
+- **DROP TABLE** - Removed table definitions
+
+### Column Operations
+- **ADD COLUMN** - New columns added to existing tables
+- **DROP COLUMN** - Columns removed from tables
+- **RENAME COLUMN** - Column renames (detected interactively)
+- **ALTER COLUMN TYPE** - Data type changes
+- **SET NOT NULL / DROP NOT NULL** - Nullability changes
+- **SET DEFAULT / DROP DEFAULT** - Default value changes
+
+### Constraints
+- **ADD/DROP UNIQUE** - Unique constraints
+- **ADD/DROP INDEX** - Indexes
+- **ADD/DROP FOREIGN KEY** - Foreign key constraints
+
+### Example: Adding a Column
+
+Before:
+```dart
+@PgTable('users')
+final users = (
+  id: uuid('id').primaryKey(),
+  email: varchar('email', length: 255).unique(),
+);
+```
+
+After:
+```dart
+@PgTable('users')
+final users = (
+  id: uuid('id').primaryKey(),
+  email: varchar('email', length: 255).unique(),
+  name: varchar('name', length: 255),  // New column
+);
+```
+
+Generated migration:
+```sql
+-- UP
+ALTER TABLE users ADD COLUMN name VARCHAR(255) NOT NULL;
+
+-- DOWN
+ALTER TABLE users DROP COLUMN name;
+```
+
+### Example: Making Column Nullable
+
+Before:
+```dart
+title: varchar('title', length: 255),
+```
+
+After:
+```dart
+title: varchar('title', length: 255).nullable(),
+```
+
+Generated migration:
+```sql
+-- UP
+ALTER TABLE posts ALTER COLUMN title DROP NOT NULL;
+
+-- DOWN
+ALTER TABLE posts ALTER COLUMN title SET NOT NULL;
+```
+
+## Applying Migrations
+
+### Apply All Pending
+
+```bash
+aim db:migrate
+```
+
+### Apply Up to Specific Migration
+
+```bash
+aim db:migrate --target 20250121_110000_add_posts_table
+```
+
+### How It Works
+
+1. Checks `_aim_migrations` table for applied migrations
+2. Finds pending migrations (not yet applied)
+3. Executes each migration's UP section in order
+4. Records migration in `_aim_migrations` with:
+   - Filename
+   - Checksum (to detect modifications)
+   - Applied timestamp
+
+### Migration Table
+
+Aim automatically creates and manages the `_aim_migrations` table:
+
+```sql
+CREATE TABLE _aim_migrations (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  checksum VARCHAR(64) NOT NULL,
+  applied_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+```
+
+## Rolling Back Migrations
+
+### Rollback Last Migration
+
+```bash
+aim db:rollback
+```
+
+### Rollback Multiple Migrations
+
+```bash
+aim db:rollback --step 3
+```
+
+### Rollback to Specific Migration
+
+```bash
+aim db:rollback --target 20250121_100000_initial
+```
+
+### How It Works
+
+1. Finds the most recently applied migration(s)
+2. Executes the DOWN section of each migration
+3. Removes the record from `_aim_migrations`
+
+::: warning
+If a migration file has no DOWN section, rollback will display a warning and skip that migration.
+:::
+
+## Checking Migration Status
+
+```bash
+aim db:status
+```
+
+Output:
+```
+Migration Status:
+
+  [✓] 20250121_100000_initial           Applied: 2025-01-21 10:00:00
+  [✓] 20250121_110000_add_posts_table   Applied: 2025-01-21 11:00:00
+  [ ] 20250121_120000_add_indexes       Pending
+
+Applied: 2 / Total: 3
+```
+
+## Best Practices
+
+### 1. Review Generated SQL
+
+Always review the generated migration before applying:
+
+```bash
+aim db:generate --name add_feature
+cat migrations/20250121_*_add_feature.sql
+aim db:migrate
+```
+
+### 2. Test Migrations Locally
+
+```bash
+# Apply
+aim db:migrate
+
+# Test your application
+
+# If issues, rollback
+aim db:rollback
+```
+
+### 3. Commit Migration Files
+
+Migration files should be committed to version control:
+
+```bash
+git add migrations/
+git commit -m "Add posts table migration"
+```
+
+### 4. Handle Dangerous Operations
+
+`aim db:generate` warns about potentially dangerous operations:
+
+```
+⚠️  Warning: Adding NOT NULL column 'status' without default value.
+    This will fail if the table contains existing rows.
+    Consider adding a default value: .withDefault('pending')
+```
+
+### 5. Use Transactions
+
+Migrations run within a transaction by default. If a migration fails:
+- All changes are rolled back
+- The migration is not recorded as applied
+- You can fix the issue and retry
+
+## Workflow Example
+
+### Initial Setup
+
+```bash
+# Create schema
+vim lib/schema.dart
+
+# Generate initial migration
+aim db:generate --name initial
+
+# Review
+cat migrations/*_initial.sql
+
+# Apply
+aim db:migrate
+```
+
+### Adding a Feature
+
+```bash
+# Update schema
+vim lib/schema.dart
+
+# Regenerate code
+dart run build_runner build
+
+# Generate migration
+aim db:generate --name add_comments
+
+# Review and apply
+aim db:migrate
+```
+
+### Handling Mistakes
+
+```bash
+# Oops, wrong migration
+aim db:rollback
+
+# Fix schema
+vim lib/schema.dart
+
+# Regenerate
+dart run build_runner build
+aim db:generate --name add_comments_fixed
+
+# Apply correct migration
+aim db:migrate
+```
+
+## Limitations
+
+The following features are not yet supported:
+
+| Feature | Status |
+|---------|--------|
+| `db:reset` | Planned |
+| RENAME TABLE | Not supported |
+| Composite indexes | Not supported |
+| Composite unique constraints | Not supported |
+| CHECK constraints | Not supported |
+| ENUM types | Not supported |
+
+## Next Steps
+
+- [Schema Definition](/database/orm/schema) - Column types and modifiers
+- [CLI Commands](/cli/commands#database-commands) - Full command reference

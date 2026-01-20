@@ -11,6 +11,16 @@ head:
 
 Define tables using Dart 3 Record syntax with the `@PgTable` annotation.
 
+::: tip Schema File Location
+Configure your schema file path in `pubspec.yaml`:
+```yaml
+aim:
+  database:
+    schema: lib/schema.dart  # default
+```
+See [Code Generation](/database/orm/codegen) for full setup.
+:::
+
 ## Table Definition
 
 ```dart

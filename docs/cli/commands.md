@@ -399,8 +399,136 @@ export DATABASE_URL="postgresql://localhost/db"
 aim dev
 ```
 
+## Database Commands
+
+Aim CLI provides database migration tools powered by `aim_orm`.
+
+### `aim db:generate`
+
+Generate migration SQL from schema changes.
+
+**Usage:**
+```bash
+aim db:generate [options]
+```
+
+**Options:**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--name` | Migration name | Auto-generated timestamp |
+
+**Example:**
+```bash
+aim db:generate --name add_users_table
+```
+
+This command:
+- Compares your current schema definitions with the last migration
+- Detects added/removed tables, columns, indexes, and constraints
+- Generates both UP and DOWN SQL migrations
+- Creates a file in `migrations/` directory
+
+**Output:**
+```
+migrations/
+└── 20250121_120000_add_users_table.sql
+```
+
+For detailed usage, see [Migrations Guide](/database/orm/migrations).
+
+### `aim db:migrate`
+
+Apply pending migrations to the database.
+
+**Usage:**
+```bash
+aim db:migrate [options]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--target` | Apply up to specific migration |
+
+**Example:**
+```bash
+# Apply all pending migrations
+aim db:migrate
+
+# Apply up to specific migration
+aim db:migrate --target 20250121_120000_add_users_table
+```
+
+### `aim db:rollback`
+
+Rollback applied migrations.
+
+**Usage:**
+```bash
+aim db:rollback [options]
+```
+
+**Options:**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--step` | Number of migrations to rollback | 1 |
+| `--target` | Rollback to specific migration | |
+
+**Example:**
+```bash
+# Rollback last migration
+aim db:rollback
+
+# Rollback last 3 migrations
+aim db:rollback --step 3
+
+# Rollback to specific migration
+aim db:rollback --target 20250121_100000_initial
+```
+
+### `aim db:status`
+
+Show migration status.
+
+**Usage:**
+```bash
+aim db:status
+```
+
+**Output:**
+```
+Migration Status:
+
+  [✓] 20250121_100000_initial           Applied: 2025-01-21 10:00:00
+  [✓] 20250121_110000_add_posts_table   Applied: 2025-01-21 11:00:00
+  [ ] 20250121_120000_add_comments      Pending
+
+Applied: 2 / Total: 3
+```
+
+### Database Configuration
+
+Configure database connection in `pubspec.yaml`:
+
+```yaml
+aim:
+  database:
+    url: ${DATABASE_URL:postgresql://localhost:5432/mydb}
+```
+
+Or use environment variables:
+
+```bash
+export DATABASE_URL="postgresql://user:pass@localhost:5432/mydb"
+aim db:migrate
+```
+
 ## Next Steps
 
 - Read the [Quick Start](/server/quick-start) guide
 - Learn about [Routing](/server/concepts/routing)
 - Explore [Middleware](/server/middleware/)
+- Learn about [Migrations](/database/orm/migrations)
