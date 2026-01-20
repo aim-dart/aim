@@ -24,7 +24,7 @@ const jsonLdSoftware = {
     "url": "https://github.com/aim-dart"
   },
   "programmingLanguage": "Dart",
-  "softwareVersion": "0.1.0",
+  "softwareVersion": "0.1.1",
   "license": "https://opensource.org/licenses/MIT"
 }
 
@@ -112,7 +112,7 @@ export default defineConfig({
       { text: 'Database', link: '/database/', activeMatch: '/database/' },
       { text: 'CLI', link: '/cli/', activeMatch: '/cli/' },
       {
-        text: 'v0.1.0',
+        text: 'v0.1.1',
         items: [
           { text: 'Changelog', link: 'https://github.com/aim-dart/aim/releases' },
           { text: 'Contributing', link: 'https://github.com/aim-dart/aim/blob/main/CONTRIBUTING.md' }
