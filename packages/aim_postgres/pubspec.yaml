@@ -3,7 +3,6 @@ description: A native PostgreSQL driver for Dart with full wire protocol impleme
 version: 0.0.1
 repository: https://github.com/aim-dart/aim
 resolution: workspace
-publish_to: none
 
 environment:
   sdk: ^3.10.0
