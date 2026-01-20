@@ -8,8 +8,7 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  aim_postgres:
-    path: ../aim_postgres
+  aim_postgres: ^0.0.1
   analyzer: ^10.0.1
   args: ^2.5.0
   crypto: ^3.0.3
