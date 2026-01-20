@@ -1,6 +1,6 @@
 # Changelog
 ## 0.1.1
-
+Internal fixes. No functional changes.
 
 ## 0.1.0
 
