@@ -1,6 +1,6 @@
 builders:
   recordPgTable:
-    import: "package:aim_orm_codegen/builder.dart"
+    import: "package:aim_orm_codegen/aim_orm_codegen.dart"
     builder_factories: [ "recordPgTableBuilder" ]
     build_extensions: { ".dart": [ ".aim_record_table.g.part" ] }
     build_to: cache
