@@ -9,7 +9,8 @@ void main(List<String> arguments) async {
     ..addCommand(DbGenerateCommand())
     ..addCommand(DbMigrateCommand())
     ..addCommand(DbRollbackCommand())
-    ..addCommand(DbStatusCommand());
+    ..addCommand(DbStatusCommand())
+    ..addCommand(DbResetCommand());
 
   try {
     await runner.run(arguments);
