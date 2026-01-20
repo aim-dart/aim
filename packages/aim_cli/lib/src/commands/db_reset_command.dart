@@ -25,7 +25,7 @@ class DbResetCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    // 1. DB接続情報を取得
+    // 1. Get database connection info
     final dbUrl = await _getDatabaseUrl();
     if (dbUrl == null) {
       print('Error: Database URL not found');
@@ -33,7 +33,7 @@ class DbResetCommand extends Command<void> {
       exit(1);
     }
 
-    // 2. URLからデータベース名を抽出
+    // 2. Extract database name from URL
     final parsedUrl = _parsePostgresUrl(dbUrl);
     if (parsedUrl == null) {
       print('Error: Invalid database URL format');
@@ -42,7 +42,7 @@ class DbResetCommand extends Command<void> {
 
     final dbName = parsedUrl.database;
 
-    // 3. 確認プロンプト
+    // 3. Confirmation prompt
     final force = argResults?['force'] as bool? ?? false;
     if (!force) {
       print('⚠️  This will drop and recreate database "$dbName"');
@@ -57,16 +57,16 @@ class DbResetCommand extends Command<void> {
       print('');
     }
 
-    // 4. postgres DB に接続（管理用）
+    // 4. Connect to postgres database (for admin operations)
     print('🔌 Connecting to postgres database...');
     final adminUrl = parsedUrl.toAdminUrl();
     final adminDb = await PostgresDatabase.connect(adminUrl);
 
     try {
-      // 5. 既存の接続を切断してDBをドロップ
+      // 5. Terminate existing connections and drop database
       print('🗑️  Dropping database "$dbName"...');
 
-      // 既存の接続を強制終了
+      // Terminate existing connections
       await adminDb.execute('''
         SELECT pg_terminate_backend(pg_stat_activity.pid)
         FROM pg_stat_activity
@@ -74,17 +74,17 @@ class DbResetCommand extends Command<void> {
           AND pid <> pg_backend_pid()
       ''', params: {'dbName': dbName});
 
-      // DBをドロップ（存在する場合）
+      // Drop database if exists
       await adminDb.execute('DROP DATABASE IF EXISTS "$dbName"');
 
-      // 6. DBを再作成
+      // 6. Recreate database
       print('🔨 Creating database "$dbName"...');
       await adminDb.execute('CREATE DATABASE "$dbName"');
     } finally {
       await adminDb.close();
     }
 
-    // 7. ターゲットDBに接続してマイグレーションを適用
+    // 7. Connect to target database and apply migrations
     print('🔌 Connecting to database "$dbName"...');
     final db = await PostgresDatabase.connect(dbUrl);
 
@@ -99,7 +99,7 @@ class DbResetCommand extends Command<void> {
   }
 
   Future<void> _applyAllMigrations(PostgresDatabase db) async {
-    // マイグレーションファイルを取得
+    // Get migration files
     final migrationsDir = Directory('db/migrations');
     if (!await migrationsDir.exists()) {
       print('📦 No migrations directory found');
@@ -117,29 +117,29 @@ class DbResetCommand extends Command<void> {
       return;
     }
 
-    // ファイル名でソート
+    // Sort by filename
     migrationFiles.sort((a, b) => _fileName(a).compareTo(_fileName(b)));
 
-    // マイグレーションテーブルを作成
+    // Create migrations table
     await _ensureMigrationsTable(db);
 
     print('📦 Applying ${migrationFiles.length} migration(s)...');
     print('');
 
-    // マイグレーションを適用
+    // Apply migrations
     for (final file in migrationFiles) {
       final name = _migrationName(file);
       final content = await file.readAsString();
       final checksum = _calculateChecksum(content);
 
-      // UP/DOWNセクションを分離
+      // Parse UP/DOWN sections
       final sections = _parseMigrationSections(content);
       final upSql = sections.up;
 
       print('  Applying: $name');
 
       try {
-        // UP SQLを実行
+        // Execute UP SQL
         final statements = _splitStatements(upSql);
         for (final stmt in statements) {
           if (stmt.trim().isNotEmpty) {
@@ -332,7 +332,7 @@ class _ParsedPostgresUrl {
     required this.database,
   });
 
-  /// postgresデータベース（管理用）への接続URLを生成
+  /// Generate connection URL for postgres database (for admin operations)
   String toAdminUrl() {
     final userInfo = password != null ? '$username:$password' : username;
     return '$scheme://$userInfo@$host:$port/postgres';
