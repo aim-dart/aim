@@ -1,6 +1,6 @@
 name: aim_server_basic_auth
 description: Basic authentication middleware for Aim framework. Provides RFC 7617 compliant HTTP Basic Authentication with customizable user verification, realm support, and path exclusion.
-version: 0.0.1
+version: 0.1.0
 repository: https://github.com/aim-dart/aim
 resolution: workspace
 
@@ -8,7 +8,7 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.0
   crypto: ^3.0.7
 
 dev_dependencies:

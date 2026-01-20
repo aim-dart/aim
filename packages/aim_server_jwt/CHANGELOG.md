@@ -1,3 +1,8 @@
+## 0.1.0
+
+See [Release Notes](https://github.com/aim-dart/aim/releases/tag/v0.1.0)
+
+
 ## 0.0.1
 
 Initial release - JWT authentication middleware for Aim framework
