@@ -34,6 +34,13 @@
           "isNullable": true
         },
         {
+          "name": "gender",
+          "type": "varchar",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": true
+        },
+        {
           "name": "created_at",
           "type": "timestamp",
           "isPrimaryKey": false,

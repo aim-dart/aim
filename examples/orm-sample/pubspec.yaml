@@ -30,3 +30,5 @@ dev_dependencies:
 
 aim:
   schema: lib/test.dart
+  database:
+    url: postgres://test:test@localhost:5432/test_db
