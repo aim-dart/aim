@@ -37,22 +37,5 @@ void main() async {
     print(row);
   }
 
-  await db.transaction((tx) async {
-    final sameUuid = Uuid().v4();
-    await tx.users.insert().values((
-      id: sameUuid,
-      name: 'user1',
-      email: 'user1@example.com',
-      createdAt: DateTime.now(),
-    ));
-
-    await tx.users.insert().values((
-      id: Uuid().v4(),
-      name: 'user2',
-      email: 'user2@example.com',
-      createdAt: DateTime.now(),
-    ));
-  });
-
   await db.close();
 }
