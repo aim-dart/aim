@@ -44,8 +44,8 @@ typedef UsersRow = ({
   String id,
   String name,
   String email,
-  int age,
-  String gender,
+  int? age,
+  String? gender,
   DateTime createdAt,
 });
 
@@ -89,8 +89,8 @@ class UsersSelectBuilder extends QueryFuture<List<UsersRow>>
           id: row['id'] as String,
           name: row['name'] as String,
           email: row['email'] as String,
-          age: int.parse(row['age'] as String),
-          gender: row['gender'] as String,
+          age: row['age'] != null ? int.parse(row['age'] as String) : null,
+          gender: row['gender'] as String?,
           createdAt: DateTime.parse(row['created_at'] as String),
         );
       }).toList();
@@ -169,8 +169,8 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
     String id,
     String name,
     String email,
-    int age,
-    String gender,
+    int? age,
+    String? gender,
     DateTime createdAt,
   })?
   _values;
@@ -181,8 +181,8 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
       String id,
       String name,
       String email,
-      int age,
-      String gender,
+      int? age,
+      String? gender,
       DateTime createdAt,
     })?
     values,
@@ -193,8 +193,8 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
       String id,
       String name,
       String email,
-      int age,
-      String gender,
+      int? age,
+      String? gender,
       DateTime createdAt,
     })
     record,
