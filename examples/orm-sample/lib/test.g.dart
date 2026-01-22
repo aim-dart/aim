@@ -40,7 +40,14 @@ class UsersQueryBuilder {
   }
 }
 
-typedef UsersRow = ({String id, String name, String email, DateTime createdAt});
+typedef UsersRow = ({
+  String id,
+  String name,
+  String email,
+  int? age,
+  String? gender,
+  DateTime createdAt,
+});
 
 class UsersSelectBuilder extends QueryFuture<List<UsersRow>>
     with FutureMixin<List<UsersRow>> {
@@ -82,6 +89,8 @@ class UsersSelectBuilder extends QueryFuture<List<UsersRow>>
           id: row['id'] as String,
           name: row['name'] as String,
           email: row['email'] as String,
+          age: row['age'] != null ? int.parse(row['age'] as String) : null,
+          gender: row['gender'] as String?,
           createdAt: DateTime.parse(row['created_at'] as String),
         );
       }).toList();
@@ -92,12 +101,16 @@ class UsersSelectBuilder extends QueryFuture<List<UsersRow>>
     Condition? id,
     Condition? name,
     Condition? email,
+    Condition? age,
+    Condition? gender,
     Condition? createdAt,
   }) {
     final newConditions = [...config.where];
     if (id != null) newConditions.add(id);
     if (name != null) newConditions.add(name);
     if (email != null) newConditions.add(email);
+    if (age != null) newConditions.add(age);
+    if (gender != null) newConditions.add(gender);
     if (createdAt != null) newConditions.add(createdAt);
 
     return UsersSelectBuilder(
@@ -152,15 +165,39 @@ class UsersSelectConfig {
 
 class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
-  final ({String id, String name, String email, DateTime createdAt})? _values;
+  final ({
+    String id,
+    String name,
+    String email,
+    int? age,
+    String? gender,
+    DateTime createdAt,
+  })?
+  _values;
 
   UsersInsertBuilder(
     this.db, {
-    ({String id, String name, String email, DateTime createdAt})? values,
+    ({
+      String id,
+      String name,
+      String email,
+      int? age,
+      String? gender,
+      DateTime createdAt,
+    })?
+    values,
   }) : _values = values;
 
   UsersInsertBuilder values(
-    ({String id, String name, String email, DateTime createdAt}) record,
+    ({
+      String id,
+      String name,
+      String email,
+      int? age,
+      String? gender,
+      DateTime createdAt,
+    })
+    record,
   ) {
     return UsersInsertBuilder(db, values: record);
   }
@@ -171,11 +208,13 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
       throw StateError('No values set');
     }
     final sql =
-        'INSERT INTO users (id, name, email, created_at) VALUES (:id, :name, :email, :created_at)';
+        'INSERT INTO users (id, name, email, age, gender, created_at) VALUES (:id, :name, :email, :age, :gender, :created_at)';
     final params = {
       'id': _values.id,
       'name': _values.name,
       'email': _values.email,
+      'age': _values.age,
+      'gender': _values.gender,
       'created_at': _values.createdAt,
     };
     return db.execute(sql, params: params);
@@ -184,20 +223,43 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
 
 class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
-  final ({String? id, String? name, String? email, DateTime? createdAt})?
+  final ({
+    String? id,
+    String? name,
+    String? email,
+    int? age,
+    String? gender,
+    DateTime? createdAt,
+  })?
   _values;
   final List<Condition> _where;
 
   UsersUpdateBuilder(
     this.db, {
-    ({String? id, String? name, String? email, DateTime? createdAt})? values,
+    ({
+      String? id,
+      String? name,
+      String? email,
+      int? age,
+      String? gender,
+      DateTime? createdAt,
+    })?
+    values,
     List<Condition>? where,
   }) : _where = where ?? [],
        _values = values;
 
   // SET句（更新するカラムを指定）
   UsersUpdateBuilder set(
-    ({String? id, String? name, String? email, DateTime? createdAt}) values,
+    ({
+      String? id,
+      String? name,
+      String? email,
+      int? age,
+      String? gender,
+      DateTime? createdAt,
+    })
+    values,
   ) {
     return UsersUpdateBuilder(db, values: values, where: _where);
   }
@@ -207,12 +269,16 @@ class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
     Condition? id,
     Condition? name,
     Condition? email,
+    Condition? age,
+    Condition? gender,
     Condition? createdAt,
   }) {
     final newConditions = [..._where];
     if (id != null) newConditions.add(id);
     if (name != null) newConditions.add(name);
     if (email != null) newConditions.add(email);
+    if (age != null) newConditions.add(age);
+    if (gender != null) newConditions.add(gender);
     if (createdAt != null) newConditions.add(createdAt);
     return UsersUpdateBuilder(db, values: _values, where: newConditions);
   }
@@ -235,6 +301,14 @@ class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
     if (_values.email != null) {
       updates.add('email = :set_email');
       params['set_email'] = _values.email;
+    }
+    if (_values.age != null) {
+      updates.add('age = :set_age');
+      params['set_age'] = _values.age;
+    }
+    if (_values.gender != null) {
+      updates.add('gender = :set_gender');
+      params['set_gender'] = _values.gender;
     }
     if (_values.createdAt != null) {
       updates.add('created_at = :set_created_at');
@@ -272,12 +346,16 @@ class UsersDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
     Condition? id,
     Condition? name,
     Condition? email,
+    Condition? age,
+    Condition? gender,
     Condition? createdAt,
   }) {
     final newConditions = [..._where];
     if (id != null) newConditions.add(id);
     if (name != null) newConditions.add(name);
     if (email != null) newConditions.add(email);
+    if (age != null) newConditions.add(age);
+    if (gender != null) newConditions.add(gender);
     if (createdAt != null) newConditions.add(createdAt);
     return UsersDeleteBuilder(db, newConditions);
   }
@@ -339,7 +417,7 @@ class PostsQueryBuilder {
 
 typedef PostsRow = ({
   int id,
-  int userId,
+  String userId,
   String title,
   String content,
   DateTime createdAt,
@@ -383,7 +461,7 @@ class PostsSelectBuilder extends QueryFuture<List<PostsRow>>
       return result.map((row) {
         return (
           id: int.parse(row['id'] as String),
-          userId: int.parse(row['user_id'] as String),
+          userId: row['user_id'] as String,
           title: row['title'] as String,
           content: row['content'] as String,
           createdAt: DateTime.parse(row['created_at'] as String),
@@ -460,7 +538,7 @@ class PostsInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
   final ({
     int id,
-    int userId,
+    String userId,
     String title,
     String content,
     DateTime createdAt,
@@ -469,12 +547,12 @@ class PostsInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
 
   PostsInsertBuilder(
     this.db, {
-    ({int id, int userId, String title, String content, DateTime createdAt})?
+    ({int id, String userId, String title, String content, DateTime createdAt})?
     values,
   }) : _values = values;
 
   PostsInsertBuilder values(
-    ({int id, int userId, String title, String content, DateTime createdAt})
+    ({int id, String userId, String title, String content, DateTime createdAt})
     record,
   ) {
     return PostsInsertBuilder(db, values: record);
@@ -502,7 +580,7 @@ class PostsUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
   final ({
     int? id,
-    int? userId,
+    String? userId,
     String? title,
     String? content,
     DateTime? createdAt,
@@ -514,7 +592,7 @@ class PostsUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
     this.db, {
     ({
       int? id,
-      int? userId,
+      String? userId,
       String? title,
       String? content,
       DateTime? createdAt,
@@ -528,7 +606,7 @@ class PostsUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
   PostsUpdateBuilder set(
     ({
       int? id,
-      int? userId,
+      String? userId,
       String? title,
       String? content,
       DateTime? createdAt,

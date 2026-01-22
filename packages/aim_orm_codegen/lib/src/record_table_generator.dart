@@ -142,7 +142,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
   ) {
     buffer.writeln('typedef ${capitalize(tableName)}Row = ({');
     buffer.writeln(
-      fields.map((f) => '${f.returnType} ${f.fieldName}').join(','),
+      fields.map((f) => '${f.returnType}${f.isNullable ? '?' : ''} ${f.fieldName}').join(','),
     );
     buffer.writeln('});');
     buffer.writeln();
@@ -199,25 +199,41 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       switch (field.columnMapper) {
         case PgColumnMapper.integer:
         case PgColumnMapper.serial:
-          buffer.writeln(
-            '  ${field.fieldName}: int.parse(row[\'${field.columnName}\'] as String),',
-          );
-          break;
+          if (field.isNullable) {
+            buffer.writeln(
+              '  ${field.fieldName}: row[\'${field.columnName}\'] != null ? int.parse(row[\'${field.columnName}\'] as String) : null,',
+            );
+            break;
+          } else {
+            buffer.writeln(
+              '  ${field.fieldName}: int.parse(row[\'${field
+                  .columnName}\'] as String),',
+            );
+            break;
+          }
         case PgColumnMapper.varchar:
         case PgColumnMapper.text:
         case PgColumnMapper.uuid:
           buffer.writeln(
-            '  ${field.fieldName}: row[\'${field.columnName}\'] as String,',
+            '  ${field.fieldName}: row[\'${field.columnName}\'] as String${field.isNullable ? '?' : ''},',
           );
           break;
         case PgColumnMapper.timestamp:
-          buffer.writeln(
-            '  ${field.fieldName}: DateTime.parse(row[\'${field.columnName}\'] as String),',
-          );
-          break;
+          if (field.isNullable) {
+            buffer.writeln(
+              '  ${field.fieldName}: row[\'${field.columnName}\'] != null ? DateTime.parse(row[\'${field.columnName}\'] as String) : null,',
+            );
+            break;
+          } else {
+            buffer.writeln(
+              '  ${field.fieldName}: DateTime.parse(row[\'${field
+                  .columnName}\'] as String),',
+            );
+            break;
+          }
         case PgColumnMapper.jsonb:
           buffer.writeln(
-            '  ${field.fieldName}: row[\'${field.columnName}\'] as Map<String, dynamic>,',
+            '  ${field.fieldName}: row[\'${field.columnName}\'] as Map<String, dynamic>${field.isNullable ? '?' : ''},',
           );
           break;
         case PgColumnMapper.unknown:
@@ -314,16 +330,15 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     );
     buffer.writeln('  final PostgresQueryable db;');
     buffer.writeln(
-      '  final ({${fields.map((r) => '${r.returnType} ${r.fieldName}').join(', ')}})? _values;',
-    );
+      '  final ({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}})? _values;',     );
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder(this.db, {({${fields.map((r) => '${r.returnType} ${r.fieldName}').join(', ')}})? values})',
+      '  ${capitalize(tableName)}InsertBuilder(this.db, {({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}})? values})',
     );
     buffer.writeln('    : _values = values;');
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder values(({${fields.map((r) => '${r.returnType} ${r.fieldName}').join(', ')}}) record) {',
+      '  ${capitalize(tableName)}InsertBuilder values(({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}}) record) {',
     );
     buffer.writeln(
       '    return ${capitalize(tableName)}InsertBuilder(db, values: record);',
