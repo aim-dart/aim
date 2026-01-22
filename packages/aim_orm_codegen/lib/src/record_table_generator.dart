@@ -142,7 +142,11 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
   ) {
     buffer.writeln('typedef ${capitalize(tableName)}Row = ({');
     buffer.writeln(
-      fields.map((f) => '${f.returnType}${f.isNullable ? '?' : ''} ${f.fieldName}').join(','),
+      fields
+          .map(
+            (f) => '${f.returnType}${f.isNullable ? '?' : ''} ${f.fieldName}',
+          )
+          .join(','),
     );
     buffer.writeln('});');
     buffer.writeln();
@@ -206,8 +210,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
             break;
           } else {
             buffer.writeln(
-              '  ${field.fieldName}: int.parse(row[\'${field
-                  .columnName}\'] as String),',
+              '  ${field.fieldName}: int.parse(row[\'${field.columnName}\'] as String),',
             );
             break;
           }
@@ -226,8 +229,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
             break;
           } else {
             buffer.writeln(
-              '  ${field.fieldName}: DateTime.parse(row[\'${field
-                  .columnName}\'] as String),',
+              '  ${field.fieldName}: DateTime.parse(row[\'${field.columnName}\'] as String),',
             );
             break;
           }
@@ -329,27 +331,47 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       'class ${capitalize(tableName)}InsertBuilder extends QueryFuture<int> with FutureMixin<int> {',
     );
     buffer.writeln('  final PostgresQueryable db;');
-    buffer.writeln(
-      '  final ({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}})? _values;',     );
+    for (final field in fields) {
+      buffer.writeln(
+        '  final ${field.returnType}? _${field.fieldName};',
+      );
+    }
     buffer.writeln();
-    buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder(this.db, {({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}})? values})',
-    );
-    buffer.writeln('    : _values = values;');
+    buffer.writeln('  ${capitalize(tableName)}InsertBuilder(this.db, {');
+    for (final field in fields) {
+      buffer.writeln(
+        '    ${field.returnType}? ${field.fieldName},',
+      );
+    }
+    buffer.writeln('  }): ${fields.map((f) => '_${f.fieldName} = ${f.fieldName}').join(', ')};');
     buffer.writeln();
-    buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder values(({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}}) record) {',
-    );
-    buffer.writeln(
-      '    return ${capitalize(tableName)}InsertBuilder(db, values: record);',
-    );
+    buffer.writeln('  ${capitalize(tableName)}InsertBuilder values({');
+    for (final field in fields) {
+      buffer.writeln(
+        '    ${field.isNullable ? '' : 'required'} ${field.returnType}${field.isNullable ? '?' : ''} ${field.fieldName},',
+      );
+    }
+    buffer.writeln('  }) {');
+    buffer.writeln('    return ${capitalize(tableName)}InsertBuilder(db,');
+    for (final field in fields) {
+      buffer.writeln('      ${field.fieldName}: ${field.fieldName},');
+    }
+    buffer.writeln('    );');
     buffer.writeln('  }');
     buffer.writeln();
     buffer.writeln('  @override');
     buffer.writeln('  Future<int> execute() {');
-    buffer.writeln('    if (_values == null) {');
-    buffer.writeln("      throw StateError('No values set');");
-    buffer.writeln('    }');
+    for (final field in fields) {
+      if (!field.isNullable) {
+        buffer.writeln(
+          '    if (_${field.fieldName} == null) {',
+        );
+        buffer.writeln(
+          "      throw StateError('Field `${field.fieldName}` is required but not set');",
+        );
+        buffer.writeln('    }');
+      }
+    }
     final columnNames = fields.map((r) => r.columnName).toList();
     buffer.writeln(
       "    final sql = 'INSERT INTO $tableName (${columnNames.join(', ')}) "
@@ -358,7 +380,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln('    final params = {');
     for (final field in fields) {
       buffer.writeln(
-        "      '${field.columnName}': _values.${field.fieldName},",
+        "      '${field.columnName}': _${field.fieldName},",
       );
     }
     buffer.writeln('    };');
@@ -377,26 +399,33 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       'class ${capitalize(tableName)}UpdateBuilder extends QueryFuture<int> with FutureMixin<int> {',
     );
     buffer.writeln('  final PostgresQueryable db;');
-    buffer.writeln(
-      '  final ({${fields.map((r) => '${r.returnType}? ${r.fieldName}').join(', ')}})? _values;',
-    );
+    for (final field in fields) {
+      buffer.writeln(
+        '  final ${field.returnType}? _${field.fieldName};',
+      );
+    }
     buffer.writeln('  final List<Condition> _where;');
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}UpdateBuilder(this.db, {({${fields.map((r) => '${r.returnType}? ${r.fieldName}').join(', ')}})? values, List<Condition>? where})',
+      '  ${capitalize(tableName)}UpdateBuilder(this.db, {${fields.map((r) => '${r.returnType}? ${r.fieldName}').join(', ')}, List<Condition>? where})',
     );
-    buffer.writeln('    : _where = where ?? []');
-    buffer.writeln('  , _values = values;');
+    buffer.writeln('    : ${fields.map((f) => '_${f.fieldName} = ${f.fieldName}').join(', ')}, _where = where ?? [];');
     buffer.writeln();
     buffer.writeln('  // SET句（更新するカラムを指定）');
-    buffer.writeln('  ${capitalize(tableName)}UpdateBuilder set(({');
+    buffer.writeln('  ${capitalize(tableName)}UpdateBuilder set({');
     for (final record in fields) {
       buffer.writeln('    ${record.returnType}? ${record.fieldName},');
     }
-    buffer.writeln('  }) values) {');
+    buffer.writeln('  }) {');
     buffer.writeln(
-      '    return ${capitalize(tableName)}UpdateBuilder(db, values: values, where: _where);',
+      '    return ${capitalize(tableName)}UpdateBuilder(db, where: _where,',
     );
+    for (final record in fields) {
+      buffer.writeln(
+        '      ${record.fieldName}: ${record.fieldName},',
+      );
+    }
+    buffer.writeln(');');
     buffer.writeln('  }');
     buffer.writeln();
     buffer.writeln('  // WHERE句（SelectBuilderと同じ仕組み）');
@@ -411,26 +440,29 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       buffer.writeln('      newConditions.add(${record.fieldName});');
     }
     buffer.writeln(
-      '    return ${capitalize(tableName)}UpdateBuilder(db, values: _values, where: newConditions);',
+      '    return ${capitalize(tableName)}UpdateBuilder(db, where: newConditions,',
     );
+    for (final record in fields) {
+      buffer.writeln(
+        '      ${record.fieldName}: _${record.fieldName},',
+      );
+    }
+    buffer.writeln(');');
     buffer.writeln('  }');
     buffer.writeln();
     buffer.writeln('  @override');
     buffer.writeln('  Future<int> execute() {');
-    buffer.writeln(
-      '    if (_values == null) throw StateError(\'No values set\');',
-    );
     buffer.writeln();
     buffer.writeln('    // SET句の構築');
     buffer.writeln('    final updates = <String>[];');
     buffer.writeln('    final params = <String, dynamic>{};');
     for (final record in fields) {
-      buffer.writeln('    if (_values.${record.fieldName} != null) {');
+      buffer.writeln('    if (_${record.fieldName} != null) {');
       buffer.writeln(
         "      updates.add('${record.columnName} = :set_${record.columnName}');",
       );
       buffer.writeln(
-        '      params[\'set_${record.columnName}\'] = _values.${record.fieldName};',
+        '      params[\'set_${record.columnName}\'] = _${record.fieldName};',
       );
       buffer.writeln('    }');
     }
@@ -592,7 +624,9 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       }
     }
 
-    print('Analyzed field: $fieldName, type: $columnType, returnType: $returnType, columnMapper: $columnMapper');
+    print(
+      'Analyzed field: $fieldName, type: $columnType, returnType: $returnType, columnMapper: $columnMapper',
+    );
     return (
       fieldName: fieldName,
       columnType: columnType ?? 'unknown',
