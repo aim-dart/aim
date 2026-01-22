@@ -36,13 +36,3 @@ void main() async {
 
   await db.close();
 }
-
-class Hoge {
-  final int _id;
-  final String _name;
-
-  const Hoge({
-    required int id,
-    required String name
-  }) :_id = id, _name = name;
-}
