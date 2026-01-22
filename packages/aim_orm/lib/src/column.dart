@@ -61,24 +61,30 @@ abstract class Column<T, Self> {
   Self withDefault(T value) => copyWith(defaultValue: value);
 
   /// Creates an equality condition (column = value).
+  // TODO: Generalize to T when Condition supports generics
   Condition eq(int value) => Condition(name, ConditionOperator.equal, value);
 
   /// Creates a greater-than condition (column > value).
+  // TODO: Generalize to T when Condition supports generics
   Condition gt(int value) =>
       Condition(name, ConditionOperator.greaterThan, value);
 
   /// Creates a less-than condition (column < value).
+  // TODO: Generalize to T when Condition supports generics
   Condition lt(int value) => Condition(name, ConditionOperator.lessThan, value);
 
   /// Creates a greater-than-or-equal condition (column >= value).
+  // TODO: Generalize to T when Condition supports generics
   Condition gte(int value) =>
       Condition(name, ConditionOperator.greaterThanOrEqual, value);
 
   /// Creates a less-than-or-equal condition (column <= value).
+  // TODO: Generalize to T when Condition supports generics
   Condition lte(int value) =>
       Condition(name, ConditionOperator.lessThanOrEqual, value);
 
   /// Creates an IN condition (column IN (values)).
+  // TODO: Generalize to T when Condition supports generics
   Condition inList(List<int> values) =>
       Condition(name, ConditionOperator.inList, values);
 
