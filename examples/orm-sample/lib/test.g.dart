@@ -165,57 +165,70 @@ class UsersSelectConfig {
 
 class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
-  final ({
-    String id,
-    String name,
-    String email,
-    int? age,
-    String? gender,
-    DateTime createdAt,
-  })?
-  _values;
+  final String? _id;
+  final String? _name;
+  final String? _email;
+  final int? _age;
+  final String? _gender;
+  final DateTime? _createdAt;
 
   UsersInsertBuilder(
     this.db, {
-    ({
-      String id,
-      String name,
-      String email,
-      int? age,
-      String? gender,
-      DateTime createdAt,
-    })?
-    values,
-  }) : _values = values;
+    String? id,
+    String? name,
+    String? email,
+    int? age,
+    String? gender,
+    DateTime? createdAt,
+  }) : _id = id,
+       _name = name,
+       _email = email,
+       _age = age,
+       _gender = gender,
+       _createdAt = createdAt;
 
-  UsersInsertBuilder values(
-    ({
-      String id,
-      String name,
-      String email,
-      int? age,
-      String? gender,
-      DateTime createdAt,
-    })
-    record,
-  ) {
-    return UsersInsertBuilder(db, values: record);
+  UsersInsertBuilder values({
+    required String id,
+    required String name,
+    required String email,
+    int? age,
+    String? gender,
+    required DateTime createdAt,
+  }) {
+    return UsersInsertBuilder(
+      db,
+      id: id,
+      name: name,
+      email: email,
+      age: age,
+      gender: gender,
+      createdAt: createdAt,
+    );
   }
 
   @override
   Future<int> execute() {
-    if (_values == null) {
-      throw StateError('No values set');
+    if (_id == null) {
+      throw StateError('Field `id` is required but not set');
+    }
+    if (_name == null) {
+      throw StateError('Field `name` is required but not set');
+    }
+    if (_email == null) {
+      throw StateError('Field `email` is required but not set');
+    }
+    if (_createdAt == null) {
+      throw StateError('Field `createdAt` is required but not set');
     }
     final sql =
         'INSERT INTO users (id, name, email, age, gender, created_at) VALUES (:id, :name, :email, :age, :gender, :created_at)';
     final params = {
-      'id': _values.id,
-      'name': _values.name,
-      'email': _values.email,
-      'age': _values.age,
-      'gender': _values.gender,
-      'created_at': _values.createdAt,
+      'id': _id,
+      'name': _name,
+      'email': _email,
+      'age': _age,
+      'gender': _gender,
+      'created_at': _createdAt,
     };
     return db.execute(sql, params: params);
   }
@@ -223,45 +236,50 @@ class UsersInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
 
 class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
-  final ({
+  final String? _id;
+  final String? _name;
+  final String? _email;
+  final int? _age;
+  final String? _gender;
+  final DateTime? _createdAt;
+  final List<Condition> _where;
+
+  UsersUpdateBuilder(
+    this.db, {
     String? id,
     String? name,
     String? email,
     int? age,
     String? gender,
     DateTime? createdAt,
-  })?
-  _values;
-  final List<Condition> _where;
-
-  UsersUpdateBuilder(
-    this.db, {
-    ({
-      String? id,
-      String? name,
-      String? email,
-      int? age,
-      String? gender,
-      DateTime? createdAt,
-    })?
-    values,
     List<Condition>? where,
-  }) : _where = where ?? [],
-       _values = values;
+  }) : _id = id,
+       _name = name,
+       _email = email,
+       _age = age,
+       _gender = gender,
+       _createdAt = createdAt,
+       _where = where ?? [];
 
   // SET句（更新するカラムを指定）
-  UsersUpdateBuilder set(
-    ({
-      String? id,
-      String? name,
-      String? email,
-      int? age,
-      String? gender,
-      DateTime? createdAt,
-    })
-    values,
-  ) {
-    return UsersUpdateBuilder(db, values: values, where: _where);
+  UsersUpdateBuilder set({
+    String? id,
+    String? name,
+    String? email,
+    int? age,
+    String? gender,
+    DateTime? createdAt,
+  }) {
+    return UsersUpdateBuilder(
+      db,
+      where: _where,
+      id: id,
+      name: name,
+      email: email,
+      age: age,
+      gender: gender,
+      createdAt: createdAt,
+    );
   }
 
   // WHERE句（SelectBuilderと同じ仕組み）
@@ -280,39 +298,46 @@ class UsersUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
     if (age != null) newConditions.add(age);
     if (gender != null) newConditions.add(gender);
     if (createdAt != null) newConditions.add(createdAt);
-    return UsersUpdateBuilder(db, values: _values, where: newConditions);
+    return UsersUpdateBuilder(
+      db,
+      where: newConditions,
+      id: _id,
+      name: _name,
+      email: _email,
+      age: _age,
+      gender: _gender,
+      createdAt: _createdAt,
+    );
   }
 
   @override
   Future<int> execute() {
-    if (_values == null) throw StateError('No values set');
-
     // SET句の構築
     final updates = <String>[];
     final params = <String, dynamic>{};
-    if (_values.id != null) {
+    if (_id != null) {
       updates.add('id = :set_id');
-      params['set_id'] = _values.id;
+      params['set_id'] = _id;
     }
-    if (_values.name != null) {
+    if (_name != null) {
       updates.add('name = :set_name');
-      params['set_name'] = _values.name;
+      params['set_name'] = _name;
     }
-    if (_values.email != null) {
+    if (_email != null) {
       updates.add('email = :set_email');
-      params['set_email'] = _values.email;
+      params['set_email'] = _email;
     }
-    if (_values.age != null) {
+    if (_age != null) {
       updates.add('age = :set_age');
-      params['set_age'] = _values.age;
+      params['set_age'] = _age;
     }
-    if (_values.gender != null) {
+    if (_gender != null) {
       updates.add('gender = :set_gender');
-      params['set_gender'] = _values.gender;
+      params['set_gender'] = _gender;
     }
-    if (_values.createdAt != null) {
+    if (_createdAt != null) {
       updates.add('created_at = :set_created_at');
-      params['set_created_at'] = _values.createdAt;
+      params['set_created_at'] = _createdAt;
     }
 
     if (updates.isEmpty) throw StateError('No fields to update');
@@ -536,41 +561,67 @@ class PostsSelectConfig {
 
 class PostsInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
-  final ({
-    int id,
-    String userId,
-    String title,
-    String content,
-    DateTime createdAt,
-  })?
-  _values;
+  final int? _id;
+  final String? _userId;
+  final String? _title;
+  final String? _content;
+  final DateTime? _createdAt;
 
   PostsInsertBuilder(
     this.db, {
-    ({int id, String userId, String title, String content, DateTime createdAt})?
-    values,
-  }) : _values = values;
+    int? id,
+    String? userId,
+    String? title,
+    String? content,
+    DateTime? createdAt,
+  }) : _id = id,
+       _userId = userId,
+       _title = title,
+       _content = content,
+       _createdAt = createdAt;
 
-  PostsInsertBuilder values(
-    ({int id, String userId, String title, String content, DateTime createdAt})
-    record,
-  ) {
-    return PostsInsertBuilder(db, values: record);
+  PostsInsertBuilder values({
+    required int id,
+    required String userId,
+    required String title,
+    required String content,
+    required DateTime createdAt,
+  }) {
+    return PostsInsertBuilder(
+      db,
+      id: id,
+      userId: userId,
+      title: title,
+      content: content,
+      createdAt: createdAt,
+    );
   }
 
   @override
   Future<int> execute() {
-    if (_values == null) {
-      throw StateError('No values set');
+    if (_id == null) {
+      throw StateError('Field `id` is required but not set');
+    }
+    if (_userId == null) {
+      throw StateError('Field `userId` is required but not set');
+    }
+    if (_title == null) {
+      throw StateError('Field `title` is required but not set');
+    }
+    if (_content == null) {
+      throw StateError('Field `content` is required but not set');
+    }
+    if (_createdAt == null) {
+      throw StateError('Field `createdAt` is required but not set');
     }
     final sql =
         'INSERT INTO posts (id, user_id, title, content, created_at) VALUES (:id, :user_id, :title, :content, :created_at)';
     final params = {
-      'id': _values.id,
-      'user_id': _values.userId,
-      'title': _values.title,
-      'content': _values.content,
-      'created_at': _values.createdAt,
+      'id': _id,
+      'user_id': _userId,
+      'title': _title,
+      'content': _content,
+      'created_at': _createdAt,
     };
     return db.execute(sql, params: params);
   }
@@ -578,42 +629,45 @@ class PostsInsertBuilder extends QueryFuture<int> with FutureMixin<int> {
 
 class PostsUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
   final PostgresQueryable db;
-  final ({
+  final int? _id;
+  final String? _userId;
+  final String? _title;
+  final String? _content;
+  final DateTime? _createdAt;
+  final List<Condition> _where;
+
+  PostsUpdateBuilder(
+    this.db, {
     int? id,
     String? userId,
     String? title,
     String? content,
     DateTime? createdAt,
-  })?
-  _values;
-  final List<Condition> _where;
-
-  PostsUpdateBuilder(
-    this.db, {
-    ({
-      int? id,
-      String? userId,
-      String? title,
-      String? content,
-      DateTime? createdAt,
-    })?
-    values,
     List<Condition>? where,
-  }) : _where = where ?? [],
-       _values = values;
+  }) : _id = id,
+       _userId = userId,
+       _title = title,
+       _content = content,
+       _createdAt = createdAt,
+       _where = where ?? [];
 
   // SET句（更新するカラムを指定）
-  PostsUpdateBuilder set(
-    ({
-      int? id,
-      String? userId,
-      String? title,
-      String? content,
-      DateTime? createdAt,
-    })
-    values,
-  ) {
-    return PostsUpdateBuilder(db, values: values, where: _where);
+  PostsUpdateBuilder set({
+    int? id,
+    String? userId,
+    String? title,
+    String? content,
+    DateTime? createdAt,
+  }) {
+    return PostsUpdateBuilder(
+      db,
+      where: _where,
+      id: id,
+      userId: userId,
+      title: title,
+      content: content,
+      createdAt: createdAt,
+    );
   }
 
   // WHERE句（SelectBuilderと同じ仕組み）
@@ -630,35 +684,41 @@ class PostsUpdateBuilder extends QueryFuture<int> with FutureMixin<int> {
     if (title != null) newConditions.add(title);
     if (content != null) newConditions.add(content);
     if (createdAt != null) newConditions.add(createdAt);
-    return PostsUpdateBuilder(db, values: _values, where: newConditions);
+    return PostsUpdateBuilder(
+      db,
+      where: newConditions,
+      id: _id,
+      userId: _userId,
+      title: _title,
+      content: _content,
+      createdAt: _createdAt,
+    );
   }
 
   @override
   Future<int> execute() {
-    if (_values == null) throw StateError('No values set');
-
     // SET句の構築
     final updates = <String>[];
     final params = <String, dynamic>{};
-    if (_values.id != null) {
+    if (_id != null) {
       updates.add('id = :set_id');
-      params['set_id'] = _values.id;
+      params['set_id'] = _id;
     }
-    if (_values.userId != null) {
+    if (_userId != null) {
       updates.add('user_id = :set_user_id');
-      params['set_user_id'] = _values.userId;
+      params['set_user_id'] = _userId;
     }
-    if (_values.title != null) {
+    if (_title != null) {
       updates.add('title = :set_title');
-      params['set_title'] = _values.title;
+      params['set_title'] = _title;
     }
-    if (_values.content != null) {
+    if (_content != null) {
       updates.add('content = :set_content');
-      params['set_content'] = _values.content;
+      params['set_content'] = _content;
     }
-    if (_values.createdAt != null) {
+    if (_createdAt != null) {
       updates.add('created_at = :set_created_at');
-      params['set_created_at'] = _values.createdAt;
+      params['set_created_at'] = _createdAt;
     }
 
     if (updates.isEmpty) throw StateError('No fields to update');

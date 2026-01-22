@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:aim_orm/aim_orm.dart';
 import 'package:aim_orm_postgres/aim_orm_postgres.dart';
 import 'package:aim_postgres/aim_postgres.dart';
@@ -37,4 +35,14 @@ void main() async {
   }
 
   await db.close();
+}
+
+class Hoge {
+  final int _id;
+  final String _name;
+
+  const Hoge({
+    required int id,
+    required String name
+  }) :_id = id, _name = name;
 }
