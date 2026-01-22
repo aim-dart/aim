@@ -54,9 +54,9 @@ void main(List<String> args) async {
   }
 
   for (final pkg in sorted) {
-    stdout.writeln('${'=' * 50}');
+    stdout.writeln('=' * 50);
     stdout.writeln('Publishing ${pkg.name}...');
-    stdout.writeln('${'=' * 50}');
+    stdout.writeln('=' * 50);
 
     final result = await Process.run(
       'dart',

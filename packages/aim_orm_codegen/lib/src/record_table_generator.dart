@@ -325,20 +325,26 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     String tableName,
     List<AnalyzedField> fields,
   ) {
+    final insertRecordName = '${capitalize(tableName)}InsertRecord';
+    buffer.writeln('typedef $insertRecordName = ({');
+    buffer.writeln(
+      fields.map((f) => '${f.returnType}${f.isNullable ? '?' : ''} ${f.fieldName}').join(','),
+    );
+    buffer.writeln('});');
     buffer.writeln(
       'class ${capitalize(tableName)}InsertBuilder extends QueryFuture<int> with FutureMixin<int> {',
     );
     buffer.writeln('  final PostgresQueryable db;');
     buffer.writeln(
-      '  final ({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}})? _values;',     );
+      '  final $insertRecordName? _values;',     );
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder(this.db, {({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}})? values})',
+      '  ${capitalize(tableName)}InsertBuilder(this.db, {$insertRecordName? values})',
     );
     buffer.writeln('    : _values = values;');
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}InsertBuilder values(({${fields.map((r) => '${r.returnType}${r.isNullable ? '?' : ''} ${r.fieldName}').join(', ')}}) record) {',
+      '  ${capitalize(tableName)}InsertBuilder values($insertRecordName record) {',
     );
     buffer.writeln(
       '    return ${capitalize(tableName)}InsertBuilder(db, values: record);',
