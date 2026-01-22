@@ -18,25 +18,25 @@ Use `.update().set().where()` to update rows:
 ```dart
 await db.users
     .update()
-    .set((name: 'Alice Updated'))
+    .set(name: 'Alice Updated')
     .where(id: users.id.eq('user-123'));
 ```
 
 ## Set Values
 
-The `.set()` method takes a Record with only the fields you want to update:
+The `.set()` method takes named parameters. You only need to specify the fields you want to update:
 
 ```dart
 // Update only name
 await db.users
     .update()
-    .set((name: 'New Name'))
+    .set(name: 'New Name')
     .where(id: users.id.eq('user-123'));
 
 // Update multiple fields
 await db.users
     .update()
-    .set((name: 'New Name', email: 'new@example.com'))
+    .set(name: 'New Name', email: 'new@example.com')
     .where(id: users.id.eq('user-123'));
 ```
 
@@ -48,13 +48,13 @@ Always use `.where()` to specify which rows to update:
 // Update single row by ID
 await db.users
     .update()
-    .set((name: 'Updated'))
+    .set(name: 'Updated')
     .where(id: users.id.eq('user-123'));
 
 // Update multiple rows
 await db.posts
     .update()
-    .set((content: 'Archived'))
+    .set(content: 'Archived')
     .where(userId: posts.userId.eq('deleted-user'));
 ```
 
@@ -65,7 +65,7 @@ UPDATE returns `Future<int>` - the number of affected rows:
 ```dart
 final affected = await db.users
     .update()
-    .set((name: 'Updated Name'))
+    .set(name: 'Updated Name')
     .where(id: users.id.eq('user-123'));
 
 print('Updated $affected row(s)');
@@ -82,7 +82,7 @@ Future<int> updateEmail({
 }) async {
   return db.users
       .update()
-      .set((email: newEmail))
+      .set(email: newEmail)
       .where(id: users.id.eq(userId));
 }
 ```
@@ -97,7 +97,7 @@ Future<int> updatePost({
 }) async {
   return db.posts
       .update()
-      .set((title: title, content: content))
+      .set(title: title, content: content)
       .where(id: posts.id.eq(postId));
 }
 ```
