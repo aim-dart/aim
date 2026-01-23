@@ -784,3 +784,8 @@ class PostsDeleteBuilder extends QueryFuture<int> with FutureMixin<int> {
     return db.execute(sqlBuffer.toString(), params: params);
   }
 }
+
+typedef PostUserRow = ({
+  PostsRow post,
+  UsersRow user,
+});

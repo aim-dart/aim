@@ -77,6 +77,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     generateInsertBuilder(buffer, tableName, records);
     generateUpdateBuilder(buffer, tableName, records);
     generateDeleteBuilder(buffer, tableName, records);
+    generateRelationSelectBuilder(buffer, tableName, records);
 
     return buffer.toString();
   }
@@ -332,18 +333,16 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     );
     buffer.writeln('  final PostgresQueryable db;');
     for (final field in fields) {
-      buffer.writeln(
-        '  final ${field.returnType}? _${field.fieldName};',
-      );
+      buffer.writeln('  final ${field.returnType}? _${field.fieldName};');
     }
     buffer.writeln();
     buffer.writeln('  ${capitalize(tableName)}InsertBuilder(this.db, {');
     for (final field in fields) {
-      buffer.writeln(
-        '    ${field.returnType}? ${field.fieldName},',
-      );
+      buffer.writeln('    ${field.returnType}? ${field.fieldName},');
     }
-    buffer.writeln('  }): ${fields.map((f) => '_${f.fieldName} = ${f.fieldName}').join(', ')};');
+    buffer.writeln(
+      '  }): ${fields.map((f) => '_${f.fieldName} = ${f.fieldName}').join(', ')};',
+    );
     buffer.writeln();
     buffer.writeln('  ${capitalize(tableName)}InsertBuilder values({');
     for (final field in fields) {
@@ -363,9 +362,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln('  Future<int> execute() {');
     for (final field in fields) {
       if (!field.isNullable) {
-        buffer.writeln(
-          '    if (_${field.fieldName} == null) {',
-        );
+        buffer.writeln('    if (_${field.fieldName} == null) {');
         buffer.writeln(
           "      throw StateError('Field `${field.fieldName}` is required but not set');",
         );
@@ -379,9 +376,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     );
     buffer.writeln('    final params = {');
     for (final field in fields) {
-      buffer.writeln(
-        "      '${field.columnName}': _${field.fieldName},",
-      );
+      buffer.writeln("      '${field.columnName}': _${field.fieldName},");
     }
     buffer.writeln('    };');
     buffer.writeln('    return db.execute(sql, params: params);');
@@ -400,16 +395,16 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     );
     buffer.writeln('  final PostgresQueryable db;');
     for (final field in fields) {
-      buffer.writeln(
-        '  final ${field.returnType}? _${field.fieldName};',
-      );
+      buffer.writeln('  final ${field.returnType}? _${field.fieldName};');
     }
     buffer.writeln('  final List<Condition> _where;');
     buffer.writeln();
     buffer.writeln(
       '  ${capitalize(tableName)}UpdateBuilder(this.db, {${fields.map((r) => '${r.returnType}? ${r.fieldName}').join(', ')}, List<Condition>? where})',
     );
-    buffer.writeln('    : ${fields.map((f) => '_${f.fieldName} = ${f.fieldName}').join(', ')}, _where = where ?? [];');
+    buffer.writeln(
+      '    : ${fields.map((f) => '_${f.fieldName} = ${f.fieldName}').join(', ')}, _where = where ?? [];',
+    );
     buffer.writeln();
     buffer.writeln('  // SET句（更新するカラムを指定）');
     buffer.writeln('  ${capitalize(tableName)}UpdateBuilder set({');
@@ -421,9 +416,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       '    return ${capitalize(tableName)}UpdateBuilder(db, where: _where,',
     );
     for (final record in fields) {
-      buffer.writeln(
-        '      ${record.fieldName}: ${record.fieldName},',
-      );
+      buffer.writeln('      ${record.fieldName}: ${record.fieldName},');
     }
     buffer.writeln(');');
     buffer.writeln('  }');
@@ -443,9 +436,7 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       '    return ${capitalize(tableName)}UpdateBuilder(db, where: newConditions,',
     );
     for (final record in fields) {
-      buffer.writeln(
-        '      ${record.fieldName}: _${record.fieldName},',
-      );
+      buffer.writeln('      ${record.fieldName}: _${record.fieldName},');
     }
     buffer.writeln(');');
     buffer.writeln('  }');
@@ -553,6 +544,12 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln();
   }
 
+  void generateRelationSelectBuilder(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> fields,
+  ) {}
+
   void analyzeMethodChain(Expression expression) {
     if (expression is MethodInvocation) {
       final methodName = expression.methodName.name;
@@ -578,6 +575,8 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     PgColumnMapper? columnMapper;
     String? returnType;
     int? varcharLength;
+    String? refTable;
+    String? refColumn;
 
     // メソッドチェーンを全部集める
     final methods = <MethodInvocation>[];
@@ -621,12 +620,34 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
         isUnique = true;
       } else if (methodName == 'nullable') {
         isNullable = true;
+      } else if (methodName == 'references') {
+        print('Found references() method - foreign key detected.');
+        for (final arg in method.argumentList.arguments) {
+          print('  Argument: $arg, type: ${arg.runtimeType}');
+          if (arg is FunctionExpression) {
+            final body = arg.body;
+            print('    Function body: $body, type: ${body.runtimeType}');
+            if (body is ExpressionFunctionBody) {
+              final refExpr = body.expression;
+              print(
+                '    Returned expression: $refExpr, type: ${refExpr.runtimeType}',
+              );
+              if (refExpr is PropertyAccess) {
+                refTable = refExpr.target.toString();
+                refColumn = refExpr.propertyName.name;
+                print('      Target: $refTable, Property: $refColumn');
+              }
+              if (refExpr is PrefixedIdentifier) {
+                refTable = refExpr.prefix.name;
+                refColumn = refExpr.identifier.name;
+                print('      Foreign key references $refTable.$refColumn');
+              }
+            }
+          }
+        }
       }
     }
 
-    print(
-      'Analyzed field: $fieldName, type: $columnType, returnType: $returnType, columnMapper: $columnMapper',
-    );
     return (
       fieldName: fieldName,
       columnType: columnType ?? 'unknown',
@@ -637,6 +658,8 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       isUnique: isUnique,
       isNullable: isNullable,
       varcharLength: varcharLength,
+      refTable: refTable,
+      refColumn: refColumn,
     );
   }
 }
@@ -651,6 +674,8 @@ typedef AnalyzedField = ({
   bool isUnique,
   bool isNullable,
   int? varcharLength,
+  String? refTable,
+  String? refColumn,
 });
 
 class RecordVisitor extends RecursiveAstVisitor<void> {
