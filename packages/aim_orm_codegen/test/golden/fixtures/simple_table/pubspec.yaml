@@ -1,0 +1,16 @@
+name: simple_table_fixture
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  aim_orm: ^0.1.1
+  aim_orm_postgres: ^0.1.1
+  aim_postgres: ^0.1.1
+  aim_database: ^0.1.1
+
+dev_dependencies:
+  aim_orm_codegen: ^0.1.1
+  build_runner: ^2.4.0
