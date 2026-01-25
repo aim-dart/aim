@@ -1,6 +1,7 @@
 import 'package:aim_orm/aim_orm.dart';
 import 'package:aim_orm_postgres/aim_orm_postgres.dart';
 import 'package:aim_postgres/aim_postgres.dart';
+import 'package:orm_sample/seed.dart';
 
 part 'test.g.dart';
 
@@ -16,11 +17,12 @@ final users = (
 
 @PgTable('posts')
 final posts = (
-  id: integer('id').primaryKey(),
+  id: uuid('id').primaryKey(),
   userId: uuid('user_id').references(() => users.id),
   title: varchar('title', length: 255),
   content: text('content'),
   createdAt: timestamp('created_at').withDefault(DateTime.now()),
+  statusId: uuid('status_id').references(() => status.id),
 );
 
 void main() async {
@@ -33,6 +35,9 @@ void main() async {
   for (var row in result) {
     print(row);
   }
+
+  final hoge = await db.posts.select().withUser().withStatus();
+  final foo = await db.posts.select().withStatus().withUser();
 
   await db.close();
 }

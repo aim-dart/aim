@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:aim_orm_postgres/aim_orm_postgres.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:source_gen/source_gen.dart';
 
 class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
@@ -51,6 +54,9 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     libraryReader.accept(recordVisitor);
     final recordLiteral = recordVisitor.foundRecord;
 
+    // Phase 1で収集された全テーブル情報をJSONから読み込み
+    final allTables = await _readAllTableInfo(buildStep);
+
     final fields = <({String name, Expression expression})>[];
     if (recordLiteral != null) {
       for (final field in recordLiteral.fields) {
@@ -72,12 +78,12 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     generateTransactionExtensionForTable(buffer, tableName);
     generateQueryBuilder(buffer, tableName);
     generateSelectRowBuilder(buffer, tableName, records);
-    generateSelectBuilder(buffer, tableName, records);
+    generateSelectBuilder(buffer, tableName, records, allTables);
     generateSelectConfig(buffer, tableName);
     generateInsertBuilder(buffer, tableName, records);
     generateUpdateBuilder(buffer, tableName, records);
     generateDeleteBuilder(buffer, tableName, records);
-    generateRelationSelectBuilder(buffer, tableName, records);
+    generateRelationSelectBuilder(buffer, tableName, records, allTables);
 
     return buffer.toString();
   }
@@ -157,19 +163,22 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     StringBuffer buffer,
     String tableName,
     List<AnalyzedField> fields,
+    Map<String, List<AnalyzedField>> allTables,
   ) {
+    final tableCapitalized = capitalize(tableName);
+
     buffer.writeln(
-      'class ${capitalize(tableName)}SelectBuilder extends QueryFuture<List<${capitalize(tableName)}Row>> with FutureMixin<List<${capitalize(tableName)}Row>> {',
+      'class ${tableCapitalized}SelectBuilder extends QueryFuture<List<${tableCapitalized}Row>> with FutureMixin<List<${tableCapitalized}Row>> {',
     );
     buffer.writeln('  final PostgresQueryable db;');
-    buffer.writeln('  final ${capitalize(tableName)}SelectConfig config;');
+    buffer.writeln('  final ${tableCapitalized}SelectConfig config;');
     buffer.writeln();
     buffer.writeln(
-      '  ${capitalize(tableName)}SelectBuilder(this.db, this.config);',
+      '  ${tableCapitalized}SelectBuilder(this.db, this.config);',
     );
     buffer.writeln();
     buffer.writeln('  @override');
-    buffer.writeln('  Future<List<${capitalize(tableName)}Row>> execute() {');
+    buffer.writeln('  Future<List<${tableCapitalized}Row>> execute() {');
     buffer.writeln(
       '    final sqlBuffer = StringBuffer(\'SELECT * FROM $tableName\');',
     );
@@ -249,7 +258,27 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln('  }');
     buffer.writeln();
 
-    buffer.writeln('  ${capitalize(tableName)}SelectBuilder where({');
+    // FK フィールドに対する withXxx() メソッドを生成
+    final fkFields = fields.where((f) => f.refTable != null && f.refColumn != null).toList();
+    for (final fk in fkFields) {
+      final relationName = _inferRelationName(fk.fieldName, fk.refTable!);
+      final withBuilderName = '${tableCapitalized}With${capitalize(relationName)}SelectBuilder';
+      final withConfigName = '${tableCapitalized}With${capitalize(relationName)}SelectConfig';
+
+      buffer.writeln('  $withBuilderName with${capitalize(relationName)}() {');
+      buffer.writeln('    return $withBuilderName(');
+      buffer.writeln('      db,');
+      buffer.writeln('      $withConfigName(');
+      buffer.writeln('        where: config.where,');
+      buffer.writeln('        limit: config.limit,');
+      buffer.writeln('        offset: config.offset,');
+      buffer.writeln('      ),');
+      buffer.writeln('    );');
+      buffer.writeln('  }');
+      buffer.writeln();
+    }
+
+    buffer.writeln('  ${tableCapitalized}SelectBuilder where({');
     for (final field in fields) {
       buffer.writeln('    Condition? ${field.fieldName},');
     }
@@ -260,9 +289,9 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       buffer.writeln('      newConditions.add(${field.fieldName});');
     }
     buffer.writeln();
-    buffer.writeln('    return ${capitalize(tableName)}SelectBuilder(');
+    buffer.writeln('    return ${tableCapitalized}SelectBuilder(');
     buffer.writeln('      db,');
-    buffer.writeln('      ${capitalize(tableName)}SelectConfig(');
+    buffer.writeln('      ${tableCapitalized}SelectConfig(');
     buffer.writeln('        where: newConditions,');
     buffer.writeln('        limit: config.limit,');
     buffer.writeln('        offset: config.offset,');
@@ -272,11 +301,11 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln();
 
     buffer.writeln(
-      '  ${capitalize(tableName)}SelectBuilder limit(int limit) {',
+      '  ${tableCapitalized}SelectBuilder limit(int limit) {',
     );
-    buffer.writeln('    return ${capitalize(tableName)}SelectBuilder(');
+    buffer.writeln('    return ${tableCapitalized}SelectBuilder(');
     buffer.writeln('      db,');
-    buffer.writeln('      ${capitalize(tableName)}SelectConfig(');
+    buffer.writeln('      ${tableCapitalized}SelectConfig(');
     buffer.writeln('        where: config.where,');
     buffer.writeln('        limit: limit,');
     buffer.writeln('        offset: config.offset,');
@@ -286,11 +315,11 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     buffer.writeln();
 
     buffer.writeln(
-      '  ${capitalize(tableName)}SelectBuilder offset(int offset) {',
+      '  ${tableCapitalized}SelectBuilder offset(int offset) {',
     );
-    buffer.writeln('    return ${capitalize(tableName)}SelectBuilder(');
+    buffer.writeln('    return ${tableCapitalized}SelectBuilder(');
     buffer.writeln('      db,');
-    buffer.writeln('      ${capitalize(tableName)}SelectConfig(');
+    buffer.writeln('      ${tableCapitalized}SelectConfig(');
     buffer.writeln('        where: config.where,');
     buffer.writeln('        limit: config.limit,');
     buffer.writeln('        offset: offset,');
@@ -548,22 +577,456 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     StringBuffer buffer,
     String tableName,
     List<AnalyzedField> fields,
-  ) {}
+    Map<String, List<AnalyzedField>> allTables,
+  ) {
+    // FK を持つフィールドを抽出
+    final fkFields =
+        fields.where((f) => f.refTable != null && f.refColumn != null).toList();
 
-  void analyzeMethodChain(Expression expression) {
-    if (expression is MethodInvocation) {
-      final methodName = expression.methodName.name;
-      print('Method: $methodName');
-      for (final arg in expression.argumentList.arguments) {
-        if (arg is IntegerLiteral) {
-          print('  Argument: ${arg.value}');
+    if (fkFields.isEmpty) return;
+
+    // 全ての FK の部分集合を生成（組み合わせ爆発対応）
+    final subsets = _generateSubsets(fkFields);
+
+    for (final subset in subsets) {
+      if (subset.isEmpty) continue; // 空集合はスキップ（元の SelectBuilder）
+
+      _generateRelationBuilderForSubset(
+        buffer,
+        tableName,
+        fields,
+        fkFields,
+        subset,
+        allTables,
+      );
+    }
+  }
+
+  /// FK フィールドの全部分集合を生成
+  List<List<AnalyzedField>> _generateSubsets(List<AnalyzedField> fields) {
+    final result = <List<AnalyzedField>>[];
+    final n = fields.length;
+
+    for (var i = 0; i < (1 << n); i++) {
+      final subset = <AnalyzedField>[];
+      for (var j = 0; j < n; j++) {
+        if ((i & (1 << j)) != 0) {
+          subset.add(fields[j]);
         }
       }
+      result.add(subset);
+    }
 
-      if (expression.target != null) {
-        analyzeMethodChain(expression.target!);
+    return result;
+  }
+
+  /// テーブル名を単数形に変換
+  /// 例: 'posts' -> 'post', 'users' -> 'user', 'status' -> 'status'
+  String _toSingular(String name) {
+    // 'ss' で終わる場合はそのまま（status, class, etc.）
+    if (name.endsWith('ss')) return name;
+    // 'ies' で終わる場合は 'y' に（categories -> category）
+    if (name.endsWith('ies')) return '${name.substring(0, name.length - 3)}y';
+    // 's' で終わる場合は削除（posts -> post, users -> user）
+    if (name.endsWith('s')) return name.substring(0, name.length - 1);
+    return name;
+  }
+
+  /// FK フィールド名からリレーション名を推測
+  /// 例: 'userId' -> 'user', 'postStatusId' -> 'postStatus'
+  String _inferRelationName(String fieldName, String refTable) {
+    // 'userId' -> 'user'
+    if (fieldName.endsWith('Id')) {
+      return fieldName.substring(0, fieldName.length - 2);
+    }
+    // フォールバック: 参照先テーブル名をそのまま使う
+    return refTable;
+  }
+
+  /// 部分集合のサフィックスを生成
+  /// 例: [userId, statusId] -> 'WithUserWithStatus'
+  String _generateSubsetSuffix(List<AnalyzedField> subset) {
+    return subset.map((fk) {
+      final relationName = _inferRelationName(fk.fieldName, fk.refTable!);
+      return 'With${capitalize(relationName)}';
+    }).join('');
+  }
+
+  void _generateRelationBuilderForSubset(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> allFields,
+    List<AnalyzedField> allFkFields,
+    List<AnalyzedField> includedFks,
+    Map<String, List<AnalyzedField>> allTables,
+  ) {
+    final tableCapitalized = capitalize(tableName);
+    final suffix = _generateSubsetSuffix(includedFks);
+    final builderName = '$tableCapitalized${suffix}SelectBuilder';
+    final configName = '$tableCapitalized${suffix}SelectConfig';
+    final rowName = '$tableCapitalized${suffix}Row';
+
+    // 残りの FK（まだ include されていないもの）
+    final remainingFks =
+        allFkFields.where((fk) => !includedFks.contains(fk)).toList();
+
+    // Row typedef を生成
+    _generateRelationRowTypedef(
+        buffer, tableName, rowName, includedFks, allTables);
+
+    // Config クラスを生成
+    _generateRelationSelectConfig(buffer, configName);
+
+    // SelectBuilder クラスを生成
+    _generateRelationSelectBuilderClass(
+      buffer,
+      tableName,
+      builderName,
+      configName,
+      rowName,
+      allFields,
+      allFkFields,
+      includedFks,
+      remainingFks,
+      allTables,
+    );
+  }
+
+  void _generateRelationRowTypedef(
+    StringBuffer buffer,
+    String tableName,
+    String rowName,
+    List<AnalyzedField> includedFks,
+    Map<String, List<AnalyzedField>> allTables,
+  ) {
+    buffer.writeln('typedef $rowName = ({');
+    buffer.writeln('  ${capitalize(tableName)}Row ${_toSingular(tableName).toLowerCase()},');
+
+    for (final fk in includedFks) {
+      final relationName = _inferRelationName(fk.fieldName, fk.refTable!);
+      final refTableCapitalized = capitalize(fk.refTable!);
+      final nullableSuffix = fk.isNullable ? '?' : '';
+      buffer.writeln('  ${refTableCapitalized}Row$nullableSuffix $relationName,');
+    }
+
+    buffer.writeln('});');
+    buffer.writeln();
+  }
+
+  void _generateRelationSelectConfig(StringBuffer buffer, String configName) {
+    buffer.writeln('class $configName {');
+    buffer.writeln('  final List<Condition> where;');
+    buffer.writeln('  final int? limit;');
+    buffer.writeln('  final int? offset;');
+    buffer.writeln();
+    buffer.writeln('  $configName({');
+    buffer.writeln('    required List<Condition>? where,');
+    buffer.writeln('    required this.limit,');
+    buffer.writeln('    required this.offset,');
+    buffer.writeln('  }) : where = where ?? [];');
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
+  void _generateRelationSelectBuilderClass(
+    StringBuffer buffer,
+    String tableName,
+    String builderName,
+    String configName,
+    String rowName,
+    List<AnalyzedField> allFields,
+    List<AnalyzedField> allFkFields,
+    List<AnalyzedField> includedFks,
+    List<AnalyzedField> remainingFks,
+    Map<String, List<AnalyzedField>> allTables,
+  ) {
+    buffer.writeln(
+      'class $builderName extends QueryFuture<List<$rowName>> with FutureMixin<List<$rowName>> {',
+    );
+    buffer.writeln('  final PostgresQueryable db;');
+    buffer.writeln('  final $configName config;');
+    buffer.writeln();
+    buffer.writeln('  $builderName(this.db, this.config);');
+    buffer.writeln();
+
+    // execute() メソッド
+    _generateRelationExecuteMethod(
+      buffer,
+      tableName,
+      rowName,
+      allFields,
+      includedFks,
+      allTables,
+    );
+
+    // 残りの FK に対する withXxx() メソッド
+    for (final fk in remainingFks) {
+      _generateWithMethod(
+        buffer,
+        tableName,
+        allFkFields,
+        includedFks,
+        fk,
+      );
+    }
+
+    // where() メソッド
+    _generateRelationWhereMethod(buffer, builderName, configName, allFields);
+
+    // limit() メソッド
+    _generateRelationLimitMethod(buffer, builderName, configName);
+
+    // offset() メソッド
+    _generateRelationOffsetMethod(buffer, builderName, configName);
+
+    buffer.writeln('}');
+    buffer.writeln();
+  }
+
+  void _generateRelationExecuteMethod(
+    StringBuffer buffer,
+    String tableName,
+    String rowName,
+    List<AnalyzedField> allFields,
+    List<AnalyzedField> includedFks,
+    Map<String, List<AnalyzedField>> allTables,
+  ) {
+    buffer.writeln('  @override');
+    buffer.writeln('  Future<List<$rowName>> execute() {');
+
+    // SELECT句を構築（エイリアス付き）
+    final selectColumns = <String>[];
+
+    // メインテーブルのカラム
+    for (final field in allFields) {
+      selectColumns.add('$tableName.${field.columnName} AS ${tableName}_${field.columnName}');
+    }
+
+    // 参照先テーブルのカラム
+    for (final fk in includedFks) {
+      final refTable = fk.refTable!;
+      final refFields = allTables[refTable];
+      if (refFields != null) {
+        for (final refField in refFields) {
+          selectColumns.add('$refTable.${refField.columnName} AS ${refTable}_${refField.columnName}');
+        }
       }
     }
+
+    buffer.writeln("    final sqlBuffer = StringBuffer('SELECT ${selectColumns.join(', ')} FROM $tableName');");
+
+    // JOIN句
+    for (final fk in includedFks) {
+      final refTable = fk.refTable!;
+      final refColumn = fk.refColumn!;
+      final joinType = fk.isNullable ? 'LEFT' : 'INNER';
+      buffer.writeln(
+        "    sqlBuffer.write(' $joinType JOIN $refTable ON $tableName.${fk.columnName} = $refTable.$refColumn');",
+      );
+    }
+
+    // WHERE句
+    buffer.writeln('    final params = <String, dynamic>{};');
+    buffer.writeln('    if (config.where.isNotEmpty) {');
+    buffer.writeln("      sqlBuffer.write(' WHERE ');");
+    buffer.writeln('      final whereClauses = <String>[];');
+    buffer.writeln('      for (var i = 0; i < config.where.length; i++) {');
+    buffer.writeln('        final condition = config.where[i];');
+    buffer.writeln('        whereClauses.add(condition.toSql(i));');
+    buffer.writeln('        params.addAll(condition.toParams(i));');
+    buffer.writeln('      }');
+    buffer.writeln("      sqlBuffer.write(whereClauses.join(' AND '));");
+    buffer.writeln('    }');
+
+    // LIMIT / OFFSET
+    buffer.writeln('    if (config.limit != null) {');
+    buffer.writeln("      sqlBuffer.write(' LIMIT \${config.limit}');");
+    buffer.writeln('    }');
+    buffer.writeln('    if (config.offset != null) {');
+    buffer.writeln("      sqlBuffer.write(' OFFSET \${config.offset}');");
+    buffer.writeln('    }');
+
+    // クエリ実行と結果マッピング
+    buffer.writeln('    return db.query(sqlBuffer.toString(), params: params).then((result) {');
+    buffer.writeln('      return result.map((row) {');
+    buffer.writeln('        return (');
+
+    // メインテーブルの Row
+    buffer.writeln('          ${_toSingular(tableName).toLowerCase()}: (');
+    for (final field in allFields) {
+      final alias = '${tableName}_${field.columnName}';
+      _generateFieldMapping(buffer, field, alias, '            ');
+    }
+    buffer.writeln('          ),');
+
+    // 参照先テーブルの Row
+    for (final fk in includedFks) {
+      final relationName = _inferRelationName(fk.fieldName, fk.refTable!);
+      final refTable = fk.refTable!;
+      final refFields = allTables[refTable];
+
+      if (fk.isNullable) {
+        // Nullable FK: LEFT JOIN の結果が null の場合を考慮
+        final firstRefField = refFields?.first;
+        final checkAlias = '${refTable}_${firstRefField?.columnName ?? 'id'}';
+        buffer.writeln("          $relationName: row['$checkAlias'] == null ? null : (");
+      } else {
+        buffer.writeln('          $relationName: (');
+      }
+
+      if (refFields != null) {
+        for (final refField in refFields) {
+          final alias = '${refTable}_${refField.columnName}';
+          _generateFieldMapping(buffer, refField, alias, '            ');
+        }
+      }
+      buffer.writeln('          ),');
+    }
+
+    buffer.writeln('        );');
+    buffer.writeln('      }).toList();');
+    buffer.writeln('    });');
+    buffer.writeln('  }');
+    buffer.writeln();
+  }
+
+  void _generateFieldMapping(
+    StringBuffer buffer,
+    AnalyzedField field,
+    String alias,
+    String indent,
+  ) {
+    switch (field.columnMapper) {
+      case PgColumnMapper.integer:
+      case PgColumnMapper.serial:
+        if (field.isNullable) {
+          buffer.writeln(
+            "$indent${field.fieldName}: row['$alias'] != null ? int.parse(row['$alias'] as String) : null,",
+          );
+        } else {
+          buffer.writeln(
+            "$indent${field.fieldName}: int.parse(row['$alias'] as String),",
+          );
+        }
+      case PgColumnMapper.varchar:
+      case PgColumnMapper.text:
+      case PgColumnMapper.uuid:
+        buffer.writeln(
+          "$indent${field.fieldName}: row['$alias'] as String${field.isNullable ? '?' : ''},",
+        );
+      case PgColumnMapper.timestamp:
+        if (field.isNullable) {
+          buffer.writeln(
+            "$indent${field.fieldName}: row['$alias'] != null ? DateTime.parse(row['$alias'] as String) : null,",
+          );
+        } else {
+          buffer.writeln(
+            "$indent${field.fieldName}: DateTime.parse(row['$alias'] as String),",
+          );
+        }
+      case PgColumnMapper.jsonb:
+        buffer.writeln(
+          "$indent${field.fieldName}: row['$alias'] as Map<String, dynamic>${field.isNullable ? '?' : ''},",
+        );
+      case PgColumnMapper.unknown:
+        buffer.writeln("$indent${field.fieldName}: row['$alias'],");
+    }
+  }
+
+  void _generateWithMethod(
+    StringBuffer buffer,
+    String tableName,
+    List<AnalyzedField> allFkFields,
+    List<AnalyzedField> currentFks,
+    AnalyzedField newFk,
+  ) {
+    final relationName = _inferRelationName(newFk.fieldName, newFk.refTable!);
+
+    // 新しいFKリストを作成し、元のFK順序でソート
+    final newFks = [...currentFks, newFk];
+    newFks.sort((a, b) {
+      final indexA = allFkFields.indexOf(a);
+      final indexB = allFkFields.indexOf(b);
+      return indexA.compareTo(indexB);
+    });
+
+    final newSuffix = _generateSubsetSuffix(newFks);
+    final newBuilderName = '${capitalize(tableName)}${newSuffix}SelectBuilder';
+    final newConfigName = '${capitalize(tableName)}${newSuffix}SelectConfig';
+
+    buffer.writeln('  $newBuilderName with${capitalize(relationName)}() {');
+    buffer.writeln('    return $newBuilderName(');
+    buffer.writeln('      db,');
+    buffer.writeln('      $newConfigName(');
+    buffer.writeln('        where: config.where,');
+    buffer.writeln('        limit: config.limit,');
+    buffer.writeln('        offset: config.offset,');
+    buffer.writeln('      ),');
+    buffer.writeln('    );');
+    buffer.writeln('  }');
+    buffer.writeln();
+  }
+
+  void _generateRelationWhereMethod(
+    StringBuffer buffer,
+    String builderName,
+    String configName,
+    List<AnalyzedField> fields,
+  ) {
+    buffer.writeln('  $builderName where({');
+    for (final field in fields) {
+      buffer.writeln('    Condition? ${field.fieldName},');
+    }
+    buffer.writeln('  }) {');
+    buffer.writeln('    final newConditions = [...config.where];');
+    for (final field in fields) {
+      buffer.writeln('    if (${field.fieldName} != null) newConditions.add(${field.fieldName});');
+    }
+    buffer.writeln('    return $builderName(');
+    buffer.writeln('      db,');
+    buffer.writeln('      $configName(');
+    buffer.writeln('        where: newConditions,');
+    buffer.writeln('        limit: config.limit,');
+    buffer.writeln('        offset: config.offset,');
+    buffer.writeln('      ),');
+    buffer.writeln('    );');
+    buffer.writeln('  }');
+    buffer.writeln();
+  }
+
+  void _generateRelationLimitMethod(
+    StringBuffer buffer,
+    String builderName,
+    String configName,
+  ) {
+    buffer.writeln('  $builderName limit(int limit) {');
+    buffer.writeln('    return $builderName(');
+    buffer.writeln('      db,');
+    buffer.writeln('      $configName(');
+    buffer.writeln('        where: config.where,');
+    buffer.writeln('        limit: limit,');
+    buffer.writeln('        offset: config.offset,');
+    buffer.writeln('      ),');
+    buffer.writeln('    );');
+    buffer.writeln('  }');
+    buffer.writeln();
+  }
+
+  void _generateRelationOffsetMethod(
+    StringBuffer buffer,
+    String builderName,
+    String configName,
+  ) {
+    buffer.writeln('  $builderName offset(int offset) {');
+    buffer.writeln('    return $builderName(');
+    buffer.writeln('      db,');
+    buffer.writeln('      $configName(');
+    buffer.writeln('        where: config.where,');
+    buffer.writeln('        limit: config.limit,');
+    buffer.writeln('        offset: offset,');
+    buffer.writeln('      ),');
+    buffer.writeln('    );');
+    buffer.writeln('  }');
   }
 
   AnalyzedField analyzeField(String fieldName, Expression expression) {
@@ -621,26 +1084,18 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       } else if (methodName == 'nullable') {
         isNullable = true;
       } else if (methodName == 'references') {
-        print('Found references() method - foreign key detected.');
         for (final arg in method.argumentList.arguments) {
-          print('  Argument: $arg, type: ${arg.runtimeType}');
           if (arg is FunctionExpression) {
             final body = arg.body;
-            print('    Function body: $body, type: ${body.runtimeType}');
             if (body is ExpressionFunctionBody) {
               final refExpr = body.expression;
-              print(
-                '    Returned expression: $refExpr, type: ${refExpr.runtimeType}',
-              );
               if (refExpr is PropertyAccess) {
                 refTable = refExpr.target.toString();
                 refColumn = refExpr.propertyName.name;
-                print('      Target: $refTable, Property: $refColumn');
               }
               if (refExpr is PrefixedIdentifier) {
                 refTable = refExpr.prefix.name;
                 refColumn = refExpr.identifier.name;
-                print('      Foreign key references $refTable.$refColumn');
               }
             }
           }
@@ -661,6 +1116,51 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
       refTable: refTable,
       refColumn: refColumn,
     );
+  }
+
+  /// Phase 1で収集された全テーブル情報をJSONファイルから読み込む
+  Future<Map<String, List<AnalyzedField>>> _readAllTableInfo(
+    BuildStep buildStep,
+  ) async {
+    final allTables = <String, List<AnalyzedField>>{};
+
+    await for (final input
+        in buildStep.findAssets(Glob('**/*.aim_tables.json'))) {
+      try {
+        final content = await buildStep.readAsString(input);
+        final tables = jsonDecode(content) as Map<String, dynamic>;
+
+        for (final entry in tables.entries) {
+          final tableVarName = entry.key;
+          final tableData = entry.value as Map<String, dynamic>;
+          final fieldsJson = tableData['fields'] as List<dynamic>;
+
+          final fields = fieldsJson.map((fieldJson) {
+            final f = fieldJson as Map<String, dynamic>;
+            return (
+              fieldName: f['fieldName'] as String,
+              columnType: f['columnType'] as String,
+              columnName: f['columnName'] as String,
+              returnType: f['returnType'] as String,
+              columnMapper: PgColumnMapper.match(f['columnType'] as String) ??
+                  PgColumnMapper.unknown,
+              isPrimaryKey: f['isPrimaryKey'] as bool,
+              isUnique: f['isUnique'] as bool,
+              isNullable: f['isNullable'] as bool,
+              varcharLength: f['varcharLength'] as int?,
+              refTable: f['refTable'] as String?,
+              refColumn: f['refColumn'] as String?,
+            );
+          }).toList();
+
+          allTables[tableVarName] = fields;
+        }
+      } catch (_) {
+        // Skip files that can't be read or parsed
+      }
+    }
+
+    return allTables;
   }
 }
 
