@@ -36,8 +36,5 @@ void main() async {
     print(row);
   }
 
-  final hoge = await db.posts.select().withUser().withStatus();
-  final foo = await db.posts.select().withStatus().withUser();
-
   await db.close();
 }
