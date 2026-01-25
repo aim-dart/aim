@@ -1,6 +1,36 @@
 {
   "tables": [
     {
+      "name": "status",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "isPrimaryKey": true,
+          "isUnique": false,
+          "isNullable": false
+        },
+        {
+          "name": "description",
+          "type": "varchar",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false,
+          "varcharLength": 255
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false,
+          "defaultValue": "CURRENT_TIMESTAMP"
+        }
+      ],
+      "indexes": [],
+      "foreignKeys": []
+    },
+    {
       "name": "users",
       "columns": [
         {
@@ -70,7 +100,7 @@
       "columns": [
         {
           "name": "id",
-          "type": "integer",
+          "type": "uuid",
           "isPrimaryKey": true,
           "isUnique": false,
           "isNullable": false
@@ -104,6 +134,13 @@
           "isUnique": false,
           "isNullable": false,
           "defaultValue": "CURRENT_TIMESTAMP"
+        },
+        {
+          "name": "status_id",
+          "type": "uuid",
+          "isPrimaryKey": false,
+          "isUnique": false,
+          "isNullable": false
         }
       ],
       "indexes": [],
@@ -111,6 +148,11 @@
         {
           "column": "user_id",
           "referencesTable": "users",
+          "referencesColumn": "id"
+        },
+        {
+          "column": "status_id",
+          "referencesTable": "status",
           "referencesColumn": "id"
         }
       ]
