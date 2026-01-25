@@ -23,3 +23,8 @@ workspace:
   - examples/basic-sample
   - examples/orm-sample
   - tools/release
+  - packages/aim_orm_codegen/test/golden/fixtures/simple_table
+  - packages/aim_orm_codegen/test/golden/fixtures/nullable_columns
+  - packages/aim_orm_codegen/test/golden/fixtures/foreign_key
+  - packages/aim_orm_codegen/test/golden/fixtures/multiple_fk
+  - packages/aim_orm_codegen/test/golden/fixtures/nullable_fk
