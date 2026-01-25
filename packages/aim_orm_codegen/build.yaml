@@ -5,7 +5,7 @@ builders:
     builder_factories: [ "tableCollectorBuilder" ]
     build_extensions: { ".dart": [ ".aim_tables.json" ] }
     build_to: cache
-    auto_apply: dependents
+    auto_apply: all_packages
 
   # Phase 2: Generate ORM code using collected table info
   recordPgTable:
@@ -13,6 +13,22 @@ builders:
     builder_factories: [ "recordPgTableBuilder" ]
     build_extensions: { ".dart": [ ".aim_record_table.g.part" ] }
     build_to: cache
-    auto_apply: dependents
+    auto_apply: all_packages
     required_inputs: [ ".aim_tables.json" ]
     applies_builders: [ "source_gen|combining_builder" ]
+
+targets:
+  $default:
+    builders:
+      aim_orm_codegen|tableCollector:
+        generate_for:
+          - lib/**
+          - test/**
+      aim_orm_codegen|recordPgTable:
+        generate_for:
+          - lib/**
+          - test/**
+      source_gen|combining_builder:
+        generate_for:
+          - lib/**
+          - test/**
