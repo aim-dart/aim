@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('basicAuth middleware', () {
-    late Aim<BasicAuthEnv> app;
+    late Aim<BasicAuthVariables> app;
     late TestClient client;
     late BasicAuthOptions options;
 
@@ -19,8 +19,8 @@ void main() {
         },
       );
 
-      app = Aim<BasicAuthEnv>(
-        envFactory: () => BasicAuthEnv(options: options),
+      app = Aim<BasicAuthVariables>(
+        variablesFactory: () => BasicAuthVariables(options: options),
       );
       client = TestClient(app);
 
@@ -175,8 +175,8 @@ void main() {
       });
 
       test('Should support password containing colons', () async {
-        final appWithColon = Aim<BasicAuthEnv>(
-          envFactory: () => BasicAuthEnv(
+        final appWithColon = Aim<BasicAuthVariables>(
+          variablesFactory: () => BasicAuthVariables(
             options: BasicAuthOptions(
               realm: 'Test',
               verify: (username, password) async {
@@ -200,8 +200,8 @@ void main() {
       });
 
       test('Should support empty password', () async {
-        final appWithEmptyPass = Aim<BasicAuthEnv>(
-          envFactory: () => BasicAuthEnv(
+        final appWithEmptyPass = Aim<BasicAuthVariables>(
+          variablesFactory: () => BasicAuthVariables(
             options: BasicAuthOptions(
               realm: 'Test',
               verify: (username, password) async {
@@ -225,8 +225,8 @@ void main() {
       });
 
       test('Should support non-ASCII characters in credentials', () async {
-        final appWithUnicode = Aim<BasicAuthEnv>(
-          envFactory: () => BasicAuthEnv(
+        final appWithUnicode = Aim<BasicAuthVariables>(
+          variablesFactory: () => BasicAuthVariables(
             options: BasicAuthOptions(
               realm: 'Test',
               verify: (username, password) async {
@@ -252,12 +252,12 @@ void main() {
     });
 
     group('excludedPaths', () {
-      late Aim<BasicAuthEnv> appWithExclusions;
+      late Aim<BasicAuthVariables> appWithExclusions;
       late TestClient exclusionsClient;
 
       setUp(() {
-        appWithExclusions = Aim<BasicAuthEnv>(
-          envFactory: () => BasicAuthEnv(
+        appWithExclusions = Aim<BasicAuthVariables>(
+          variablesFactory: () => BasicAuthVariables(
             options: BasicAuthOptions(
               realm: 'Test Realm',
               verify: (username, password) async {
@@ -378,8 +378,8 @@ void main() {
 
     group('Realm configuration', () {
       test('Should use custom realm in WWW-Authenticate header', () async {
-        final customApp = Aim<BasicAuthEnv>(
-          envFactory: () => BasicAuthEnv(
+        final customApp = Aim<BasicAuthVariables>(
+          variablesFactory: () => BasicAuthVariables(
             options: BasicAuthOptions(
               realm: 'Custom Admin Area',
               verify: (username, password) async => false,
@@ -401,8 +401,8 @@ void main() {
       });
 
       test('Should use default realm when not specified', () async {
-        final defaultApp = Aim<BasicAuthEnv>(
-          envFactory: () => BasicAuthEnv(
+        final defaultApp = Aim<BasicAuthVariables>(
+          variablesFactory: () => BasicAuthVariables(
             options: BasicAuthOptions(
               verify: (username, password) async => false,
             ),

@@ -14,8 +14,8 @@ import 'package:aim_server_jwt/aim_server_jwt.dart';
 ///
 /// Example:
 /// ```dart
-/// final app = Aim<JwtEnv>(
-///   envFactory: () => JwtEnv.create(
+/// final app = Aim<JwtVariables>(
+///   variablesFactory: () => JwtVariables.create(
 ///     JwtOptions(
 ///       algorithm: HS256(
 ///         secretKey: SecretKey(secret: 'your-secret-key-at-least-32-chars'),
@@ -32,7 +32,7 @@ import 'package:aim_server_jwt/aim_server_jwt.dart';
 ///   return c.json({'user_id': payload['user_id']});
 /// });
 /// ```
-Middleware<E> jwt<E extends JwtEnv>() {
+Middleware<E> jwt<E extends JwtVariables>() {
   return (c, next) async {
     if (c.variables.jwtOptions.excludedPaths.contains(c.req.path)) {
       return next();

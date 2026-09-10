@@ -2,14 +2,14 @@ import 'package:aim_server_basic_auth/aim_server_basic_auth.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('BasicAuthEnv', () {
+  group('BasicAuthVariables', () {
     test('Should create with options', () {
       final options = BasicAuthOptions(
         realm: 'Test Realm',
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
+      final env = BasicAuthVariables(options: options);
 
       expect(env.options, equals(options));
       expect(env.username, isNull);
@@ -20,7 +20,7 @@ void main() {
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
+      final env = BasicAuthVariables(options: options);
       env.username = 'testuser';
 
       expect(env.username, equals('testuser'));
@@ -31,7 +31,7 @@ void main() {
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
+      final env = BasicAuthVariables(options: options);
       env.username = 'user1';
       expect(env.username, equals('user1'));
 
@@ -44,7 +44,7 @@ void main() {
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
+      final env = BasicAuthVariables(options: options);
       env.username = 'testuser';
       expect(env.username, isNotNull);
 
@@ -59,7 +59,7 @@ void main() {
         excludedPaths: ['/login', '/public'],
       );
 
-      final env = BasicAuthEnv(options: options);
+      final env = BasicAuthVariables(options: options);
 
       expect(env.options.realm, equals('Custom Realm'));
       expect(env.options.excludedPaths, hasLength(2));

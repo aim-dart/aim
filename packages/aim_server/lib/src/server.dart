@@ -13,7 +13,7 @@ extension HttpRequestAccess on Request {
 }
 
 /// Runs an [Aim] application on `dart:io`'s [HttpServer].
-extension AimServe<E extends Env> on Aim<E> {
+extension AimServe<E extends Variables> on Aim<E> {
   /// Starts the HTTP server and begins listening for requests.
   ///
   /// Returns an [AimHttpServer] instance that can be used to stop the server.
@@ -74,7 +74,7 @@ extension AimServe<E extends Env> on Aim<E> {
 }
 
 /// Default error handler for the VM adapter: logs and returns 500.
-Future<Response> _printAndRespond<E extends Env>(
+Future<Response> _printAndRespond<E extends Variables>(
   Object error,
   StackTrace stackTrace,
   Context<E> c,
