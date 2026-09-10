@@ -39,7 +39,15 @@ Future<web.Response> _fetch<E extends Env>(
     web.console.error('Failed to process request: $e\n$st'.toJS);
     response = Response.text('Bad Request', statusCode: 400);
   }
-  return toWebResponse(response);
+  try {
+    return toWebResponse(response);
+  } catch (e, st) {
+    web.console.error('Failed to send response: $e\n$st'.toJS);
+    return web.Response(
+      'Internal Server Error'.toJS,
+      web.ResponseInit(status: 500),
+    );
+  }
 }
 
 Future<Response> _logAndRespond<E extends Env>(

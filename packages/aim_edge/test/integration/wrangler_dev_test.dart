@@ -184,6 +184,29 @@ void main() {
     expect(res.headers.value('access-control-allow-origin'), '*');
   });
 
+  test('answers a CORS preflight with 204 and no body', () async {
+    final req = await client.openUrl(
+      'OPTIONS',
+      Uri.parse('http://localhost:$port/echo'),
+    );
+    req.headers.set('origin', 'https://example.com');
+    req.headers.set('access-control-request-method', 'POST');
+    final res = await req.close();
+    final body = await utf8.decodeStream(res);
+    expect(res.statusCode, 204);
+    expect(res.headers.value('access-control-allow-origin'), '*');
+    expect(body, isEmpty);
+  });
+
+  test('sends 304 without a body even after middleware set headers',
+      () async {
+    final res = await get('/not-modified');
+    final body = await utf8.decodeStream(res);
+    expect(res.statusCode, 304);
+    expect(res.headers.value('etag'), '"v1"');
+    expect(body, isEmpty);
+  });
+
   test('reads worker bindings through workerEnv', () async {
     final res = await get('/env');
     expect(await utf8.decodeStream(res), 'hello from workerd');

@@ -49,6 +49,11 @@ void main() {
 
   app.get('/boom', (c) async => throw StateError('boom'));
 
+  app.get('/not-modified', (c) async {
+    c.header('etag', '"v1"');
+    return c.text('', statusCode: 304);
+  });
+
   app.notFound((c) async => c.json({'error': 'not found'}, statusCode: 404));
 
   app.onError((error, c) async {
