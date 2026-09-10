@@ -6,7 +6,10 @@ import 'package:aim_core/aim_core.dart';
 extension HttpRequestAccess on Request {
   /// The [HttpRequest] this request was created from, or `null` when the
   /// request was not produced by [AimServe.serve] (for example in tests).
-  HttpRequest? get httpRequest => raw as HttpRequest?;
+  HttpRequest? get httpRequest {
+    final r = raw;
+    return r is HttpRequest ? r : null;
+  }
 }
 
 /// Runs an [Aim] application on `dart:io`'s [HttpServer].
@@ -55,10 +58,17 @@ extension AimServe<E extends Env> on Aim<E> {
   }
 
   Future<void> _handleHttpRequest(HttpRequest httpRequest) async {
-    final response = await handle(
-      _toRequest(httpRequest),
-      onUnhandledError: _printAndRespond,
-    );
+    Response response;
+    try {
+      response = await handle(
+        _toRequest(httpRequest),
+        onUnhandledError: _printAndRespond,
+      );
+    } catch (e, st) {
+      print('Failed to process request: $e');
+      print(st.toString());
+      response = Response.text('Bad Request', statusCode: 400);
+    }
     await _writeResponse(httpRequest.response, response);
   }
 }
@@ -76,8 +86,10 @@ Future<Response> _printAndRespond<E extends Env>(
 
 /// Converts a `dart:io` [HttpRequest] into an Aim [Request].
 ///
-/// Multi-value headers are joined with `,`. The URI is made absolute using
-/// the `host` header (falling back to `localhost`).
+/// Multi-value headers are joined with `,`. The path and query always come
+/// from the request line; only the scheme, host, and port come from the
+/// `Host` header, falling back to `localhost` when that header is missing
+/// or malformed.
 Request _toRequest(HttpRequest httpRequest) {
   final headers = <String, String>{};
   httpRequest.headers.forEach((key, values) {
@@ -87,8 +99,19 @@ Request _toRequest(HttpRequest httpRequest) {
   final scheme = httpRequest.connectionInfo?.localPort == 443
       ? 'https'
       : 'http';
-  final host = httpRequest.headers.value('host') ?? 'localhost';
-  final absoluteUri = Uri.parse('$scheme://$host${httpRequest.uri}');
+  Uri base;
+  try {
+    base = Uri.parse(
+      '$scheme://${httpRequest.headers.value('host') ?? 'localhost'}',
+    );
+    if (base.host.isEmpty) base = Uri.parse('$scheme://localhost');
+  } on FormatException {
+    base = Uri.parse('$scheme://localhost');
+  }
+  final absoluteUri = base.replace(
+    path: httpRequest.uri.path,
+    query: httpRequest.uri.hasQuery ? httpRequest.uri.query : null,
+  );
 
   return Request(
     httpRequest.method,

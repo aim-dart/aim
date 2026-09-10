@@ -67,5 +67,35 @@ void main() {
       expect(response.statusCode, equals(502));
       expect(await response.readAsString(), equals('registered'));
     });
+
+    test('calls onUnhandledError when the registered onError throws', () async {
+      final app = Aim();
+      app.get('/boom', (c) async => throw Exception('boom'));
+      app.onError((e, c) async => throw StateError('handler broke'));
+      Object? seenError;
+
+      final response = await app.handle(
+        Request('GET', Uri.parse('http://localhost/boom')),
+        onUnhandledError: (error, stackTrace, c) async {
+          seenError = error;
+          return c.text('fallback', statusCode: 503);
+        },
+      );
+
+      expect(response.statusCode, equals(503));
+      expect(await response.readAsString(), equals('fallback'));
+      expect(seenError, isA<StateError>());
+      expect((seenError as StateError).message, equals('handler broke'));
+
+      final responseWithoutFallback = await app.handle(
+        Request('GET', Uri.parse('http://localhost/boom')),
+      );
+
+      expect(responseWithoutFallback.statusCode, equals(500));
+      expect(
+        await responseWithoutFallback.readAsString(),
+        equals('Internal Server Error'),
+      );
+    });
   });
 }

@@ -16,6 +16,22 @@ Future<(T, List<String>)> capturePrint<T>(Future<T> Function() body) async {
   return (result, lines);
 }
 
+/// Decodes a chunked-transfer-encoded HTTP body into plain text.
+String _decodeChunkedBody(String body) {
+  final lines = body.split('\r\n');
+  final decoded = StringBuffer();
+  for (var i = 0; i < lines.length;) {
+    final sizeLine = lines[i].trim();
+    i++;
+    if (sizeLine.isEmpty) continue;
+    final size = int.parse(sizeLine, radix: 16);
+    if (size == 0) break;
+    decoded.write(lines[i]);
+    i++;
+  }
+  return decoded.toString();
+}
+
 void main() {
   late HttpClient client;
 
@@ -68,25 +84,34 @@ void main() {
     await socket.close();
     final headerEnd = raw.indexOf('\r\n\r\n');
     final body = raw.substring(headerEnd + 4);
-    final lines = body.split('\r\n');
-    final decoded = StringBuffer();
-    for (var i = 0; i < lines.length;) {
-      final sizeLine = lines[i].trim();
-      i++;
-      if (sizeLine.isEmpty) continue;
-      final size = int.parse(sizeLine, radix: 16);
-      if (size == 0) break;
-      decoded.write(lines[i]);
-      i++;
-    }
-    return decoded.toString();
+    return _decodeChunkedBody(body);
+  }
+
+  // Sends a raw, already-formed HTTP request over a plain socket and
+  // returns the response status line and decoded (chunked) body.
+  Future<({String statusLine, String body})> sendRaw(
+    int port,
+    String rawRequest,
+  ) async {
+    final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+    socket.write(rawRequest);
+    await socket.flush();
+    final raw = await utf8.decoder.bind(socket).join();
+    await socket.close();
+    final statusLine = raw.split('\r\n').first;
+    final headerEnd = raw.indexOf('\r\n\r\n');
+    final body = _decodeChunkedBody(raw.substring(headerEnd + 4));
+    return (statusLine: statusLine, body: body);
   }
 
   group('dart:io adapter', () {
     test('joins multi-value request headers with a comma', () async {
       final app = Aim();
       app.get('/h', (c) async => c.text(c.headers['x-multi'] ?? ''));
-      final server = await app.serve(host: InternetAddress.loopbackIPv4, port: 0);
+      final server = await app.serve(
+        host: InternetAddress.loopbackIPv4,
+        port: 0,
+      );
       addTearDown(() => server.close(force: true));
 
       final body = await sendRawMultiHeader(server.port, '/h', 'X-Multi', [
@@ -100,7 +125,10 @@ void main() {
     test('builds an absolute request URI from the host header', () async {
       final app = Aim();
       app.get('/u', (c) async => c.text(c.req.uri.toString()));
-      final server = await app.serve(host: InternetAddress.loopbackIPv4, port: 0);
+      final server = await app.serve(
+        host: InternetAddress.loopbackIPv4,
+        port: 0,
+      );
       addTearDown(() => server.close(force: true));
 
       final res = await send(server.port, 'GET', '/u?q=1');
@@ -117,7 +145,10 @@ void main() {
         final raw = c.req.httpRequest;
         return c.text(raw == null ? 'null' : raw.method);
       });
-      final server = await app.serve(host: InternetAddress.loopbackIPv4, port: 0);
+      final server = await app.serve(
+        host: InternetAddress.loopbackIPv4,
+        port: 0,
+      );
       addTearDown(() => server.close(force: true));
 
       final res = await send(server.port, 'GET', '/raw');
@@ -134,7 +165,10 @@ void main() {
           headers: {'set-cookie': 'a=1; Path=/\nb=2; Path=/'},
         ),
       );
-      final server = await app.serve(host: InternetAddress.loopbackIPv4, port: 0);
+      final server = await app.serve(
+        host: InternetAddress.loopbackIPv4,
+        port: 0,
+      );
       addTearDown(() => server.close(force: true));
 
       final res = await send(server.port, 'GET', '/c');
@@ -145,22 +179,71 @@ void main() {
       expect(res.headers['set-cookie'], contains('b=2; Path=/'));
     });
 
-    test('prints unhandled errors and answers 500 when onError is unset',
-        () async {
+    test(
+      'prints unhandled errors and answers 500 when onError is unset',
+      () async {
+        final app = Aim();
+        app.get('/boom', (c) async => throw Exception('boom'));
+
+        final (res, printed) = await capturePrint(() async {
+          final server = await app.serve(
+            host: InternetAddress.loopbackIPv4,
+            port: 0,
+          );
+          addTearDown(() => server.close(force: true));
+          return send(server.port, 'GET', '/boom');
+        });
+
+        expect(res.statusCode, equals(500));
+        expect(await utf8.decodeStream(res), contains('boom'));
+        expect(printed.first, equals('Error: Exception: boom'));
+        expect(printed.length, greaterThanOrEqualTo(2));
+      },
+    );
+
+    test('does not let the Host header rewrite the routed path', () async {
       final app = Aim();
-      app.get('/boom', (c) async => throw Exception('boom'));
+      app.get('/users', (c) async => c.text('public'));
+      app.get('/admin/users', (c) async => c.text('ADMIN'));
+      final server = await app.serve(
+        host: InternetAddress.loopbackIPv4,
+        port: 0,
+      );
+      addTearDown(() => server.close(force: true));
 
-      final (res, printed) = await capturePrint(() async {
-        final server =
-            await app.serve(host: InternetAddress.loopbackIPv4, port: 0);
-        addTearDown(() => server.close(force: true));
-        return send(server.port, 'GET', '/boom');
-      });
+      final result = await sendRaw(
+        server.port,
+        'GET /users HTTP/1.1\r\n'
+        'Host: localhost/admin\r\n'
+        'Connection: close\r\n'
+        '\r\n',
+      );
 
-      expect(res.statusCode, equals(500));
-      expect(await utf8.decodeStream(res), contains('boom'));
-      expect(printed.first, equals('Error: Exception: boom'));
-      expect(printed.length, greaterThanOrEqualTo(2));
+      expect(result.body, equals('public'));
+    });
+
+    test('answers a malformed Host header instead of crashing', () async {
+      final app = Aim();
+      app.get('/x', (c) async => c.text('ok'));
+      final server = await app.serve(
+        host: InternetAddress.loopbackIPv4,
+        port: 0,
+      );
+      addTearDown(() => server.close(force: true));
+
+      final result = await sendRaw(
+        server.port,
+        'GET /x HTTP/1.1\r\n'
+        'Host: [::1\r\n'
+        'Connection: close\r\n'
+        '\r\n',
+      );
+
+      expect(result.statusLine, contains('200'));
+
+      // The server (and process) must still be alive for a normal request.
+      final res = await send(server.port, 'GET', '/x');
+      expect(await utf8.decodeStream(res), equals('ok'));
     });
   });
 }

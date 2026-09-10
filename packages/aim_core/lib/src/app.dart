@@ -99,7 +99,9 @@ class Aim<E extends Env> {
   /// 3. Executes the middleware chain
   /// 4. Calls the appropriate handler (route handler or 404 handler)
   /// 5. Handles errors using the registered error handler, then
-  ///    [onUnhandledError], then a plain 500 response
+  ///    [onUnhandledError], then a plain 500 response. The fallback to
+  ///    [onUnhandledError] and the plain 500 also runs when the registered
+  ///    error handler itself throws.
   ///
   /// The core never prints. Adapters that want to log unhandled errors pass
   /// [onUnhandledError].
@@ -144,7 +146,18 @@ class Aim<E extends Env> {
       if (_errorHandler != null) {
         try {
           return await _errorHandler!(e, context);
-        } catch (_) {
+        } catch (handlerError, handlerStack) {
+          if (onUnhandledError != null) {
+            try {
+              return await onUnhandledError(
+                handlerError,
+                handlerStack,
+                context,
+              );
+            } catch (_) {
+              // fall through to the plain 500 below
+            }
+          }
           return Response.internalServerError(body: 'Internal Server Error');
         }
       }
