@@ -60,9 +60,9 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
     final fields = <({String name, Expression expression})>[];
     if (recordLiteral != null) {
       for (final field in recordLiteral.fields) {
-        if (field is NamedExpression) {
-          final fieldName = field.name.label.name;
-          final expression = field.expression;
+        if (field is RecordLiteralNamedField) {
+          final fieldName = field.name.lexeme;
+          final expression = field.fieldExpression;
           fields.add((name: fieldName, expression: expression));
         }
       }
@@ -1070,9 +1070,9 @@ class RecordPgTableGenerator extends GeneratorForAnnotation<PgTable> {
         // varcharの場合、名前付きパラメータ 'length' を取得
         if (methodName == 'varchar') {
           for (final arg in method.argumentList.arguments) {
-            if (arg is NamedExpression && arg.name.label.name == 'length') {
-              if (arg.expression is IntegerLiteral) {
-                varcharLength = (arg.expression as IntegerLiteral).value;
+            if (arg is NamedArgument && arg.name.lexeme == 'length') {
+              if (arg.argumentExpression is IntegerLiteral) {
+                varcharLength = (arg.argumentExpression as IntegerLiteral).value;
               }
             }
           }
