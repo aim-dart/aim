@@ -5,7 +5,7 @@ repository: https://github.com/aim-dart/aim
 resolution: workspace
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.13.0
 
 dependencies:
   aim_orm: ^0.1.1

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_sse/src/formatter.dart';
 import 'package:aim_server_sse/src/sse_event.dart';
 import 'package:aim_server_sse/src/sse_stream.dart';

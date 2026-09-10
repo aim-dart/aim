@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 /// Represents parsed multipart form data containing text fields and uploaded files.
 ///
@@ -138,20 +137,6 @@ class UploadedFile {
   /// print('File size: ${file.size} bytes');
   /// ```
   int get size => bytes.length;
-
-  /// Saves the uploaded file to the specified [path].
-  ///
-  /// Creates or overwrites the file at the given path with the uploaded content.
-  ///
-  /// Example:
-  /// ```dart
-  /// await file.saveTo('uploads/${file.filename}');
-  /// ```
-  ///
-  /// Throws [FileSystemException] if the file cannot be written.
-  Future<void> saveTo(String path) async {
-    await File(path).writeAsBytes(bytes);
-  }
 
   /// Decodes the file contents as a string using the specified [encoding].
   ///

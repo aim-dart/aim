@@ -1,6 +1,6 @@
-import 'package:aim_server/src/env.dart';
-import 'package:aim_server/src/request.dart';
-import 'package:aim_server/src/response.dart';
+import 'package:aim_core/src/env.dart';
+import 'package:aim_core/src/request.dart';
+import 'package:aim_core/src/response.dart';
 
 /// Context provides a simple API for handling HTTP requests and responses.
 ///

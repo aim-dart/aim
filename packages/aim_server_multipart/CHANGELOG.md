@@ -1,3 +1,9 @@
+## Unreleased
+
+- **Breaking:** `UploadedFile.saveTo()` moved to the `UploadedFileIO` extension in `package:aim_server_multipart/aim_server_multipart_io.dart`. Add that import to keep using it.
+- `aim_server_multipart.dart` now exports `MultipartFormData`, `UploadedFile`, `parseMultipart`, and the `MultipartRequest` extension (previously only a placeholder was exported).
+- Depends on `aim_core` instead of `aim_server`, so it works on every runtime adapter.
+
 ## 0.1.1
 
 See [Release Notes](https://github.com/aim-dart/aim/releases/tag/0.1.1)

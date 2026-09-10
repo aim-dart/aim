@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_basic_auth/src/basic_auth_env.dart';
 
 /// Creates HTTP Basic Authentication middleware.
@@ -64,6 +64,7 @@ Middleware<E> basicAuth<E extends BasicAuthEnv>() {
       return;
     }
 
+    late final String username;
     try {
       final encodedCredentials = authHeader.substring('Basic '.length);
       final decodedBytes = base64Decode(encodedCredentials);
@@ -76,7 +77,7 @@ Middleware<E> basicAuth<E extends BasicAuthEnv>() {
         return;
       }
 
-      final username = decodedCredentials.substring(0, colonIndex);
+      username = decodedCredentials.substring(0, colonIndex);
       final password = decodedCredentials.substring(colonIndex + 1);
 
       final isValid = await c.variables.options.verify(username, password);
@@ -87,11 +88,11 @@ Middleware<E> basicAuth<E extends BasicAuthEnv>() {
       }
 
       c.variables.username = username;
-      return next();
     } on FormatException {
       c.header('WWW-Authenticate', 'Basic realm="${c.variables.options.realm}"');
       c.json({'error': 'Unauthorized'}, statusCode: 401);
       return;
     }
+    return next();
   };
 }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:aim_server/src/body.dart';
-import 'package:aim_server/src/message.dart';
+import 'package:aim_core/src/body.dart';
+import 'package:aim_core/src/message.dart';
 
 /// The response returned by a [Handler].
 class Response with MessageMixin {

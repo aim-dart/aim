@@ -1,4 +1,4 @@
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 import 'package:aim_server_testing/aim_server_testing.dart';
 import 'package:test/test.dart';

@@ -1,4 +1,4 @@
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
 /// Creates JWT authentication middleware.
@@ -49,10 +49,10 @@ Middleware<E> jwt<E extends JwtEnv>() {
       final jwt = Jwt(options: c.variables.jwtOptions);
       final payload = jwt.verify(token);
       c.variables.jwtPayload = payload;
-      return next();
     } catch (e) {
       c.json({'error': 'Invalid token'}, statusCode: 401);
       return;
     }
+    return next();
   };
 }

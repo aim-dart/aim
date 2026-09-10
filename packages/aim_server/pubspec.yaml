@@ -1,13 +1,14 @@
 name: aim_server
-description: A lightweight, fast web framework for Dart with routing, middleware and hot reload during development.
+description: Run Aim web applications on the Dart VM with dart:io HttpServer. Re-exports aim_core.
 version: 0.1.1
 repository: https://github.com/aim-dart/aim
 resolution: workspace
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.13.0
 
 dependencies:
+  aim_core: ^0.1.1
 
 dev_dependencies:
   lints: ^6.0.0

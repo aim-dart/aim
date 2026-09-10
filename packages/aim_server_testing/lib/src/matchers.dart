@@ -1,4 +1,4 @@
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_testing/src/test_client.dart';
 import 'package:test/test.dart';
 
