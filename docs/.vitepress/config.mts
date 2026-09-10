@@ -170,7 +170,8 @@ export default defineConfig({
           items: [
             { text: 'Testing', link: '/server/guides/testing' },
             { text: 'Best Practices', link: '/server/guides/best-practices' },
-            { text: 'FAQ', link: '/server/guides/faq' }
+            { text: 'FAQ', link: '/server/guides/faq' },
+            { text: 'Migration Guide', link: '/server/guides/migration' }
           ]
         }
       ],
