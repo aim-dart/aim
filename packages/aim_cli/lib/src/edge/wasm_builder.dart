@@ -35,6 +35,18 @@ Future<void> buildWasm({
   required String outputDir,
 }) async {
   await Directory(outputDir).create(recursive: true);
+
+  // Sweep stale staging dirs left over from an interrupted build.
+  for (final entity in Directory(outputDir).listSync()) {
+    if (entity is Directory && p.basename(entity.path).startsWith('.staging-')) {
+      try {
+        await entity.delete(recursive: true);
+      } catch (_) {
+        // Ignore: best-effort cleanup.
+      }
+    }
+  }
+
   final staging = await Directory(outputDir).createTemp('.staging-');
   try {
     final wasmPath = p.join(staging.path, 'main.wasm');

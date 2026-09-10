@@ -59,7 +59,7 @@ class AimConfig {
         : AimTarget.parse(targetValue.toString());
 
     final entryValue = aim['entry'];
-    final entry = entryValue == null ? null : entryValue.toString();
+    final entry = entryValue?.toString();
 
     final env = <String, String>{};
     final envValue = aim['env'];

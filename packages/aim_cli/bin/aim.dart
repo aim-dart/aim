@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:args/command_runner.dart';
 import 'package:aim_cli/aim_cli.dart';
 
@@ -14,7 +16,11 @@ void main(List<String> arguments) async {
 
   try {
     await runner.run(arguments);
+  } on UsageException catch (e) {
+    print(e);
+    exit(64);
   } catch (e) {
     print('Error: $e');
+    exit(1);
   }
 }

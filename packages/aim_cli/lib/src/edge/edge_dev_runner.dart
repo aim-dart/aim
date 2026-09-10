@@ -36,11 +36,18 @@ class EdgeDevRunner {
     await buildWasm(entry: entry, outputDir: outputDir);
     print('');
 
-    _wrangler = await Process.start(
-      'npx',
-      ['--yes', 'wrangler@4', 'dev', if (port != null) ...['--port', '$port']],
-      mode: ProcessStartMode.inheritStdio,
-    );
+    try {
+      _wrangler = await Process.start(
+        'npx',
+        ['--yes', 'wrangler@4', 'dev', if (port != null) ...['--port', '$port']],
+        mode: ProcessStartMode.inheritStdio,
+      );
+    } on ProcessException catch (e) {
+      throw StateError(
+        'Could not start `npx wrangler@4 dev` (${e.message}). Node.js is '
+        'required for the edge target; install Node and retry.',
+      );
+    }
 
     if (watch) {
       _watcher = FileWatcher(watchPaths: watchPaths, onChanged: () { _rebuild(); });
