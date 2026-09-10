@@ -305,7 +305,7 @@ See the [Testing guide](/server/guides/testing) for details.
 
 2. Deploy the binary to your server
 
-3. Run with env vars:
+3. Run with environment variables:
    ```bash
    ENV=production JWT_SECRET=xxx ./build/server
    ```

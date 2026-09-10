@@ -369,7 +369,7 @@ All 401 responses include an error message:
 
 ## Best Practices
 
-1. **Use env vars for secrets**
+1. **Use environment variables for secrets**
    ```dart
    final secret = Platform.environment['JWT_SECRET']!;
    ```
