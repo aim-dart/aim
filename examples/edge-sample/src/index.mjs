@@ -12,7 +12,12 @@ async function init() {
 export default {
   async fetch(request, env, ctx) {
     ready ??= init();
-    await ready;
+    try {
+      await ready;
+    } catch (e) {
+      ready = undefined; // allow the next request to retry initialisation
+      throw e;
+    }
     return globalThis.__aimFetch(request, env, ctx);
   },
 };

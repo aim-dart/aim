@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
-import 'package:aim_core/aim_core.dart';
 import 'package:aim_edge/aim_edge.dart';
 import 'package:aim_server_cors/aim_server_cors.dart';
 

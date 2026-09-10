@@ -84,7 +84,7 @@ void main() {
     _port = await _freePort();
     _wrangler = await Process.start('npx', [
       '--yes',
-      'wrangler',
+      'wrangler@4',
       'dev',
       '--port',
       '$port',

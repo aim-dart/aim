@@ -32,6 +32,9 @@ jobs:
           path: ~/.npm
           key: ${{ runner.os }}-npm-wrangler
 
+      - name: Warm wrangler
+        run: npx --yes wrangler@4 --version
+
       - name: Cache dependencies
         uses: actions/cache@v5
         with:
