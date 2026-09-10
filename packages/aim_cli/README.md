@@ -11,7 +11,7 @@ Command-line tools for the Aim framework.
 ## Installation
 
 ```bash
-dart pub global activate aim_cli
+dart install aim_cli
 ```
 
 ## Documentation
