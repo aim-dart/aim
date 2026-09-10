@@ -7,6 +7,17 @@ import 'package:test/test.dart';
 /// `dart test`).
 const _exampleDir = '../../examples/edge-sample';
 
+int? _port;
+Process? _wrangler;
+HttpClient? _client;
+
+/// The ephemeral port `wrangler dev` is listening on. Only valid once
+/// `setUpAll` has assigned it; used by the `get()` helper and the tests.
+int get port => _port!;
+
+/// The shared HTTP client. Only valid once `setUpAll` has assigned it.
+HttpClient get client => _client!;
+
 Future<int> _freePort() async {
   final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
   final port = socket.port;
@@ -30,27 +41,33 @@ Future<void> _waitUntilReady(HttpClient client, int port) async {
   throw StateError('wrangler dev did not become ready on port $port');
 }
 
-/// `npx wrangler dev` forks a chain of processes (npm exec -> node
-/// wrangler-dist/cli.js -> workerd) that do not reliably exit when only the
-/// top-level process receives SIGTERM. Recursively SIGKILLs the whole
-/// subtree rooted at [pid] so no wrangler/workerd process outlives the test.
-Future<void> _killProcessTree(int pid) async {
-  final children = await Process.run('pgrep', ['-P', '$pid']);
-  final childPids = (children.stdout as String)
+/// Returns every descendant PID of [pid] (not including [pid] itself),
+/// ordered depth-first with children before their parents (i.e. deepest
+/// descendants first). Must be called while [pid] and its tree are still
+/// alive: `npx wrangler dev` forks a chain of processes (npm exec -> node
+/// wrangler-dist/cli.js -> workerd), and once the root process exits its
+/// children are reparented to init and no longer appear under
+/// `pgrep -P <root pid>` — enumerating after signalling the root would miss
+/// them and let wrangler/workerd survive undetected.
+Future<List<int>> _descendantPids(int pid) async {
+  final result = await Process.run('pgrep', ['-P', '$pid']);
+  final children = (result.stdout as String)
       .split('\n')
       .map((line) => line.trim())
       .where((line) => line.isNotEmpty)
       .map(int.parse);
-  for (final child in childPids) {
-    await _killProcessTree(child);
+  final descendants = <int>[];
+  for (final child in children) {
+    // Best-effort: a process forked between this pgrep call and its
+    // recursive descent (or after the deepest enumeration) can still slip
+    // through this snapshot.
+    descendants.addAll(await _descendantPids(child));
+    descendants.add(child);
   }
-  await Process.run('kill', ['-9', '$pid']);
+  return descendants;
 }
 
 void main() {
-  late int port;
-  late Process wrangler;
-  late HttpClient client;
   final wranglerOutput = StringBuffer();
 
   setUpAll(() async {
@@ -64,8 +81,8 @@ void main() {
       reason: 'build failed:\n${build.stdout}\n${build.stderr}',
     );
 
-    port = await _freePort();
-    wrangler = await Process.start('npx', [
+    _port = await _freePort();
+    _wrangler = await Process.start('npx', [
       '--yes',
       'wrangler',
       'dev',
@@ -74,10 +91,10 @@ void main() {
       '--log-level',
       'error',
     ], workingDirectory: _exampleDir);
-    wrangler.stdout.transform(utf8.decoder).listen(wranglerOutput.write);
-    wrangler.stderr.transform(utf8.decoder).listen(wranglerOutput.write);
+    _wrangler!.stdout.transform(utf8.decoder).listen(wranglerOutput.write);
+    _wrangler!.stderr.transform(utf8.decoder).listen(wranglerOutput.write);
 
-    client = HttpClient();
+    _client = HttpClient();
     try {
       await _waitUntilReady(client, port);
     } catch (e) {
@@ -86,21 +103,32 @@ void main() {
   });
 
   tearDownAll(() async {
-    client.close(force: true);
-    wrangler.kill(ProcessSignal.sigterm);
-    await wrangler.exitCode.timeout(
-      const Duration(seconds: 5),
-      onTimeout: () => -1,
-    );
-    // SIGTERM to the top-level `npx` process does not reliably propagate
-    // through the npm exec -> wrangler cli -> workerd process chain, so
-    // force-kill any survivors by process tree and, as a last resort, by
-    // whatever is still listening on the dev port.
-    await _killProcessTree(wrangler.pid);
-    await Process.run('sh', [
-      '-c',
-      'lsof -ti tcp:$port | xargs kill -9 2>/dev/null; true',
-    ]);
+    _client?.close(force: true);
+
+    final wrangler = _wrangler;
+    if (wrangler != null) {
+      // Enumerate and kill descendants BEFORE signalling the root: if the
+      // root exits first, its children are reparented and a subsequent
+      // `pgrep -P <root pid>` finds nothing, leaving wrangler/workerd alive.
+      final descendants = await _descendantPids(wrangler.pid);
+      for (final pid in descendants) {
+        await Process.run('kill', ['-9', '$pid']);
+      }
+      wrangler.kill(ProcessSignal.sigkill);
+      await wrangler.exitCode.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => -1,
+      );
+    }
+
+    // Last-resort fallback: whatever is still listening on the dev port.
+    final p = _port;
+    if (p != null) {
+      await Process.run('sh', [
+        '-c',
+        'lsof -ti tcp:$p | xargs kill -9 2>/dev/null; true',
+      ]);
+    }
   });
 
   Future<HttpClientResponse> get(
