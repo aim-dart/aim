@@ -108,7 +108,10 @@ Request _toRequest(HttpRequest httpRequest) {
   } on FormatException {
     base = Uri.parse('$scheme://localhost');
   }
-  final absoluteUri = base.replace(
+  final absoluteUri = Uri(
+    scheme: base.scheme,
+    host: base.host,
+    port: base.hasPort ? base.port : null,
     path: httpRequest.uri.path,
     query: httpRequest.uri.hasQuery ? httpRequest.uri.query : null,
   );

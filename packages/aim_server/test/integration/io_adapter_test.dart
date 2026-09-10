@@ -245,5 +245,25 @@ void main() {
       final res = await send(server.port, 'GET', '/x');
       expect(await utf8.decodeStream(res), equals('ok'));
     });
+
+    test('does not let the Host header inject a query string', () async {
+      final app = Aim();
+      app.get('/q', (c) async => c.text('${c.req.uri} q=${c.query.length}'));
+      final server = await app.serve(
+        host: InternetAddress.loopbackIPv4,
+        port: 0,
+      );
+      addTearDown(() => server.close(force: true));
+
+      final result = await sendRaw(
+        server.port,
+        'GET /q HTTP/1.1\r\n'
+        'Host: localhost?tracked=1\r\n'
+        'Connection: close\r\n'
+        '\r\n',
+      );
+
+      expect(result.body, equals('http://localhost/q q=0'));
+    });
   });
 }
