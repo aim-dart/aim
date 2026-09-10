@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:aim_server/src/body.dart';
-import 'package:aim_server/src/message.dart';
+import 'package:aim_core/src/body.dart';
+import 'package:aim_core/src/message.dart';
 
 /// An HTTP request to be processed by an Aim application.
 class Request with MessageMixin {
@@ -21,11 +20,12 @@ class Request with MessageMixin {
   @override
   final Body body;
 
-  /// The raw [HttpRequest] object, if available.
+  /// The raw platform-specific request object, if available.
   ///
-  /// This is used for operations that require access to the underlying
-  /// HTTP request, such as WebSocket upgrades.
-  final HttpRequest? raw;
+  /// On the Dart VM (`aim_server`) this is an `HttpRequest`. On other
+  /// runtimes it is whatever the adapter received. Adapters provide typed
+  /// accessors; core code must not depend on its concrete type.
+  final Object? raw;
 
   /// Creates a new [Request].
   ///

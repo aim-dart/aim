@@ -1,9 +1,6 @@
 import 'dart:io';
 
-import 'package:aim_server/src/context.dart';
-import 'package:aim_server/src/env.dart';
-import 'package:aim_server/src/request.dart';
-import 'package:aim_server/src/response.dart';
+import 'package:aim_core/aim_core.dart';
 
 /// A function that handles an HTTP request and returns a response.
 ///

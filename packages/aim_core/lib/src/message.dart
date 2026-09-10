@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:aim_server/src/body.dart';
+import 'package:aim_core/src/body.dart';
 
 /// Mixin that provides common functionality for HTTP messages.
 ///

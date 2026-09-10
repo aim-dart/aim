@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:aim_server/src/body.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:test/test.dart';
 
 void main() {
