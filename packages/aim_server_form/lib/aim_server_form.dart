@@ -8,8 +8,8 @@
 /// Import this package along with `aim_server`:
 ///
 /// ```dart
-/// import 'package:aim_server/aim_server.dart';
-/// import 'package:aim_form/aim_server_form.dart';
+/// import 'package:aim_core/aim_core.dart';
+/// import 'package:aim_server_form/aim_server_form.dart';
 /// ```
 ///
 /// Then use the `formData()` extension method on requests:

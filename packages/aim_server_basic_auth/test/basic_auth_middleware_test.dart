@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_basic_auth/aim_server_basic_auth.dart';
 import 'package:aim_server_testing/aim_server_testing.dart';
 import 'package:test/test.dart';

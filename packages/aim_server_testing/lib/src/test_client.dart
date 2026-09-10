@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_testing/src/request_builder.dart';
 
 /// A client for sending test requests to Aim applications.

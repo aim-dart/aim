@@ -1,4 +1,4 @@
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 
 /// Creates a logger middleware for HTTP request/response logging.
 ///

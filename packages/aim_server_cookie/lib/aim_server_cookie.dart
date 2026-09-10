@@ -5,7 +5,7 @@
 ///
 /// Example:
 /// ```dart
-/// import 'package:aim_server/aim_server.dart';
+/// import 'package:aim_core/aim_core.dart';
 /// import 'package:aim_server_cookie/aim_server_cookie.dart';
 ///
 /// void main() {

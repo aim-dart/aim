@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 
 /// A class for easily constructing test Requests using the builder pattern.
 ///

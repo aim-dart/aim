@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_basic_auth/src/basic_auth_env.dart';
 
 /// Creates HTTP Basic Authentication middleware.
