@@ -2,17 +2,17 @@ import 'package:aim_server_basic_auth/aim_server_basic_auth.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('BasicAuthEnv', () {
+  group('BasicAuthVariables', () {
     test('Should create with options', () {
       final options = BasicAuthOptions(
         realm: 'Test Realm',
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
+      final variables = BasicAuthVariables(options: options);
 
-      expect(env.options, equals(options));
-      expect(env.username, isNull);
+      expect(variables.options, equals(options));
+      expect(variables.username, isNull);
     });
 
     test('Should allow setting username', () {
@@ -20,10 +20,10 @@ void main() {
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
-      env.username = 'testuser';
+      final variables = BasicAuthVariables(options: options);
+      variables.username = 'testuser';
 
-      expect(env.username, equals('testuser'));
+      expect(variables.username, equals('testuser'));
     });
 
     test('Should allow updating username', () {
@@ -31,12 +31,12 @@ void main() {
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
-      env.username = 'user1';
-      expect(env.username, equals('user1'));
+      final variables = BasicAuthVariables(options: options);
+      variables.username = 'user1';
+      expect(variables.username, equals('user1'));
 
-      env.username = 'user2';
-      expect(env.username, equals('user2'));
+      variables.username = 'user2';
+      expect(variables.username, equals('user2'));
     });
 
     test('Should allow clearing username', () {
@@ -44,12 +44,12 @@ void main() {
         verify: (username, password) async => true,
       );
 
-      final env = BasicAuthEnv(options: options);
-      env.username = 'testuser';
-      expect(env.username, isNotNull);
+      final variables = BasicAuthVariables(options: options);
+      variables.username = 'testuser';
+      expect(variables.username, isNotNull);
 
-      env.username = null;
-      expect(env.username, isNull);
+      variables.username = null;
+      expect(variables.username, isNull);
     });
 
     test('Should store options reference', () {
@@ -59,10 +59,10 @@ void main() {
         excludedPaths: ['/login', '/public'],
       );
 
-      final env = BasicAuthEnv(options: options);
+      final variables = BasicAuthVariables(options: options);
 
-      expect(env.options.realm, equals('Custom Realm'));
-      expect(env.options.excludedPaths, hasLength(2));
+      expect(variables.options.realm, equals('Custom Realm'));
+      expect(variables.options.excludedPaths, hasLength(2));
     });
   });
 }

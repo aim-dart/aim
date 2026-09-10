@@ -1,6 +1,6 @@
 ---
 title: Quick Start - Aim Framework
-description: Build your first Dart server application with Aim. Learn routing, middleware, and environment variables in minutes.
+description: Build your first Dart server application with Aim. Learn routing, middleware, and context variables in minutes.
 ---
 
 # Quick Start
@@ -132,23 +132,23 @@ Now all requests will be logged to the console:
 --> GET / 200 2ms
 ```
 
-## Environment Variables
+## Variables
 
-Use custom environment classes for type-safe variable storage:
+Use custom `Variables` classes for type-safe variable storage:
 
 ```dart
 import 'dart:io';
 import 'package:aim_server/aim_server.dart';
 
-// Define your environment
-class MyEnv extends Env {
+// Define your context variables
+class MyVariables extends Variables {
   String? requestId;
   String? userId;
 }
 
 void main() async {
-  final app = Aim<MyEnv>(
-    envFactory: () => MyEnv(),
+  final app = Aim<MyVariables>(
+    variablesFactory: () => MyVariables(),
   );
 
   // Middleware to set request ID
@@ -208,13 +208,13 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_logger/aim_server_logger.dart';
 import 'package:aim_server_cors/aim_server_cors.dart';
 
-class AppEnv extends Env {
+class AppVariables extends Variables {
   String? requestId;
 }
 
 void main() async {
-  final app = Aim<AppEnv>(
-    envFactory: () => AppEnv(),
+  final app = Aim<AppVariables>(
+    variablesFactory: () => AppVariables(),
   );
 
   // Middleware

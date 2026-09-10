@@ -1,5 +1,5 @@
 import 'package:aim_core/src/app.dart';
-import 'package:aim_core/src/env.dart';
+import 'package:aim_core/src/variables.dart';
 
 /// Internal class representing a route with path pattern matching.
 ///
@@ -8,7 +8,7 @@ import 'package:aim_core/src/env.dart';
 /// - Regex constraints: `/users/:id(\\d+)`
 /// - Wildcard: `/posts/*`
 /// - Wildcard parameter: `/static/*filepath`
-class Route<E extends Env> {
+class Route<E extends Variables> {
   /// The path pattern for this route.
   final String path;
 

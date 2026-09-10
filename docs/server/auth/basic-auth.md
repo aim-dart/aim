@@ -24,8 +24,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_basic_auth/aim_server_basic_auth.dart';
 
 void main() async {
-  final app = Aim<BasicAuthEnv>(
-    envFactory: () => BasicAuthEnv(
+  final app = Aim<BasicAuthVariables>(
+    variablesFactory: () => BasicAuthVariables(
       options: BasicAuthOptions(
         realm: 'Admin Area',
         verify: (username, password) async {
@@ -112,8 +112,8 @@ final options = BasicAuthOptions(
 Skip authentication for specific routes:
 
 ```dart
-final app = Aim<BasicAuthEnv>(
-  envFactory: () => BasicAuthEnv(
+final app = Aim<BasicAuthVariables>(
+  variablesFactory: () => BasicAuthVariables(
     options: BasicAuthOptions(
       realm: 'Admin Area',
       verify: verifyCredentials,
@@ -187,8 +187,8 @@ void main() async {
     excludedPaths: ['/login', '/health', '/public'],
   );
 
-  final app = Aim<BasicAuthEnv>(
-    envFactory: () => BasicAuthEnv(options: options),
+  final app = Aim<BasicAuthVariables>(
+    variablesFactory: () => BasicAuthVariables(options: options),
   );
 
   app.use(basicAuth());

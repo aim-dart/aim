@@ -1,3 +1,7 @@
+## Unreleased
+
+- **Breaking:** `JwtEnv` is renamed to `JwtVariables` (deprecated typedef kept for one release). `jwt()` now requires `E extends JwtVariables`.
+
 ## 0.1.1
 
 See [Release Notes](https://github.com/aim-dart/aim/releases/tag/0.1.1)

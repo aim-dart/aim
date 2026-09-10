@@ -1,15 +1,15 @@
 ---
 title: Context API - Aim Framework
-description: Deep dive into Aim's Context API. Handle requests, responses, headers, and type-safe environment variables in Dart server applications.
+description: Deep dive into Aim's Context API. Handle requests, responses, headers, and type-safe context variables in Dart server applications.
 head:
   - - meta
     - name: keywords
-      content: Dart Context API, request handling, response methods, environment variables, type-safe, Aim context
+      content: Dart Context API, request handling, response methods, context variables, type-safe, Aim context
 ---
 
 # Context
 
-The `Context` object is the heart of Aim. It provides access to the request, response, and environment variables for each HTTP request.
+The `Context` object is the heart of Aim. It provides access to the request, response, and per-request context variables for each HTTP request.
 
 ## Overview
 
@@ -109,8 +109,8 @@ Use the `aim_server_form` middleware:
 ```dart
 import 'package:aim_server_form/aim_server_form.dart';
 
-final app = Aim<FormEnv>(
-  envFactory: () => FormEnv(),
+final app = Aim<FormVariables>(
+  variablesFactory: () => FormVariables(),
 );
 
 app.use(form());
@@ -130,8 +130,8 @@ Use the `aim_server_multipart` middleware:
 ```dart
 import 'package:aim_server_multipart/aim_server_multipart.dart';
 
-final app = Aim<MultipartEnv>(
-  envFactory: () => MultipartEnv(),
+final app = Aim<MultipartVariables>(
+  variablesFactory: () => MultipartVariables(),
 );
 
 app.use(multipart());
@@ -265,8 +265,8 @@ For Server-Sent Events (SSE), use the `aim_server_sse` package:
 ```dart
 import 'package:aim_server_sse/aim_server_sse.dart';
 
-final app = Aim<SseEnv>(
-  envFactory: () => SseEnv(),
+final app = Aim<SseVariables>(
+  variablesFactory: () => SseVariables(),
 );
 
 app.use(sse());
@@ -295,19 +295,19 @@ app.get('/api', (c) async {
 });
 ```
 
-## Environment Variables
+## Variables
 
-Use custom environment classes for type-safe variables:
+Use custom `Variables` classes for type-safe context variables:
 
 ```dart
-class AppEnv extends Env {
+class AppVariables extends Variables {
   String? userId;
   String? requestId;
   DateTime? requestTime;
 }
 
-final app = Aim<AppEnv>(
-  envFactory: () => AppEnv(),
+final app = Aim<AppVariables>(
+  variablesFactory: () => AppVariables(),
 );
 
 // Set in middleware
@@ -326,21 +326,31 @@ app.get('/info', (c) async {
 });
 ```
 
-### Middleware-Specific Environments
+::: tip Variables vs. runtime env
+`Variables` are per-request values your middleware and handlers share. Runtime bindings such as Cloudflare Workers' `env` are a different concept and are exposed by the runtime adapter (for example `c.env` in `aim_edge`).
+:::
 
-Many middleware packages extend the base `Env`:
+### Middleware-Specific Variables
+
+Many middleware packages extend the base `Variables`:
 
 ```dart
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
-final app = Aim<JwtEnv>(
-  envFactory: () => JwtEnv(secret: 'secret'),
+final app = Aim<JwtVariables>(
+  variablesFactory: () => JwtVariables.create(
+    JwtOptions(
+      algorithm: HS256(
+        secretKey: SecretKey(secret: 'your-secret-key-at-least-32-chars'),
+      ),
+    ),
+  ),
 );
 
 app.use(jwt());
 
 app.get('/protected', (c) async {
-  final payload = c.variables.payload;  // From JWT middleware
+  final payload = c.variables.jwtPayload;  // From JWT middleware
   return c.json({'userId': payload['sub']});
 });
 ```
@@ -380,12 +390,12 @@ app.get('/', (c) async {
 
 ```dart
 // ✅ Good - Type-safe
-class MyEnv extends Env {
+class MyVariables extends Variables {
   String? userId;
 }
 
-final app = Aim<MyEnv>(
-  envFactory: () => MyEnv(),
+final app = Aim<MyVariables>(
+  variablesFactory: () => MyVariables(),
 );
 
 // ❌ Bad - No type safety
@@ -436,15 +446,15 @@ app.get('/api', (c) async {
 ```dart
 import 'package:aim_server/aim_server.dart';
 
-class AppEnv extends Env {
+class AppVariables extends Variables {
   String? userId;
   String? requestId;
   DateTime? startTime;
 }
 
 void main() async {
-  final app = Aim<AppEnv>(
-    envFactory: () => AppEnv(),
+  final app = Aim<AppVariables>(
+    variablesFactory: () => AppVariables(),
   );
 
   // Middleware to track request

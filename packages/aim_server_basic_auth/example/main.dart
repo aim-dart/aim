@@ -10,7 +10,7 @@ void main() {
       return username == 'admin' && password == 'password';
     },
   );
-  final app = Aim<BasicAuthEnv>(envFactory: () => BasicAuthEnv(options: options));
+  final app = Aim<BasicAuthVariables>(variablesFactory: () => BasicAuthVariables(options: options));
 
   app.use(basicAuth());
 

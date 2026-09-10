@@ -19,7 +19,7 @@ import 'package:aim_server_testing/src/request_builder.dart';
 /// expect(response.statusCode, equals(200));
 /// expect(response.bodyAsJson()['id'], equals('123'));
 /// ```
-class TestClient<E extends Env> {
+class TestClient<E extends Variables> {
   final Aim<E> _app;
 
   /// Creates a new TestClient instance.

@@ -7,7 +7,7 @@ import 'package:aim_server_sse/src/sse_event.dart';
 import 'package:aim_server_sse/src/sse_stream.dart';
 
 /// Extension on [Context] to add SSE support.
-extension SseContext<E extends Env> on Context<E> {
+extension SseContext<E extends Variables> on Context<E> {
   /// Returns a Server-Sent Events (SSE) response.
   ///
   /// The [callback] function receives an [SseStream] that can be used to send

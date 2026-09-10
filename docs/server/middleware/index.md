@@ -109,24 +109,28 @@ app.get('/protected', handler);
 - Authentication should come before protected routes
 - Error handlers should wrap other middleware
 
-## Environment-Based Middleware
+## Middleware That Requires Variables
 
-Some middleware requires custom environment classes:
+Some middleware requires custom `Variables` classes:
 
 ```dart
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
-final app = Aim<JwtEnv>(
-  envFactory: () => JwtEnv(
-    secret: 'your-secret-key',
+final app = Aim<JwtVariables>(
+  variablesFactory: () => JwtVariables.create(
+    JwtOptions(
+      algorithm: HS256(
+        secretKey: SecretKey(secret: 'your-secret-key-at-least-32-chars'),
+      ),
+    ),
   ),
 );
 
 app.use(jwt());
 
 app.get('/protected', (c) async {
-  // Access JWT payload from environment
-  final userId = c.variables.payload['sub'];
+  // Access JWT payload from context variables
+  final userId = c.variables.jwtPayload['sub'];
   return c.json({'userId': userId});
 });
 ```
@@ -138,8 +142,14 @@ app.get('/protected', (c) async {
 ```dart
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
-final app = Aim<JwtEnv>(
-  envFactory: () => JwtEnv(secret: 'secret'),
+final app = Aim<JwtVariables>(
+  variablesFactory: () => JwtVariables.create(
+    JwtOptions(
+      algorithm: HS256(
+        secretKey: SecretKey(secret: 'your-secret-key-at-least-32-chars'),
+      ),
+    ),
+  ),
 );
 
 // Global middleware
@@ -165,12 +175,20 @@ import 'package:aim_server_jwt/aim_server_jwt.dart';
 import 'package:aim_server_form/aim_server_form.dart';
 
 // Combine multiple middleware environments
-class ApiEnv extends JwtEnv with FormMixin {
-  ApiEnv() : super(secret: Platform.environment['JWT_SECRET']!);
+class ApiVariables extends JwtVariables with FormMixin {
+  ApiVariables()
+      : super(
+          jwtOptions: JwtOptions(
+            algorithm: HS256(
+              secretKey: SecretKey(secret: Platform.environment['JWT_SECRET']!),
+            ),
+          ),
+          jwtPayload: {},
+        );
 }
 
-final app = Aim<ApiEnv>(
-  envFactory: () => ApiEnv(),
+final app = Aim<ApiVariables>(
+  variablesFactory: () => ApiVariables(),
 );
 
 app.use(logger());
@@ -186,8 +204,8 @@ app.post('/api/data', apiHandler);
 ```dart
 import 'package:aim_server_multipart/aim_server_multipart.dart';
 
-final app = Aim<MultipartEnv>(
-  envFactory: () => MultipartEnv(),
+final app = Aim<MultipartVariables>(
+  variablesFactory: () => MultipartVariables(),
 );
 
 app.use(logger());
@@ -212,7 +230,7 @@ Future<void> requestTiming(Context c, Next next) async {
 }
 
 // Middleware factory
-Middleware<E> customHeader<E extends Env>(String name, String value) {
+Middleware<E> customHeader<E extends Variables>(String name, String value) {
   return (c, next) async {
     c.header(name, value);
     return next();

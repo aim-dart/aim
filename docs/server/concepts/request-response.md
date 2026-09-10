@@ -98,8 +98,8 @@ Use the `aim_server_form` middleware:
 ```dart
 import 'package:aim_server_form/aim_server_form.dart';
 
-final app = Aim<FormEnv>(
-  envFactory: () => FormEnv(),
+final app = Aim<FormVariables>(
+  variablesFactory: () => FormVariables(),
 );
 
 app.use(form());

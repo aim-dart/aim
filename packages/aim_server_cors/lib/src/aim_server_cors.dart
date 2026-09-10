@@ -58,7 +58,7 @@ class CorsOptions {
 ///   origin: (String origin) => origin.endsWith('.example.com'),
 /// )));
 /// ```
-Middleware<E> cors<E extends Env>([CorsOptions options = const CorsOptions()]) {
+Middleware<E> cors<E extends Variables>([CorsOptions options = const CorsOptions()]) {
   return (Context<E> c, Next next) async {
     // Get request origin
     final requestOrigin = c.headers['origin'];

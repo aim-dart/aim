@@ -4,8 +4,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
 void main() {
-  final app = Aim<JwtEnv>(
-    envFactory: () => JwtEnv.create(
+  final app = Aim<JwtVariables>(
+    variablesFactory: () => JwtVariables.create(
       JwtOptions(
         algorithm: HS256(
           secretKey: SecretKey(secret: 'super-secret-key-change-in-production'),

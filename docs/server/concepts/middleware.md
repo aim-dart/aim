@@ -16,7 +16,7 @@ Middleware functions are the building blocks of request processing in Aim. They 
 A middleware is a function that takes a `Context` and a `Next` function, and returns a `Future<void>`:
 
 ```dart
-typedef Middleware<E extends Env> = Future<void> Function(
+typedef Middleware<E extends Variables> = Future<void> Function(
   Context<E> c,
   Next next,
 );
@@ -124,14 +124,14 @@ app.use((c, next) async {
 Middleware can modify the context before passing it forward:
 
 ```dart
-class MyEnv extends Env {
+class MyVariables extends Variables {
   String? requestId;
   String? userId;
 }
 
 void main() async {
-  final app = Aim<MyEnv>(
-    envFactory: () => MyEnv(),
+  final app = Aim<MyVariables>(
+    variablesFactory: () => MyVariables(),
   );
 
   // Add request ID
@@ -208,11 +208,11 @@ void main() async {
 Protect routes with authentication:
 
 ```dart
-class AuthEnv extends Env {
+class AuthVariables extends Variables {
   String? userId;
 }
 
-Future<void> requireAuth(Context<AuthEnv> c, Next next) async {
+Future<void> requireAuth(Context<AuthVariables> c, Next next) async {
   final token = c.req.headers['authorization'];
 
   if (token == null) {
@@ -231,8 +231,8 @@ Future<void> requireAuth(Context<AuthEnv> c, Next next) async {
 }
 
 void main() async {
-  final app = Aim<AuthEnv>(
-    envFactory: () => AuthEnv(),
+  final app = Aim<AuthVariables>(
+    variablesFactory: () => AuthVariables(),
   );
 
   // Public routes
@@ -284,7 +284,7 @@ Middleware factories allow configuration:
 
 ```dart
 // Middleware factory
-Middleware<E> timing<E extends Env>() {
+Middleware<E> timing<E extends Variables>() {
   return (c, next) async {
     final stopwatch = Stopwatch()..start();
     await next();
@@ -301,7 +301,7 @@ app.use(timing());
 With parameters:
 
 ```dart
-Middleware<E> ratelimit<E extends Env>({
+Middleware<E> ratelimit<E extends Variables>({
   required int maxRequests,
   required Duration window,
 }) {
@@ -340,8 +340,8 @@ import 'package:aim_server_logger/aim_server_logger.dart';
 import 'package:aim_server_cors/aim_server_cors.dart';
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
-final app = Aim<JwtEnv>(
-  envFactory: () => JwtEnv(
+final app = Aim<JwtVariables>(
+  variablesFactory: () => JwtVariables(
     secret: 'your-secret-key',
   ),
 );
@@ -366,7 +366,7 @@ See the [Middleware Packages](/server/middleware/) section for all available mid
 1. **Order Matters**: Security/auth middleware should run early
 2. **Always Await**: Use `await next()` to ensure proper execution order
 3. **Early Return**: Return without calling `next()` to stop the chain
-4. **Type Safety**: Use custom `Env` classes for typed variables
+4. **Type Safety**: Use custom `Variables` classes for typed context variables
 5. **Error Handling**: Wrap `next()` in try-catch for error handling
 6. **Single Responsibility**: Each middleware should do one thing well
 

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('JWT Middleware', () {
-    late Aim<JwtEnv> app;
+    late Aim<JwtVariables> app;
     late TestClient client;
     late JwtOptions jwtOptions;
     late String validToken;
@@ -18,8 +18,8 @@ void main() {
         excludedPaths: ['/login', '/public'],
       );
 
-      app = Aim<JwtEnv>(
-        envFactory: () => JwtEnv.create(jwtOptions),
+      app = Aim<JwtVariables>(
+        variablesFactory: () => JwtVariables.create(jwtOptions),
       );
       client = TestClient(app);
 
@@ -318,8 +318,8 @@ void main() {
         issuer: 'test-issuer',
       );
 
-      final issuerApp = Aim<JwtEnv>(
-        envFactory: () => JwtEnv.create(issuerOptions),
+      final issuerApp = Aim<JwtVariables>(
+        variablesFactory: () => JwtVariables.create(issuerOptions),
       );
       final issuerClient = TestClient(issuerApp);
 
@@ -345,8 +345,8 @@ void main() {
         audience: 'api.example.com',
       );
 
-      final audienceApp = Aim<JwtEnv>(
-        envFactory: () => JwtEnv.create(audienceOptions),
+      final audienceApp = Aim<JwtVariables>(
+        variablesFactory: () => JwtVariables.create(audienceOptions),
       );
       final audienceClient = TestClient(audienceApp);
 

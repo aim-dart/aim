@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:aim_core/aim_core.dart';
-import 'package:aim_server_basic_auth/src/basic_auth_env.dart';
+import 'package:aim_server_basic_auth/src/basic_auth_variables.dart';
 
 /// Creates HTTP Basic Authentication middleware.
 ///
@@ -23,8 +23,8 @@ import 'package:aim_server_basic_auth/src/basic_auth_env.dart';
 ///
 /// Example:
 /// ```dart
-/// final app = Aim<BasicAuthEnv>(
-///   envFactory: () => BasicAuthEnv(
+/// final app = Aim<BasicAuthVariables>(
+///   variablesFactory: () => BasicAuthVariables(
 ///     options: BasicAuthOptions(
 ///       realm: 'Admin Area',
 ///       verify: (username, password) async {
@@ -51,7 +51,7 @@ import 'package:aim_server_basic_auth/src/basic_auth_env.dart';
 /// - Use password hashing (bcrypt, argon2) in the verify function
 /// - Consider rate limiting to prevent brute force attacks
 /// - Never log or store plaintext passwords
-Middleware<E> basicAuth<E extends BasicAuthEnv>() {
+Middleware<E> basicAuth<E extends BasicAuthVariables>() {
   return (c, next) async {
     if (c.variables.options.excludedPaths.contains(c.req.path)) {
       return next();

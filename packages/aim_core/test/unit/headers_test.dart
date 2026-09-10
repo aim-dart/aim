@@ -116,7 +116,7 @@ void main() {
     test('Should handle security headers', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.html(
         '<h1>Hello</h1>',
@@ -149,7 +149,7 @@ void main() {
     test('Should set Content-Type for HTML responses via Context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
       final response = context.html('<h1>Hello</h1>');
       expect(
         response.headers['content-type'],
@@ -216,7 +216,7 @@ void main() {
     test('Should allow adding headers via Context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('X-Custom-Header', 'value');
       final response = context.json({'message': 'Hello'});
@@ -227,7 +227,7 @@ void main() {
     test('Should merge multiple headers added via Context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('X-Header-1', 'value1');
       context.header('X-Header-2', 'value2');
@@ -240,7 +240,7 @@ void main() {
     test('Should preserve both default and custom headers', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('X-Custom', 'custom-value');
       final response = context.json({});
@@ -252,7 +252,7 @@ void main() {
     test('Should allow overriding headers via Context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('content-type', 'application/custom');
       final response = context.json({});

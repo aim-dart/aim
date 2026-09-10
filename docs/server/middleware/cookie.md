@@ -24,8 +24,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_cookie/aim_server_cookie.dart';
 
 void main() async {
-  final app = Aim<CookieEnv>(
-    envFactory: () => CookieEnv(),
+  final app = Aim<CookieVariables>(
+    variablesFactory: () => CookieVariables(),
   );
 
   app.use(cookie());
@@ -193,8 +193,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_cookie/aim_server_cookie.dart';
 
 void main() async {
-  final app = Aim<CookieEnv>(
-    envFactory: () => CookieEnv(),
+  final app = Aim<CookieVariables>(
+    variablesFactory: () => CookieVariables(),
   );
 
   app.use(cookie());

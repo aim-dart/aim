@@ -24,8 +24,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_sse/aim_server_sse.dart';
 
 void main() async {
-  final app = Aim<SseEnv>(
-    envFactory: () => SseEnv(),
+  final app = Aim<SseVariables>(
+    variablesFactory: () => SseVariables(),
   );
 
   app.use(sse());
@@ -285,12 +285,12 @@ app.get('/feed', (c) async {
 ### Chat Notifications
 
 ```dart
-class ChatEnv extends SseEnv {
+class ChatVariables extends SseVariables {
   String? userId;
 }
 
-final app = Aim<ChatEnv>(
-  envFactory: () => ChatEnv(),
+final app = Aim<ChatVariables>(
+  variablesFactory: () => ChatVariables(),
 );
 
 app.use(sse());

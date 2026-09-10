@@ -1,15 +1,15 @@
 import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_basic_auth/src/basic_auth_options.dart';
 
-/// Environment variables for HTTP Basic Authentication.
+/// Context variables for HTTP Basic Authentication.
 ///
-/// This class extends [Env] to provide type-safe access to Basic Auth
+/// This class extends [Variables] to provide type-safe access to Basic Auth
 /// configuration and the authenticated username.
 ///
 /// Example:
 /// ```dart
-/// final app = Aim<BasicAuthEnv>(
-///   envFactory: () => BasicAuthEnv(
+/// final app = Aim<BasicAuthVariables>(
+///   variablesFactory: () => BasicAuthVariables(
 ///     options: BasicAuthOptions(
 ///       realm: 'Admin Area',
 ///       verify: (username, password) async {
@@ -26,8 +26,8 @@ import 'package:aim_server_basic_auth/src/basic_auth_options.dart';
 ///   return c.json({'username': username});
 /// });
 /// ```
-class BasicAuthEnv extends Env {
-  BasicAuthEnv({required this.options});
+class BasicAuthVariables extends Variables {
+  BasicAuthVariables({required this.options});
 
   /// The Basic Authentication configuration options.
   ///
@@ -50,3 +50,7 @@ class BasicAuthEnv extends Env {
   /// ```
   String? username;
 }
+
+/// Former name of [BasicAuthVariables]. Will be removed in a future release.
+@Deprecated('Use BasicAuthVariables')
+typedef BasicAuthEnv = BasicAuthVariables;

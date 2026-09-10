@@ -6,7 +6,7 @@ void main() {
     test('Should provide access to method', () {
       final uri = Uri.parse('https://example.com/test');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.method, equals('GET'));
     });
@@ -14,7 +14,7 @@ void main() {
     test('Should provide access to path', () {
       final uri = Uri.parse('http://example.com/users/123');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.path, equals('/users/123'));
     });
@@ -26,7 +26,7 @@ void main() {
         uri,
         headers: {'content-type': 'application/json'},
       );
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.headers['content-type'], equals('application/json'));
     });
@@ -34,7 +34,7 @@ void main() {
     test('Should provide access to query parameters', () {
       final uri = Uri.parse('http://example.com/?name=John&age=30');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.query['name'], equals('John'));
       expect(context.query['age'], equals('30'));
@@ -43,7 +43,7 @@ void main() {
     test('Should provide shorthand req accessor', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.req, same(request));
     });
@@ -53,7 +53,7 @@ void main() {
     test('Should extract path parameter', () {
       final uri = Uri.parse('http://example.com/users/123');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.set('param:id', '123');
       expect(context.param('id'), equals('123'));
@@ -62,7 +62,7 @@ void main() {
     test('Should extract multiple path parameters', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.set('param:userId', '123');
       context.set('param:postId', '456');
@@ -74,7 +74,7 @@ void main() {
     test('Should throw when parameter not found', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(() => context.param('nonexistent'), throwsArgumentError);
     });
@@ -82,7 +82,7 @@ void main() {
     test('Should throw with clear message when parameter missing', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       try {
         context.param('missing');
@@ -98,7 +98,7 @@ void main() {
     test('Should extract query parameter', () {
       final uri = Uri.parse('http://example.com/?search=test');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.queryParam('search'), equals('test'));
     });
@@ -106,7 +106,7 @@ void main() {
     test('Should use default when parameter missing', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.queryParam('page', '1'), equals('1'));
     });
@@ -114,7 +114,7 @@ void main() {
     test('Should throw when required parameter missing', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(() => context.queryParam('required'), throwsArgumentError);
     });
@@ -122,7 +122,7 @@ void main() {
     test('Should handle multiple query parameters', () {
       final uri = Uri.parse('http://example.com/?a=1&b=2&c=3');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.queryParam('a'), equals('1'));
       expect(context.queryParam('b'), equals('2'));
@@ -132,7 +132,7 @@ void main() {
     test('Should prefer actual value over default', () {
       final uri = Uri.parse('http://example.com/?page=5');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.queryParam('page', '1'), equals('5'));
     });
@@ -142,7 +142,7 @@ void main() {
     test('Should set and get variables', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.set('key', 'value');
       expect(context.get<String>('key'), equals('value'));
@@ -151,7 +151,7 @@ void main() {
     test('Should type-cast variables correctly', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.set('number', 42);
       context.set('string', 'hello');
@@ -165,7 +165,7 @@ void main() {
     test('Should return null for non-existent keys', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.get<String>('nonexistent'), isNull);
     });
@@ -173,7 +173,7 @@ void main() {
     test('Should allow overwriting variables', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.set('key', 'value1');
       expect(context.get<String>('key'), equals('value1'));
@@ -185,7 +185,7 @@ void main() {
     test('Should store complex objects', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final user = {'id': 1, 'name': 'Alice'};
       context.set('user', user);
@@ -198,7 +198,7 @@ void main() {
     test('Should create JSON response via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.json({'message': 'Hello'});
 
@@ -209,7 +209,7 @@ void main() {
     test('Should create text response via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.text('Hello');
 
@@ -223,7 +223,7 @@ void main() {
     test('Should create HTML response via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.html('<h1>Hello</h1>');
 
@@ -237,7 +237,7 @@ void main() {
     test('Should create redirect via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.redirect('/new-page');
 
@@ -248,7 +248,7 @@ void main() {
     test('Should create stream response via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final stream = Stream<List<int>>.value([1, 2, 3]);
       final response = context.stream(stream);
@@ -259,7 +259,7 @@ void main() {
     test('Should create notFound response via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.notFound();
 
@@ -269,7 +269,7 @@ void main() {
     test('Should allow custom status codes for responses', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.json({'error': 'Unauthorized'}, statusCode: 401);
 
@@ -281,7 +281,7 @@ void main() {
     test('Should allow setting response headers via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('X-Custom-Header', 'value');
       final response = context.json({});
@@ -292,7 +292,7 @@ void main() {
     test('Should merge multiple headers into response', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('X-Header-1', 'value1');
       context.header('X-Header-2', 'value2');
@@ -305,7 +305,7 @@ void main() {
     test('Should preserve default headers along with custom', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('X-Custom', 'custom');
       final response = context.json({});
@@ -317,7 +317,7 @@ void main() {
     test('Should allow header override via context', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.header('content-type', 'application/custom');
       final response = context.json({});
@@ -330,7 +330,7 @@ void main() {
     test('Should mark response as finalized', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.finalized, isFalse);
 
@@ -342,7 +342,7 @@ void main() {
     test('Should store finalized response', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response = context.text('Hello');
 
@@ -352,7 +352,7 @@ void main() {
     test('Should prevent double finalization', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       final response1 = context.json({'first': true});
 
@@ -364,7 +364,7 @@ void main() {
     test('Should check finalization status', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.finalized, isFalse);
       expect(context.response, isNull);
@@ -376,11 +376,11 @@ void main() {
     });
   });
 
-  group('Context - Type-safe Env', () {
-    test('Should support custom Env types', () {
+  group('Context - Type-safe Variables', () {
+    test('Should support custom Variables types', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final env = EmptyEnv();
+      final env = EmptyVariables();
       final context = Context(request, env);
 
       expect(context.variables, equals(env));
@@ -389,9 +389,9 @@ void main() {
     test('Should provide type-safe variable access', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
-      expect(context.variables, isA<EmptyEnv>());
+      expect(context.variables, isA<EmptyVariables>());
     });
   });
 
@@ -399,7 +399,7 @@ void main() {
     test('Should integrate request accessors with response helpers', () {
       final uri = Uri.parse('http://example.com/users/123?format=json');
       final request = Request('POST', uri, bodyContent: '{"name":"Alice"}');
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.method, equals('POST'));
       expect(context.path, equals('/users/123'));
@@ -412,7 +412,7 @@ void main() {
     test('Should combine parameters and response generation', () {
       final uri = Uri.parse('http://example.com/users/456');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       context.set('param:id', '456');
       final id = context.param('id');
@@ -424,7 +424,7 @@ void main() {
     test('Should support middleware-style variable passing', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       // Simulate middleware setting user
       context.set('user', {'id': 1, 'name': 'Alice'});
@@ -441,7 +441,7 @@ void main() {
     test('Should handle empty query parameters', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.query, isEmpty);
     });
@@ -449,7 +449,7 @@ void main() {
     test('Should handle empty headers', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.headers, isEmpty);
     });
@@ -457,7 +457,7 @@ void main() {
     test('Should handle root path', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.path, equals('/'));
     });
@@ -465,7 +465,7 @@ void main() {
     test('Should handle complex paths', () {
       final uri = Uri.parse('http://example.com/a/b/c/d/e');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       expect(context.path, equals('/a/b/c/d/e'));
     });
@@ -473,7 +473,7 @@ void main() {
     test('Should return null for non-existent variable', () {
       final uri = Uri.parse('http://example.com/');
       final request = Request('GET', uri);
-      final context = Context(request, EmptyEnv());
+      final context = Context(request, EmptyVariables());
 
       // Context.set() requires non-null Object value
       expect(context.get('nonexistent'), isNull);

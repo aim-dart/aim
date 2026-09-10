@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Breaking:** `BasicAuthEnv` is renamed to `BasicAuthVariables` (deprecated typedef kept for one release). `basicAuth()` now requires `E extends BasicAuthVariables`.
+
 ## 0.1.1
 
 See [Release Notes](https://github.com/aim-dart/aim/releases/tag/0.1.1)

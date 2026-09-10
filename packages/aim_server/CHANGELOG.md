@@ -1,5 +1,6 @@
 ## Unreleased
 
+- **Breaking:** follows `aim_core`'s rename of `Env` → `Variables` and `envFactory` → `variablesFactory` (re-exported).
 - Internals moved to the new `aim_core` package. `aim_server` re-exports it, so existing imports keep working.
 - `serve()` is now an extension on `Aim` provided by `aim_server`.
 - **Breaking:** `Request.raw` is typed `Object?`. Use the `Request.httpRequest` extension getter from `aim_server` to get the `HttpRequest`.
