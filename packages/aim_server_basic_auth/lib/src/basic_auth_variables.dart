@@ -1,7 +1,7 @@
 import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_basic_auth/src/basic_auth_options.dart';
 
-/// Environment variables for HTTP Basic Authentication.
+/// Context variables for HTTP Basic Authentication.
 ///
 /// This class extends [Variables] to provide type-safe access to Basic Auth
 /// configuration and the authenticated username.

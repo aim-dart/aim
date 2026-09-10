@@ -25,6 +25,10 @@ void main() {
     final serve = File('lib/src/serve_edge.dart').readAsStringSync();
     final publicMembers = RegExp(r'^\s{2}(?:JSObject\?|void)\s+(?:get\s+)?\w+',
         multiLine: true);
+    // Any two-space-indented line that looks like the start of a member
+    // declaration (starts with a letter, so doc comments starting with
+    // `//`/`///` are excluded automatically since they start with `/`).
+    final declarationLines = RegExp(r'^  [A-Za-z_][^\n]*$', multiLine: true);
     // Every member of the two exported extensions returns JSObject? or void.
     final extensionBodies = [
       _extensionBody(context, 'EdgeContext'),
@@ -42,6 +46,15 @@ void main() {
           reason: 'exported extension member signature mentions a '
               'package:web type:\n$signatures');
       expect(publicMembers.hasMatch(body), isTrue);
+      // Every top-level declaration line in the extension body must be one
+      // of the JSObject?/void-returning members matched above: if the two
+      // counts diverge, some member has snuck in with a different return
+      // type that publicMembers failed to catch.
+      expect(
+        declarationLines.allMatches(body).length,
+        equals(publicMembers.allMatches(body).length),
+        reason: 'every exported member must return JSObject? or void',
+      );
     }
   });
 }

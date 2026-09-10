@@ -1,7 +1,7 @@
 import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
-/// Environment variables for JWT authentication.
+/// Context variables for JWT authentication.
 ///
 /// This class extends [Variables] to provide type-safe access to JWT-related
 /// context variables including configuration options and decoded payload.
@@ -24,7 +24,7 @@ import 'package:aim_server_jwt/aim_server_jwt.dart';
 /// });
 /// ```
 class JwtVariables extends Variables {
-  /// Creates a new JWT environment with the given options.
+  /// Creates new JWT context variables with the given options.
   ///
   /// The [jwtPayload] is initially empty and will be populated by the
   /// JWT middleware after successful token verification.
