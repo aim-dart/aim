@@ -14,7 +14,7 @@ Complete guide to the Aim CLI tool.
 ## Installation
 
 ```bash
-dart install aim_cli
+dart pub global activate aim_cli
 ```
 
 ## Commands
@@ -28,6 +28,12 @@ Create a new Aim framework project.
 aim create <project_name>
 ```
 
+**Options:**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--target` | Project target: `server` or `edge` | `server` |
+
 **Example:**
 ```bash
 aim create my_app
@@ -40,6 +46,19 @@ This command:
 - Creates `pubspec.yaml` with Aim dependencies
 - Generates a basic server in `bin/server.dart`
 - Runs `dart pub get` to install dependencies
+
+**With `--target edge`:**
+```bash
+aim create my_worker --target edge
+cd my_worker
+```
+
+This scaffolds a Cloudflare workerd project instead:
+- `lib/main.dart` - Dart entry point exporting a `CompiledApp`
+- `src/index.mjs` - JavaScript Worker entry point
+- `wrangler.jsonc` - Wrangler configuration
+
+The Worker name in `wrangler.jsonc` is the project name with underscores (`_`) replaced by hyphens (`-`), e.g. `my_worker` becomes `my-worker`.
 
 ### `aim dev`
 
@@ -84,6 +103,15 @@ aim dev --port 3000
 - Automatically restarts the server when files are modified
 - Preserves terminal output history
 - Loads environment variables from `pubspec.yaml`
+
+**With `target: edge`:**
+- Compiles the entry point to WebAssembly (`dart compile wasm`)
+- Starts `npx wrangler@4 dev` to run the compiled Worker locally
+- `--port` is passed through to wrangler
+- Changes under `lib/` (or the watched directories) trigger a recompile; wrangler reloads the updated wasm automatically
+- `--no-hot-reload` disables file watching entirely
+- `aim.env` is ignored (with a warning) — configure vars and bindings in `wrangler.jsonc` instead
+- Requires Node.js to be installed (for `npx`)
 
 ### `aim build`
 
@@ -133,6 +161,12 @@ Next steps:
   # Build Docker image
   docker build -t my-app .
 ```
+
+**With `target: edge`:**
+- Compiles the entry point to WebAssembly (`dart compile wasm`)
+- Output is `build/edge/main.wasm` and `build/edge/main.mjs` (with `CompiledApp` already exported)
+- `--output` is a directory (default `build/edge`), not a file path
+- Next step: `npx wrangler@4 deploy`
 
 ## Configuration
 

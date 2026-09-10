@@ -60,6 +60,10 @@ jobs:
         working-directory: packages/aim_edge
         run: dart test
 
+      - name: Run tests for aim_cli
+        working-directory: packages/aim_cli
+        run: dart test
+
       - name: Run tests for aim_server_form
         working-directory: packages/aim_server_form
         run: dart test
