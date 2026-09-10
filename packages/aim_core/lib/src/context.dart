@@ -1,4 +1,4 @@
-import 'package:aim_core/src/env.dart';
+import 'package:aim_core/src/variables.dart';
 import 'package:aim_core/src/request.dart';
 import 'package:aim_core/src/response.dart';
 
@@ -8,13 +8,13 @@ import 'package:aim_core/src/response.dart';
 /// for creating responses and accessing request data.
 ///
 /// The type parameter [E] allows you to define type-safe context variables.
-class Context<E extends Env> {
+class Context<E extends Variables> {
   /// The HTTP request.
   final Request request;
 
   /// Type-safe variables for this context.
   ///
-  /// Users can define their own [Env] subclass to add custom variables
+  /// Users can define their own [Variables] subclass to add custom variables
   /// with full type safety.
   late final E variables;
 

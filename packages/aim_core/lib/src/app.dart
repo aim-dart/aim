@@ -1,5 +1,5 @@
 import 'package:aim_core/src/context.dart';
-import 'package:aim_core/src/env.dart';
+import 'package:aim_core/src/variables.dart';
 import 'package:aim_core/src/request.dart';
 import 'package:aim_core/src/response.dart';
 import 'package:aim_core/src/route.dart';
@@ -7,13 +7,13 @@ import 'package:aim_core/src/route.dart';
 /// A function that handles an HTTP request and returns a response.
 ///
 /// Handlers are registered via [Aim.get], [Aim.post], etc.
-typedef Handler<E extends Env> = Future<Response> Function(Context<E> c);
+typedef Handler<E extends Variables> = Future<Response> Function(Context<E> c);
 
 /// A function that processes requests in a middleware chain.
 ///
 /// Middleware can modify the context, perform actions before/after the handler,
 /// or finalize the response early.
-typedef Middleware<E extends Env> = Future<void> Function(
+typedef Middleware<E extends Variables> = Future<void> Function(
   Context<E> c,
   Next next,
 );
@@ -21,7 +21,7 @@ typedef Middleware<E extends Env> = Future<void> Function(
 /// A function that handles errors that occur during request processing.
 ///
 /// Error handlers are registered via [Aim.onError].
-typedef ErrorHandler<E extends Env> = Future<Response> Function(
+typedef ErrorHandler<E extends Variables> = Future<Response> Function(
   Object error,
   Context<E> c,
 );
@@ -31,7 +31,7 @@ typedef Next = Future<void> Function();
 
 /// A function that handles an error when no [Aim.onError] handler is
 /// registered. Receives the stack trace so adapters can log it.
-typedef UnhandledErrorHandler<E extends Env> = Future<Response> Function(
+typedef UnhandledErrorHandler<E extends Variables> = Future<Response> Function(
   Object error,
   StackTrace stackTrace,
   Context<E> c,
@@ -51,7 +51,7 @@ typedef UnhandledErrorHandler<E extends Env> = Future<Response> Function(
 /// app.get('/hello', (c) async => c.text('Hello, World!'));
 /// // See `aim_server` for `serve()`.
 /// ```
-class Aim<E extends Env> {
+class Aim<E extends Variables> {
   final List<Route<E>> _routes = [];
   final List<Middleware<E>> _middlewares = [];
 
@@ -73,19 +73,19 @@ class Aim<E extends Env> {
 
   /// Factory function to create instances of [E].
   ///
-  /// This must be provided by the user when using a custom [Env].
-  final E Function() _envFactory;
+  /// This must be provided by the user when using a custom [Variables].
+  final E Function() _variablesFactory;
 
   /// Creates a new [Aim] instance.
   ///
-  /// If using a custom [Env], provide an [envFactory] that creates instances of [E].
+  /// If using a custom [Variables], provide a [variablesFactory] that creates instances of [E].
   ///
   /// Example:
   /// ```dart
-  /// final app = Aim<MyEnv>(envFactory: () => MyEnv());
+  /// final app = Aim<MyVariables>(variablesFactory: () => MyVariables());
   /// ```
-  Aim({E Function()? envFactory})
-    : _envFactory = envFactory ?? (() => EmptyEnv() as E);
+  Aim({E Function()? variablesFactory})
+    : _variablesFactory = variablesFactory ?? (() => EmptyVariables() as E);
 
   /// Handles a request and returns a response without any HTTP layer.
   ///
@@ -109,8 +109,8 @@ class Aim<E extends Env> {
     Request request, {
     UnhandledErrorHandler<E>? onUnhandledError,
   }) async {
-    final env = _envFactory();
-    final context = Context<E>(request, env);
+    final variables = _variablesFactory();
+    final context = Context<E>(request, variables);
 
     try {
       Route<E>? matchingRoute;
@@ -326,11 +326,11 @@ class Aim<E extends Env> {
   ///
   /// Example:
   /// ```dart
-  /// final api = Aim<MyEnv>(envFactory: () => MyEnv());
+  /// final api = Aim<MyVariables>(variablesFactory: () => MyVariables());
   /// api.get('/users', (c) => c.json({'users': []}));
   /// api.get('/posts', (c) => c.json({'posts': []}));
   ///
-  /// final app = Aim<MyEnv>(envFactory: () => MyEnv());
+  /// final app = Aim<MyVariables>(variablesFactory: () => MyVariables());
   /// app.route('/api/v1', api); // Mounts at /api/v1/users, /api/v1/posts
   /// ```
   Aim<E> route(String basePath, Aim<E> subApp) {
