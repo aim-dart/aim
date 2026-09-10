@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `release:bump` now also updates the `aim_*` dependency pins inside the `aim create` templates.
 - `aim.target` (`server` | `edge`) in pubspec.yaml. With `edge`, `aim build` runs `dart compile wasm` into `build/edge/` and `aim dev` runs `npx wrangler@4 dev` with wasm recompilation on change.
 - `aim create --target edge` scaffolds a Cloudflare workerd project (`lib/main.dart`, `src/index.mjs`, `wrangler.jsonc`).
 - `aim:` configuration is now parsed with `package:yaml`. Entry resolution is `--entry` > `aim.entry` > default for both `dev` and `build` (previously `dev` let `aim.entry` override `--entry`).
