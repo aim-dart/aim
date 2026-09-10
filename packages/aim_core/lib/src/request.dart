@@ -34,8 +34,8 @@ class Request with MessageMixin {
   /// [encoding] is used to encode it to a `Stream<List<int>>`. The default
   /// encoding is UTF-8.
   ///
-  /// [raw] is the underlying [HttpRequest] object, which is needed for
-  /// operations like WebSocket upgrades.
+  /// [raw] is the platform-specific request object supplied by the runtime
+  /// adapter (an `HttpRequest` on the Dart VM).
   Request(
     this.method,
     this.uri, {
