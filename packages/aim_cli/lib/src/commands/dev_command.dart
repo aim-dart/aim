@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:aim_cli/src/config/aim_config.dart';
+import 'package:aim_cli/src/edge/edge_dev_runner.dart';
 import 'package:aim_cli/src/hot_reload/hot_reloader.dart';
 
 class DevCommand extends Command {
@@ -55,17 +56,47 @@ class DevCommand extends Command {
       exit(1);
     }
 
+    // Hot reload configuration
+    final hotReloadEnabled = argResults?['hot-reload'] as bool? ?? true;
+    final watchPathsArg = argResults?['watch'] as String?;
+    final watchPaths = watchPathsArg?.split(',') ??
+        (config.target == AimTarget.edge ? ['lib'] : ['lib', 'bin']);
+
+    if (config.target == AimTarget.edge) {
+      if (config.env.isNotEmpty) {
+        print('⚠️  aim.env is ignored for target: edge. Use vars in wrangler.jsonc.');
+      }
+      final portArg = argResults?['port'] as String?;
+      final runner = EdgeDevRunner(
+        entry: entryPoint,
+        outputDir: 'build/edge',
+        watchPaths: watchPaths,
+        port: portArg == null ? null : int.parse(portArg),
+        watch: hotReloadEnabled,
+      );
+      print('🚀 Starting wrangler dev (Cloudflare workerd)...');
+      print('📁 Entry point: $entryPoint');
+      print('');
+      ProcessSignal.sigint.watch().listen((_) async {
+        print('\n🛑 Stopping wrangler...');
+        await runner.stop();
+        exit(0);
+      });
+      try {
+        await runner.start();
+      } catch (e) {
+        print('❌ Error: $e');
+        exit(1);
+      }
+      return;
+    }
+
     // Get environment variables
     final envVars = config.env;
 
     // Get current environment variables and merge with aim.env settings
     final environment = Map<String, String>.from(Platform.environment)
       ..addAll(envVars);
-
-    // Hot reload configuration
-    final hotReloadEnabled = argResults?['hot-reload'] as bool? ?? true;
-    final watchPathsArg = argResults?['watch'] as String?;
-    final watchPaths = watchPathsArg?.split(',') ?? ['lib', 'bin'];
 
     if (hotReloadEnabled) {
       await _runWithHotReload(
