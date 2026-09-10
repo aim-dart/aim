@@ -5,7 +5,7 @@ description: A web server built with Aim framework
 version: 1.0.0
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.13.0
 
 dependencies:
   aim_server: ^0.0.6

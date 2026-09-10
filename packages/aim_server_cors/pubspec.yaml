@@ -11,6 +11,5 @@ dependencies:
   aim_core: ^0.1.1
 
 dev_dependencies:
-  aim_server: ^0.1.1
   lints: ^6.0.0
   test: ^1.25.6

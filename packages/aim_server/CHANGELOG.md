@@ -2,7 +2,7 @@
 
 - Internals moved to the new `aim_core` package. `aim_server` re-exports it, so existing imports keep working.
 - `serve()` is now an extension on `Aim` provided by `aim_server`.
-- `Request.raw` is typed `Object?`. Use the `Request.httpRequest` extension getter from `aim_server` to get the `HttpRequest`.
+- **Breaking:** `Request.raw` is typed `Object?`. Use the `Request.httpRequest` extension getter from `aim_server` to get the `HttpRequest`.
 - Unhandled errors without `onError` are still printed with their stack trace when running via `serve()`. `Aim.handle()` itself no longer prints.
 
 ## 0.1.1
