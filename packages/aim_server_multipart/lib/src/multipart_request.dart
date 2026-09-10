@@ -1,4 +1,4 @@
-import 'package:aim_server/aim_server.dart';
+import 'package:aim_core/aim_core.dart';
 import 'package:aim_server_multipart/src/multipart_form_data.dart';
 import 'package:aim_server_multipart/src/multipart_parser.dart';
 

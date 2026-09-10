@@ -8,9 +8,10 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  aim_server: ^0.1.1
+  aim_core: ^0.1.1
   mime: ^2.0.0
 
 dev_dependencies:
+  aim_server: ^0.1.1
   lints: ^6.0.0
   test: ^1.25.6
