@@ -20,7 +20,8 @@ A lightweight, modular web framework for Dart with native PostgreSQL support and
 
 | Package | pub.dev | Description |
 |---------|---------|-------------|
-| [aim_server](./packages/aim_server) | [![Pub Version](https://img.shields.io/pub/v/aim_server)](https://pub.dev/packages/aim_server) | Core web server framework |
+| [aim_core](./packages/aim_core) | [![Pub Version](https://img.shields.io/pub/v/aim_core)](https://pub.dev/packages/aim_core) | Platform-independent core (routing, middleware, request/response) |
+| [aim_server](./packages/aim_server) | [![Pub Version](https://img.shields.io/pub/v/aim_server)](https://pub.dev/packages/aim_server) | dart:io adapter: runs an Aim app on HttpServer |
 | [aim_server_cors](./packages/aim_server_cors) | [![Pub Version](https://img.shields.io/pub/v/aim_server_cors)](https://pub.dev/packages/aim_server_cors) | CORS middleware |
 | [aim_server_cookie](./packages/aim_server_cookie) | [![Pub Version](https://img.shields.io/pub/v/aim_server_cookie)](https://pub.dev/packages/aim_server_cookie) | Cookie management |
 | [aim_server_form](./packages/aim_server_form) | [![Pub Version](https://img.shields.io/pub/v/aim_server_form)](https://pub.dev/packages/aim_server_form) | Form data parsing |

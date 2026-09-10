@@ -34,6 +34,10 @@ jobs:
       - name: Get dependencies
         run: dart pub get
 
+      - name: Run tests for aim_core
+        working-directory: packages/aim_core
+        run: dart test
+
       - name: Run tests for aim_server
         working-directory: packages/aim_server
         run: dart test
