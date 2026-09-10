@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:aim_cli/src/config/aim_config.dart';
+import 'package:aim_cli/src/edge/wasm_builder.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
 
@@ -24,7 +25,8 @@ class BuildCommand extends Command {
     argParser.addOption(
       'output',
       abbr: 'o',
-      help: 'Output file path (default: build/server)',
+      help: 'Output path (default: build/server, or the build/edge '
+          'directory for target: edge)',
     );
   }
 
@@ -48,6 +50,31 @@ class BuildCommand extends Command {
     if (!await entryFile.exists()) {
       print('Error: Entry point "$entryPoint" not found');
       exit(1);
+    }
+
+    if (config.target == AimTarget.edge) {
+      final outputDir = argResults?['output'] as String? ?? 'build/edge';
+      print('🔨 Compiling to WebAssembly for Cloudflare workerd...');
+      print('📁 Entry point: $entryPoint');
+      print('📦 Output: $outputDir/');
+      print('');
+      try {
+        await buildWasm(entry: entryPoint, outputDir: outputDir);
+      } on WasmBuildException catch (e) {
+        print('');
+        print('❌ $e');
+        exit(e.exitCode);
+      }
+      print('');
+      print('✅ Build successful!');
+      print('');
+      print('📦 Output: $outputDir/main.wasm, $outputDir/main.mjs');
+      print('');
+      print('Next steps:');
+      print('  npx wrangler@4 dev       # run locally');
+      print('  npx wrangler@4 deploy    # deploy to Cloudflare');
+      print('');
+      return;
     }
 
     // Determine output path

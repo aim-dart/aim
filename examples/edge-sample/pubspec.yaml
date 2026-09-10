@@ -17,3 +17,7 @@ dependencies:
 
 dev_dependencies:
   lints: ^6.0.0
+
+aim:
+  target: edge
+  entry: lib/main.dart

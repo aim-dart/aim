@@ -73,7 +73,8 @@ void main() {
   setUpAll(() async {
     final build = await Process.run(Platform.resolvedExecutable, [
       'run',
-      'tool/build.dart',
+      '../../packages/aim_cli/bin/aim.dart',
+      'build',
     ], workingDirectory: _exampleDir);
     expect(
       build.exitCode,
