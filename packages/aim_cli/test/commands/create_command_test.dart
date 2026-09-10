@@ -48,8 +48,9 @@ void main() {
 
     expect(read('my_edge/pubspec.yaml'), contains('target: edge'));
     expect(read('my_edge/pubspec.yaml'), contains('aim_edge:'));
+    expect(read('my_edge/pubspec.yaml'), contains('name: my_edge'));
     expect(read('my_edge/lib/main.dart'), contains('app.serveEdge();'));
-    expect(read('my_edge/wrangler.jsonc'), contains('"name": "my_edge"'));
+    expect(read('my_edge/wrangler.jsonc'), contains('"name": "my-edge"'));
     expect(read('my_edge/wrangler.jsonc'), contains('"main": "src/index.mjs"'));
     expect(read('my_edge/src/index.mjs'), contains('build/edge/main.wasm'));
   });

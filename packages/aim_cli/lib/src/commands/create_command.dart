@@ -78,7 +78,8 @@ class CreateCommand extends Command {
     String projectName,
     String target,
   ) async {
-    final variables = {'projectName': projectName};
+    final workerName = projectName.replaceAll('_', '-');
+    final variables = {'projectName': projectName, 'workerName': workerName};
 
     // Get templates from string constants and generate
     final templates = target == 'edge'

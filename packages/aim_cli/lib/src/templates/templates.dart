@@ -365,7 +365,7 @@ export default {
 ''';
 
   static const edgeWranglerJsonc = '''{
-  "name": "{{projectName}}",
+  "name": "{{workerName}}",
   "main": "src/index.mjs",
   "compatibility_date": "2026-05-25",
   "vars": {
