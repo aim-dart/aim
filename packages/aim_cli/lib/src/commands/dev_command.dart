@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
-import 'package:aim_cli/src/utils/env_expander.dart';
+import 'package:aim_cli/src/config/aim_config.dart';
 import 'package:aim_cli/src/hot_reload/hot_reloader.dart';
 
 class DevCommand extends Command {
@@ -45,14 +45,8 @@ class DevCommand extends Command {
     }
 
     // Determine entry point
-    String entryPoint = argResults?['entry'] as String? ?? 'bin/server.dart';
-
-    // Read aim configuration from pubspec.yaml
-    final pubspecContent = await pubspecFile.readAsString();
-    final aimEntryPoint = _extractAimEntry(pubspecContent);
-    if (aimEntryPoint != null) {
-      entryPoint = aimEntryPoint;
-    }
+    final config = await AimConfig.load();
+    final entryPoint = config.resolveEntry(argResults?['entry'] as String?);
 
     // Check if entry point file exists
     final entryFile = File(entryPoint);
@@ -62,11 +56,11 @@ class DevCommand extends Command {
     }
 
     // Get environment variables
-    final envVars = _extractAimEnv(pubspecContent);
+    final envVars = config.env;
 
     // Get current environment variables and merge with aim.env settings
-    final environment = Map<String, String>.from(Platform.environment);
-    environment.addAll(envVars);
+    final environment = Map<String, String>.from(Platform.environment)
+      ..addAll(envVars);
 
     // Hot reload configuration
     final hotReloadEnabled = argResults?['hot-reload'] as bool? ?? true;
@@ -150,120 +144,5 @@ class DevCommand extends Command {
     // Wait for process to exit
     final exitCode = await process.exitCode;
     exit(exitCode);
-  }
-
-  /// Extract aim configuration from pubspec.yaml
-  String? _extractAimEntry(String content) {
-    // Simple YAML parsing (look for aim.entry)
-    final lines = content.split('\n');
-    bool inAimSection = false;
-
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-
-      // Start of aim: section
-      if (line.trim().startsWith('aim:')) {
-        inAimSection = true;
-        continue;
-      }
-
-      // Look for entry in aim section
-      if (inAimSection) {
-        if (line.startsWith('  entry:') || line.startsWith('    entry:')) {
-          final parts = line.split(':');
-          if (parts.length >= 2) {
-            final entry = parts[1]
-                .trim()
-                .replaceAll('"', '')
-                .replaceAll("'", '');
-            if (entry.isNotEmpty) {
-              return entry;
-            }
-          }
-        }
-
-        // End aim section if next top-level section starts
-        if (line.isNotEmpty &&
-            !line.startsWith(' ') &&
-            !line.startsWith('\t')) {
-          inAimSection = false;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /// Extract environment variables from pubspec.yaml
-  Map<String, String> _extractAimEnv(String content) {
-    final envVars = <String, String>{};
-    final lines = content.split('\n');
-    bool inAimSection = false;
-    bool inEnvSection = false;
-
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-
-      // Start of aim: section
-      if (line.trim().startsWith('aim:')) {
-        inAimSection = true;
-        continue;
-      }
-
-      if (inAimSection) {
-        // Start of env: section
-        if (line.startsWith('  env:') || line.startsWith('    env:')) {
-          inEnvSection = true;
-          continue;
-        }
-
-        // Read environment variables in env section
-        if (inEnvSection) {
-          // End env section if indentation decreases
-          if (line.isNotEmpty &&
-              !line.startsWith('    ') &&
-              !line.startsWith('\t\t')) {
-            inEnvSection = false;
-
-            // End aim section if top-level section
-            if (!line.startsWith(' ') && !line.startsWith('\t')) {
-              inAimSection = false;
-            }
-            continue;
-          }
-
-          // Read environment variable key: value
-          final trimmed = line.trim();
-          if (trimmed.contains(':')) {
-            final parts = trimmed.split(':');
-            if (parts.length >= 2) {
-              final key = parts[0].trim();
-              var value = parts
-                  .sublist(1)
-                  .join(':')
-                  .trim()
-                  .replaceAll('"', '')
-                  .replaceAll("'", '');
-
-              if (key.isNotEmpty && value.isNotEmpty) {
-                // Expand environment variables
-                value = EnvExpander.expand(value);
-                envVars[key] = value;
-              }
-            }
-          }
-        }
-
-        // End aim section if next top-level section starts
-        if (!inEnvSection &&
-            line.isNotEmpty &&
-            !line.startsWith(' ') &&
-            !line.startsWith('\t')) {
-          inAimSection = false;
-        }
-      }
-    }
-
-    return envVars;
   }
 }

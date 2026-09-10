@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:aim_cli/src/config/aim_config.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
 
@@ -39,19 +40,8 @@ class BuildCommand extends Command {
     }
 
     // Determine entry point
-    String entryPoint = argResults?['entry'] as String? ?? 'bin/server.dart';
-
-    // Read aim configuration from pubspec.yaml
-    final pubspecContent = await pubspecFile.readAsString();
-    final aimEntryPoint = _extractAimEntry(pubspecContent);
-    if (aimEntryPoint != null) {
-      entryPoint = aimEntryPoint;
-    }
-
-    // Override with CLI option if provided
-    if (argResults?['entry'] != null) {
-      entryPoint = argResults!['entry'] as String;
-    }
+    final config = await AimConfig.load();
+    final entryPoint = config.resolveEntry(argResults?['entry'] as String?);
 
     // Check if entry point file exists
     final entryFile = File(entryPoint);
@@ -106,47 +96,5 @@ class BuildCommand extends Command {
     print('  # Build Docker image');
     print('  docker build -t my-app .');
     print('');
-  }
-
-  /// Extract aim.entry from pubspec.yaml content
-  String? _extractAimEntry(String content) {
-    // Simple YAML parsing (look for aim.entry)
-    final lines = content.split('\n');
-    bool inAimSection = false;
-
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-
-      // Start of aim: section
-      if (line.trim().startsWith('aim:')) {
-        inAimSection = true;
-        continue;
-      }
-
-      // Look for entry in aim section
-      if (inAimSection) {
-        if (line.startsWith('  entry:') || line.startsWith('    entry:')) {
-          final parts = line.split(':');
-          if (parts.length >= 2) {
-            final entry = parts[1]
-                .trim()
-                .replaceAll('"', '')
-                .replaceAll("'", '');
-            if (entry.isNotEmpty) {
-              return entry;
-            }
-          }
-        }
-
-        // End aim section if next top-level section starts
-        if (line.isNotEmpty &&
-            !line.startsWith(' ') &&
-            !line.startsWith('\t')) {
-          inAimSection = false;
-        }
-      }
-    }
-
-    return null;
   }
 }
