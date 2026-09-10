@@ -132,7 +132,7 @@ Now all requests will be logged to the console:
 --> GET / 200 2ms
 ```
 
-## Environment Variables
+## Variables
 
 Use custom `Variables` classes for type-safe variable storage:
 

@@ -295,7 +295,7 @@ app.get('/api', (c) async {
 });
 ```
 
-## Environment Variables
+## Variables
 
 Use custom `Variables` classes for type-safe context variables:
 
@@ -330,7 +330,7 @@ app.get('/info', (c) async {
 `Variables` are per-request values your middleware and handlers share. Runtime bindings such as Cloudflare Workers' `env` are a different concept and are exposed by the runtime adapter (for example `c.env` in `aim_edge`).
 :::
 
-### Middleware-Specific Environments
+### Middleware-Specific Variables
 
 Many middleware packages extend the base `Variables`:
 
@@ -338,13 +338,19 @@ Many middleware packages extend the base `Variables`:
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
 final app = Aim<JwtVariables>(
-  variablesFactory: () => JwtVariables(secret: 'secret'),
+  variablesFactory: () => JwtVariables.create(
+    JwtOptions(
+      algorithm: HS256(
+        secretKey: SecretKey(secret: 'your-secret-key-at-least-32-chars'),
+      ),
+    ),
+  ),
 );
 
 app.use(jwt());
 
 app.get('/protected', (c) async {
-  final payload = c.variables.payload;  // From JWT middleware
+  final payload = c.variables.jwtPayload;  // From JWT middleware
   return c.json({'userId': payload['sub']});
 });
 ```

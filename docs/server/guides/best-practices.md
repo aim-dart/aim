@@ -29,7 +29,7 @@ my_app/
 │   │   └── user.dart
 │   ├── services/            # Business logic
 │   │   └── user_service.dart
-│   └── env.dart             # Environment classes
+│   └── variables.dart               # Variables classes
 ├── test/                    # Tests
 │   ├── routes/
 │   └── middleware/
