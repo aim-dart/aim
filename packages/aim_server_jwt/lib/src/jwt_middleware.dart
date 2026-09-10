@@ -49,10 +49,10 @@ Middleware<E> jwt<E extends JwtEnv>() {
       final jwt = Jwt(options: c.variables.jwtOptions);
       final payload = jwt.verify(token);
       c.variables.jwtPayload = payload;
-      return next();
     } catch (e) {
       c.json({'error': 'Invalid token'}, statusCode: 401);
       return;
     }
+    return next();
   };
 }
