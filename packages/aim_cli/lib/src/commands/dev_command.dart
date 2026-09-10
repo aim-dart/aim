@@ -67,11 +67,21 @@ class DevCommand extends Command {
         print('⚠️  aim.env is ignored for target: edge. Use vars in wrangler.jsonc.');
       }
       final portArg = argResults?['port'] as String?;
+      int? port;
+      if (portArg != null) {
+        port = int.tryParse(portArg);
+        if (port == null) {
+          throw UsageException(
+            '--port must be a number, got "$portArg"',
+            invocation,
+          );
+        }
+      }
       final runner = EdgeDevRunner(
         entry: entryPoint,
         outputDir: 'build/edge',
         watchPaths: watchPaths,
-        port: portArg == null ? null : int.parse(portArg),
+        port: port,
         watch: hotReloadEnabled,
       );
       print('🚀 Starting wrangler dev (Cloudflare workerd)...');
@@ -80,6 +90,7 @@ class DevCommand extends Command {
       ProcessSignal.sigint.watch().listen((_) async {
         print('\n🛑 Stopping wrangler...');
         await runner.stop();
+        print('✅ Stopped');
         exit(0);
       });
       try {

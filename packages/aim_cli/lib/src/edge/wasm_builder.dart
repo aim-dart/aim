@@ -22,22 +22,41 @@ String exportCompiledApp(String mjs) => mjs.replaceFirst(
 /// Compiles [entry] to `<outputDir>/main.wasm` and patches
 /// `<outputDir>/main.mjs` so `index.mjs` can import `CompiledApp`.
 ///
+/// Compiles into a temporary staging directory inside [outputDir] first,
+/// patches the loader there, and only then renames the finished files into
+/// [outputDir]. This keeps a file watcher on [outputDir] (e.g. wrangler's)
+/// from ever observing a half-written `main.mjs` that dart compile wasm has
+/// written but this function has not patched yet. The staging directory is
+/// removed afterwards, including when the compile fails.
+///
 /// Compiler output is inherited so the user sees errors directly.
 Future<void> buildWasm({
   required String entry,
   required String outputDir,
 }) async {
   await Directory(outputDir).create(recursive: true);
-  final wasmPath = p.join(outputDir, 'main.wasm');
+  final staging = await Directory(outputDir).createTemp('.staging-');
+  try {
+    final wasmPath = p.join(staging.path, 'main.wasm');
 
-  final process = await Process.start(
-    Platform.resolvedExecutable,
-    ['compile', 'wasm', entry, '-o', wasmPath],
-    mode: ProcessStartMode.inheritStdio,
-  );
-  final exitCode = await process.exitCode;
-  if (exitCode != 0) throw WasmBuildException(exitCode);
+    final process = await Process.start(
+      Platform.resolvedExecutable,
+      ['compile', 'wasm', entry, '-o', wasmPath],
+      mode: ProcessStartMode.inheritStdio,
+    );
+    final exitCode = await process.exitCode;
+    if (exitCode != 0) throw WasmBuildException(exitCode);
 
-  final loader = File(p.join(outputDir, 'main.mjs'));
-  loader.writeAsStringSync(exportCompiledApp(loader.readAsStringSync()));
+    final loader = File(p.join(staging.path, 'main.mjs'));
+    loader.writeAsStringSync(exportCompiledApp(loader.readAsStringSync()));
+
+    for (final entity in staging.listSync()) {
+      if (entity is! File) continue;
+      await entity.rename(p.join(outputDir, p.basename(entity.path)));
+    }
+  } finally {
+    if (await staging.exists()) {
+      await staging.delete(recursive: true);
+    }
+  }
 }

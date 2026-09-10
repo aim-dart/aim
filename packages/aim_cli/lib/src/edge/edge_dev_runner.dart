@@ -21,6 +21,7 @@ class EdgeDevRunner {
   FileWatcher? _watcher;
   bool _isBuilding = false;
   bool _buildRequested = false;
+  bool _stopping = false;
 
   EdgeDevRunner({
     required this.entry,
@@ -49,12 +50,14 @@ class EdgeDevRunner {
 
     final exitCode = await _wrangler!.exitCode;
     await _watcher?.stop();
+    if (_stopping) return;
     if (exitCode != 0) {
       throw StateError('wrangler dev exited with code $exitCode');
     }
   }
 
   Future<void> stop() async {
+    _stopping = true;
     await _watcher?.stop();
     final wrangler = _wrangler;
     if (wrangler != null) {
