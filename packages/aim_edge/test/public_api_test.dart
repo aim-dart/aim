@@ -15,19 +15,19 @@ void main() {
 
     expect(exports, hasLength(3));
     expect(exports[0], (uri: 'package:aim_core/aim_core.dart', show: null));
-    expect(exports[1], (uri: 'src/edge_request.dart', show: 'EdgeRequestAccess'));
+    expect(exports[1], (uri: 'src/edge_context.dart', show: 'EdgeContext'));
     expect(exports[2], (uri: 'src/serve_edge.dart', show: 'AimEdge'));
     expect(source, isNot(contains('package:web')));
   });
 
   test('exported extensions expose no package:web types', () {
-    final request = File('lib/src/edge_request.dart').readAsStringSync();
+    final context = File('lib/src/edge_context.dart').readAsStringSync();
     final serve = File('lib/src/serve_edge.dart').readAsStringSync();
     final publicMembers = RegExp(r'^\s{2}(?:JSObject\?|void)\s+(?:get\s+)?\w+',
         multiLine: true);
     // Every member of the two exported extensions returns JSObject? or void.
     final extensionBodies = [
-      _extensionBody(request, 'EdgeRequestAccess'),
+      _extensionBody(context, 'EdgeContext'),
       _extensionBody(serve, 'AimEdge'),
     ];
     for (final body in extensionBodies) {

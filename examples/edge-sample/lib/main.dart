@@ -42,7 +42,7 @@ void main() {
 
   app.get('/env', (c) async {
     final greeting =
-        (c.req.workerEnv?.getProperty('GREETING'.toJS) as JSString?)?.toDart;
+        (c.env?.getProperty('GREETING'.toJS) as JSString?)?.toDart;
     return c.text(greeting ?? 'GREETING is not set');
   });
 

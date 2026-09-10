@@ -46,22 +46,3 @@ Future<Request> toAimRequest(
     raw: EdgeRawRequest(request, env, ctx),
   );
 }
-
-/// Access to the workerd environment from a request handled by `aim_edge`.
-extension EdgeRequestAccess on Request {
-  /// The worker's bindings object (`env`), or `null` when the request was
-  /// not produced by the workerd adapter.
-  ///
-  /// Type it in your application with `dart:js_interop`, for example
-  /// `(c.req.workerEnv?.getProperty('GREETING'.toJS) as JSString?)?.toDart`.
-  JSObject? get workerEnv {
-    final r = raw;
-    return r is EdgeRawRequest ? r.env : null;
-  }
-
-  /// The worker's `ExecutionContext` (`ctx`), or `null` outside workerd.
-  JSObject? get workerContext {
-    final r = raw;
-    return r is EdgeRawRequest ? r.ctx : null;
-  }
-}

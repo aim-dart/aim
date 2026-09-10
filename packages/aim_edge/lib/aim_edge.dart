@@ -5,5 +5,5 @@
 library;
 
 export 'package:aim_core/aim_core.dart';
-export 'src/edge_request.dart' show EdgeRequestAccess;
+export 'src/edge_context.dart' show EdgeContext;
 export 'src/serve_edge.dart' show AimEdge;

@@ -7,7 +7,7 @@ import 'package:aim_edge/src/interop.dart';
 import 'package:web/web.dart' as web;
 
 /// Runs an [Aim] application on Cloudflare workerd.
-extension AimEdge<E extends Env> on Aim<E> {
+extension AimEdge<E extends Variables> on Aim<E> {
   /// Registers this application as the worker's fetch handler.
   ///
   /// Sets `globalThis.__aimFetch` to a function `(request, env, ctx)` that
@@ -23,7 +23,7 @@ extension AimEdge<E extends Env> on Aim<E> {
   }
 }
 
-Future<web.Response> _fetch<E extends Env>(
+Future<web.Response> _fetch<E extends Variables>(
   Aim<E> app,
   web.Request request,
   JSObject env,
@@ -50,7 +50,7 @@ Future<web.Response> _fetch<E extends Env>(
   }
 }
 
-Future<Response> _logAndRespond<E extends Env>(
+Future<Response> _logAndRespond<E extends Variables>(
   Object error,
   StackTrace stackTrace,
   Context<E> c,

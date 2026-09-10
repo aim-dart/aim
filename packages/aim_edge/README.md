@@ -14,7 +14,7 @@ void main() {
 
 `serveEdge()` registers `globalThis.__aimFetch`. A small JS entry module instantiates the wasm module on the first request and forwards `fetch(request, env, ctx)` to it. See `examples/edge-sample` in the repository for the build script, `wrangler.jsonc`, and the entry module.
 
-Worker bindings and the execution context are available as raw `JSObject`s via `c.req.workerEnv` and `c.req.workerContext`; type them with `dart:js_interop` in your application.
+Worker bindings and the execution context are available as raw `JSObject`s via `c.env` and `c.executionContext`; type them with `dart:js_interop` in your application.
 
 ## Limitations (v1)
 

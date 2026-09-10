@@ -207,7 +207,7 @@ void main() {
     expect(body, isEmpty);
   });
 
-  test('reads worker bindings through workerEnv', () async {
+  test('reads worker bindings through c.env', () async {
     final res = await get('/env');
     expect(await utf8.decodeStream(res), 'hello from workerd');
   });
