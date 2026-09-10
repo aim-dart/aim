@@ -18,7 +18,7 @@ The easiest way to start a new project is using the Aim CLI:
 
 ```bash
 # Install the Aim CLI
-dart pub global activate aim_cli
+dart install aim_cli
 
 # Create a new project
 aim create my_app

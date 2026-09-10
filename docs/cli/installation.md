@@ -14,7 +14,7 @@ head:
 Install Aim CLI globally:
 
 ```bash
-dart pub global activate aim_cli
+dart install aim_cli
 ```
 
 ## Verify Installation
@@ -51,7 +51,7 @@ $env:PATH += ";$env:APPDATA\Pub\Cache\bin"
 Update to the latest version:
 
 ```bash
-dart pub global activate aim_cli
+dart install aim_cli
 ```
 
 ## Uninstall

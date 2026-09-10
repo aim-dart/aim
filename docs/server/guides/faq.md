@@ -43,7 +43,7 @@ Aim requires Dart SDK 3.10.0 or higher.
 
 ```bash
 # Using CLI (recommended)
-dart pub global activate aim_cli
+dart install aim_cli
 aim create my_app
 
 # Manual

@@ -24,7 +24,7 @@ Development tools for the Aim ecosystem.
 ### Installation
 
 ```bash
-dart pub global activate aim_cli
+dart install aim_cli
 ```
 
 ### Create a Project

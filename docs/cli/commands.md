@@ -14,7 +14,7 @@ Complete guide to the Aim CLI tool.
 ## Installation
 
 ```bash
-dart pub global activate aim_cli
+dart install aim_cli
 ```
 
 ## Commands
