@@ -186,7 +186,7 @@ app.post('/comments', (c) async {
 ```dart
 final requests = <String, List<DateTime>>{};
 
-Middleware<E> ratelimit<E extends Env>({
+Middleware<E> ratelimit<E extends Variables>({
   required int maxRequests,
   required Duration window,
 }) {

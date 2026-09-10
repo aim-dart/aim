@@ -24,8 +24,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
 void main() async {
-  final app = Aim<JwtEnv>(
-    envFactory: () => JwtEnv.create(
+  final app = Aim<JwtVariables>(
+    variablesFactory: () => JwtVariables.create(
       JwtOptions(
         algorithm: HS256(
           secretKey: SecretKey(secret: 'your-secret-key-at-least-32-chars'),
@@ -250,8 +250,8 @@ void main() async {
     excludedPaths: ['/login', '/register', '/health'],
   );
 
-  final app = Aim<JwtEnv>(
-    envFactory: () => JwtEnv.create(jwtOptions),
+  final app = Aim<JwtVariables>(
+    variablesFactory: () => JwtVariables.create(jwtOptions),
   );
 
   app.use(jwt());
@@ -369,7 +369,7 @@ All 401 responses include an error message:
 
 ## Best Practices
 
-1. **Use environment variables for secrets**
+1. **Use env vars for secrets**
    ```dart
    final secret = Platform.environment['JWT_SECRET']!;
    ```

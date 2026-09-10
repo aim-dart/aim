@@ -16,7 +16,7 @@ A lightweight, fast web framework for Dart.
 - **Context API** - Intuitive request/response handling inspired by Hono
 - **Routing** - Path parameters, wildcards, and method-based routing
 - **Middleware** - Composable middleware chain with early response support
-- **Type-Safe** - Custom Env classes for type-safe context variables
+- **Type-Safe** - Custom `Variables` classes for type-safe context variables
 - **Modular** - Use only the middleware packages you need
 
 ## Quick Start

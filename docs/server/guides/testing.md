@@ -131,12 +131,12 @@ test('Logger middleware logs requests', () async {
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
 void main() {
-  late Aim<JwtEnv> app;
+  late Aim<JwtVariables> app;
   late TestClient client;
 
   setUp(() {
-    app = Aim<JwtEnv>(
-      envFactory: () => JwtEnv.create(
+    app = Aim<JwtVariables>(
+      variablesFactory: () => JwtVariables.create(
         JwtOptions(
           algorithm: HS256(
             secretKey: SecretKey(secret: 'test-secret-key-at-least-32-chars'),
@@ -254,8 +254,8 @@ test('Returns 404 for unknown routes', () async {
 import 'package:aim_server_form/aim_server_form.dart';
 
 test('Form data is parsed', () async {
-  final app = Aim<FormEnv>(
-    envFactory: () => FormEnv(),
+  final app = Aim<FormVariables>(
+    variablesFactory: () => FormVariables(),
   );
 
   app.use(form());

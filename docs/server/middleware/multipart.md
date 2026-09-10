@@ -24,8 +24,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_multipart/aim_server_multipart.dart';
 
 void main() async {
-  final app = Aim<MultipartEnv>(
-    envFactory: () => MultipartEnv(),
+  final app = Aim<MultipartVariables>(
+    variablesFactory: () => MultipartVariables(),
   );
 
   app.use(multipart());
@@ -132,8 +132,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_multipart/aim_server_multipart.dart';
 
 void main() async {
-  final app = Aim<MultipartEnv>(
-    envFactory: () => MultipartEnv(),
+  final app = Aim<MultipartVariables>(
+    variablesFactory: () => MultipartVariables(),
   );
 
   // Configure multipart

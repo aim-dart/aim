@@ -24,8 +24,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_form/aim_server_form.dart';
 
 void main() async {
-  final app = Aim<FormEnv>(
-    envFactory: () => FormEnv(),
+  final app = Aim<FormVariables>(
+    variablesFactory: () => FormVariables(),
   );
 
   app.use(form());
@@ -71,8 +71,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:aim_server_form/aim_server_form.dart';
 
 void main() async {
-  final app = Aim<FormEnv>(
-    envFactory: () => FormEnv(),
+  final app = Aim<FormVariables>(
+    variablesFactory: () => FormVariables(),
   );
 
   app.use(form());

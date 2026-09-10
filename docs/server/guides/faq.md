@@ -20,7 +20,7 @@ Aim is a lightweight, fast web framework for Dart. It's designed to be simple, t
 ### Why Aim over other Dart frameworks?
 
 - **Simple API**: Context-based API that's easy to learn
-- **Type-Safe**: Leverages Dart's type system with custom Env classes
+- **Type-Safe**: Leverages Dart's type system with custom `Variables` classes for context variables
 - **Modular**: Rich ecosystem of optional middleware packages
 - **Performance**: Minimal overhead with optimized routing
 - **Great DX**: Built-in hot reload and comprehensive testing utilities
@@ -180,8 +180,8 @@ Use the [Multipart middleware](/server/middleware/multipart):
 ```dart
 import 'package:aim_server_multipart/aim_server_multipart.dart';
 
-final app = Aim<MultipartEnv>(
-  envFactory: () => MultipartEnv(),
+final app = Aim<MultipartVariables>(
+  variablesFactory: () => MultipartVariables(),
 );
 
 app.use(multipart());
@@ -212,8 +212,8 @@ Use [JWT Auth](/server/auth/jwt) or [Basic Auth](/server/auth/basic-auth):
 ```dart
 import 'package:aim_server_jwt/aim_server_jwt.dart';
 
-final app = Aim<JwtEnv>(
-  envFactory: () => JwtEnv.create(
+final app = Aim<JwtVariables>(
+  variablesFactory: () => JwtVariables.create(
     JwtOptions(
       algorithm: HS256(
         secretKey: SecretKey(secret: 'your-secret-key'),
@@ -305,7 +305,7 @@ See the [Testing guide](/server/guides/testing) for details.
 
 2. Deploy the binary to your server
 
-3. Run with environment variables:
+3. Run with env vars:
    ```bash
    ENV=production JWT_SECRET=xxx ./build/server
    ```
