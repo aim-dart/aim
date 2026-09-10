@@ -45,7 +45,7 @@ This command:
 - Generates project structure (bin/, lib/, test/)
 - Creates `pubspec.yaml` with Aim dependencies
 - Generates a basic server in `bin/server.dart`
-- Runs `dart pub get` to install dependencies
+- Prints the next steps (`dart pub get`, `aim dev`)
 
 **With `--target edge`:**
 ```bash
@@ -74,8 +74,8 @@ aim dev [options]
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
 | `--entry` | `-e` | Server entry point | `bin/server.dart` |
-| `--host` | | Server host | From pubspec.yaml |
-| `--port` | `-p` | Server port | From pubspec.yaml |
+| `--host` | | Ignored (reserved) | — |
+| `--port` | `-p` | Port passed to `wrangler dev` (target: edge only) | 8787 (wrangler default) |
 | `--hot-reload` | | Enable hot reload | `true` |
 | `--no-hot-reload` | | Disable hot reload | |
 | `--watch` | | Directories to watch (comma-separated) | `lib,bin` |
@@ -179,7 +179,7 @@ name: my_app
 description: My Aim application
 
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.1
 
 # Aim CLI configuration
 aim:

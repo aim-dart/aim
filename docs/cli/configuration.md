@@ -18,7 +18,7 @@ name: my_app
 description: My Aim application
 
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.1
 
 aim:
   entry: bin/server.dart
