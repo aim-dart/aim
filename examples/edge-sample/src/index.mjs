@@ -1,5 +1,5 @@
-import mod from '../.out/main.wasm';
-import { CompiledApp } from '../.out/main.mjs';
+import mod from '../build/edge/main.wasm';
+import { CompiledApp } from '../build/edge/main.mjs';
 
 let ready;
 

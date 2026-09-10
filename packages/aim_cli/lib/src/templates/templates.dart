@@ -8,7 +8,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.1
 
 dev_dependencies:
   lints: ^6.0.0
@@ -304,5 +304,111 @@ test/
 *.log
 *.tmp
 .DS_Store
+''';
+
+  static const edgePubspec = '''name: {{projectName}}
+description: An Aim application running on Cloudflare workerd
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  aim_edge: ^0.1.1
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
+
+aim:
+  target: edge
+  entry: lib/main.dart
+''';
+
+  static const edgeMain = '''import 'package:aim_edge/aim_edge.dart';
+
+void main() {
+  final app = Aim();
+
+  app.get('/', (c) async => c.text('Hello from {{projectName}} on workerd'));
+
+  app.get('/users/:id', (c) async => c.json({'id': c.param('id')}));
+
+  app.serveEdge();
+}
+''';
+
+  static const edgeIndexMjs = '''import mod from '../build/edge/main.wasm';
+import { CompiledApp } from '../build/edge/main.mjs';
+
+let ready;
+
+async function init() {
+  const instance = await new CompiledApp(mod, { builtins: ['js-string'] })
+    .instantiate({});
+  instance.invokeMain(); // runs Dart main(), which calls app.serveEdge()
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    ready ??= init();
+    try {
+      await ready;
+    } catch (e) {
+      ready = undefined; // allow the next request to retry initialisation
+      throw e;
+    }
+    return globalThis.__aimFetch(request, env, ctx);
+  },
+};
+''';
+
+  static const edgeWranglerJsonc = '''{
+  "name": "{{workerName}}",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-05-25",
+  "vars": {
+    "GREETING": "hello"
+  }
+}
+''';
+
+  static const edgeGitignore = '''
+# Dart
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# wrangler / node
+.wrangler/
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+''';
+
+  static const edgeReadme = '''# {{projectName}}
+
+An [Aim](https://aim-dart.dev) application running on Cloudflare workerd.
+
+## Development
+
+```bash
+dart pub get
+aim dev            # compiles to wasm, starts wrangler dev, recompiles on change
+```
+
+## Deploy
+
+```bash
+aim build          # build/edge/main.wasm + main.mjs
+npx wrangler@4 deploy
+```
+
+Bindings declared in `wrangler.jsonc` are available in handlers as `c.env`.
 ''';
 }

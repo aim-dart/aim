@@ -15,7 +15,14 @@ class CreateCommand extends Command {
   @override
   String get invocation => 'aim create <project_name>';
 
-  CreateCommand();
+  CreateCommand() {
+    argParser.addOption(
+      'target',
+      allowed: ['server', 'edge'],
+      defaultsTo: 'server',
+      help: 'Runtime target: server (dart:io) or edge (Cloudflare workerd)',
+    );
+  }
 
   @override
   Future<void> run() async {
@@ -25,6 +32,7 @@ class CreateCommand extends Command {
     }
 
     final projectName = argResults!.rest.first;
+    final target = argResults!['target'] as String;
 
     // Validation
     if (!ProjectNameValidator.isValid(projectName)) {
@@ -48,7 +56,7 @@ class CreateCommand extends Command {
 
     try {
       // Create directory structure
-      await _createProjectStructure(projectName);
+      await _createProjectStructure(projectName, target);
 
       print('');
       print('✅ Project created successfully!');
@@ -57,26 +65,42 @@ class CreateCommand extends Command {
       print('  cd $projectName');
       print('  dart pub get');
       print('  aim dev');
+      if (target == 'edge') {
+        print('  # requires Node: npx wrangler@4 is downloaded on first run');
+      }
       print('');
     } catch (e) {
       throw Exception('Failed to create project: $e');
     }
   }
 
-  Future<void> _createProjectStructure(String projectName) async {
-    final variables = {'projectName': projectName};
+  Future<void> _createProjectStructure(
+    String projectName,
+    String target,
+  ) async {
+    final workerName = projectName.replaceAll('_', '-');
+    final variables = {'projectName': projectName, 'workerName': workerName};
 
     // Get templates from string constants and generate
-    final templates = {
-      'pubspec.yaml': Templates.projectPubspec,
-      'README.md': Templates.projectReadme,
-      'bin/server.dart': Templates.binServer,
-      'lib/src/server.dart': Templates.libSrcServer,
-      'test/${projectName}_test.dart': Templates.testTest,
-      '.gitignore': Templates.gitignore,
-      'Dockerfile': Templates.dockerfile,
-      '.dockerignore': Templates.dockerignore,
-    };
+    final templates = target == 'edge'
+        ? {
+            'pubspec.yaml': Templates.edgePubspec,
+            'README.md': Templates.edgeReadme,
+            'lib/main.dart': Templates.edgeMain,
+            'src/index.mjs': Templates.edgeIndexMjs,
+            'wrangler.jsonc': Templates.edgeWranglerJsonc,
+            '.gitignore': Templates.edgeGitignore,
+          }
+        : {
+            'pubspec.yaml': Templates.projectPubspec,
+            'README.md': Templates.projectReadme,
+            'bin/server.dart': Templates.binServer,
+            'lib/src/server.dart': Templates.libSrcServer,
+            'test/${projectName}_test.dart': Templates.testTest,
+            '.gitignore': Templates.gitignore,
+            'Dockerfile': Templates.dockerfile,
+            '.dockerignore': Templates.dockerignore,
+          };
 
     for (final entry in templates.entries) {
       final filePath = path.join(projectName, entry.key);

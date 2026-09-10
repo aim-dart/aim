@@ -17,6 +17,7 @@ Development tools for the Aim ecosystem.
 - **Development Server** - Hot reload with `aim dev`
 - **Production Build** - Compile to native executable with `aim build`
 - **Environment Configuration** - Manage env variables via `pubspec.yaml`
+- **Edge Target** - `aim.target: edge` builds for Cloudflare workerd with `aim_edge` — `aim build` compiles to WebAssembly and `aim dev` runs `wrangler dev`. See [Configuration](/cli/configuration#target).
 
 ## Quick Start
 
@@ -79,7 +80,7 @@ Configure via `pubspec.yaml`:
 name: my_app
 
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.1
 
 aim:
   entry: bin/server.dart

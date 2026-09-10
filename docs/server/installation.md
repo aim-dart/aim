@@ -51,7 +51,7 @@ cd my_app
 
 ```yaml
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.1
 
 dev_dependencies:
   lints: ^5.0.0

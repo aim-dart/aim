@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:release/template_pins.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
@@ -48,6 +49,9 @@ void main(List<String> args) {
     _updatePubspec(file, newVersion);
     _updateChangelog(file.parent, newVersion);
   }
+
+  // Update aim_* pins embedded in the aim_cli scaffold templates
+  _updateCliTemplates(newVersion);
 
   // Update docs version
   _updateDocsVersion(newVersion);
@@ -149,6 +153,39 @@ See [Release Notes]($_repoUrl/releases/tag/$newVersion)
 
 $newEntry''';
     changelogFile.writeAsStringSync(content);
+  }
+}
+
+void _updateCliTemplates(String newVersion) {
+  final templatesFile = File(
+    'packages/aim_cli/lib/src/templates/templates.dart',
+  );
+  if (!templatesFile.existsSync()) {
+    stdout.writeln(
+      'Warning: aim_cli templates file not found, skipping template pins update.',
+    );
+    return;
+  }
+
+  final content = templatesFile.readAsStringSync();
+  final pinRegex = RegExp(
+    r'^(\s*)(aim_\w+): \^(\d+\.\d+\.\d+(?:-[\w.]+)?(?:\+[\w.]+)?)$',
+    multiLine: true,
+  );
+
+  for (final match in pinRegex.allMatches(content)) {
+    final depName = match[2]!;
+    final oldVersion = match[3]!;
+    if (oldVersion != newVersion) {
+      stdout.writeln(
+        'aim_cli templates: $depName ^$oldVersion → ^$newVersion',
+      );
+    }
+  }
+
+  final updated = bumpTemplatePins(content, newVersion);
+  if (updated != content) {
+    templatesFile.writeAsStringSync(updated);
   }
 }
 

@@ -18,11 +18,28 @@ name: my_app
 description: My Aim application
 
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.1
 
 aim:
   entry: bin/server.dart
 ```
+
+## Target
+
+`aim.target` selects where the application runs. It changes what `aim dev` and `aim build` do and the default entry point.
+
+| `target` | Runtime | `aim dev` | `aim build` | Default entry |
+|---|---|---|---|---|
+| `server` (default) | Dart VM with `aim_server` | `dart run` with restart on change | `dart compile exe` → `build/server` | `bin/server.dart` |
+| `edge` | Cloudflare workerd with `aim_edge` | `dart compile wasm` + `npx wrangler@4 dev`, recompiles on change | `dart compile wasm` → `build/edge/` | `lib/main.dart` |
+
+```yaml
+aim:
+  target: edge
+  entry: lib/main.dart
+```
+
+`aim.env` is not applied for `target: edge`; declare vars and bindings in `wrangler.jsonc` instead and read them with `c.env`.
 
 ## Environment Variables
 
@@ -132,7 +149,7 @@ Entry point is determined in this order:
 
 1. `--entry` option (`aim dev --entry bin/api.dart`)
 2. `aim.entry` in `pubspec.yaml`
-3. Default: `bin/server.dart`
+3. Target default: `bin/server.dart` for `server`, `lib/main.dart` for `edge`
 
 ## Watch Directories
 

@@ -48,7 +48,7 @@ Add middleware packages to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  aim_server: ^0.0.6
+  aim_server: ^0.1.1
   aim_server_cors: ^0.0.1
   aim_server_logger: ^0.0.1
   aim_server_jwt: ^0.0.1
