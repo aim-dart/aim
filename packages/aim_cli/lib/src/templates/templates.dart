@@ -8,7 +8,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  aim_server: ^0.1.1
+  aim_server: ^0.2.0
 
 dev_dependencies:
   lints: ^6.0.0
@@ -315,7 +315,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  aim_edge: ^0.1.1
+  aim_edge: ^0.2.0
 
 dev_dependencies:
   lints: ^6.0.0
