@@ -246,11 +246,27 @@ class Pool<C> {
   Future<_PooledEntry<C>?> _takeIdle() async {
     while (_idle.isNotEmpty) {
       final entry = _idle.removeLast();
+      if (_isPastLifetime(entry)) {
+        await _destroyEntry(entry);
+        continue;
+      }
+      if (_needsValidation(entry) && !await validate(entry.conn)) {
+        _validationFailures++;
+        await _destroyEntry(entry);
+        continue;
+      }
       _inUse[entry.conn] = entry;
       return entry;
     }
     return null;
   }
+
+  bool _isPastLifetime(_PooledEntry<C> entry) =>
+      options.maxLifetime > Duration.zero &&
+      _now().difference(entry.createdAt) >= options.maxLifetime;
+
+  bool _needsValidation(_PooledEntry<C> entry) =>
+      _now().difference(entry.lastUsedAt) >= options.validationInterval;
 
   Future<_PooledEntry<C>> _createEntry() async {
     _pending++;

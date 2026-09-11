@@ -317,4 +317,87 @@ void main() {
       await pool.close();
     });
   });
+
+  group('Pool validation and lifetime on acquire', () {
+    late Harness h;
+
+    setUp(() => h = Harness());
+
+    test('skips validation when the connection was used recently', () async {
+      final pool = h.pool(quietOptions());
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(seconds: 10)); // < validationInterval 30s
+      await pool.acquire();
+      expect(h.validateCalls, 0);
+      await pool.close();
+    });
+
+    test('validates when idle for at least validationInterval', () async {
+      final pool = h.pool(quietOptions());
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(seconds: 30));
+      final again = await pool.acquire();
+      expect(h.validateCalls, 1);
+      expect(again, same(a));
+      await pool.close();
+    });
+
+    test('validationInterval zero validates on every acquire', () async {
+      final pool = h.pool(
+        PoolOptions(
+          maxConnections: 1,
+          acquireTimeout: const Duration(milliseconds: 200),
+          idleTimeout: Duration.zero,
+          maxLifetime: Duration.zero,
+          validationInterval: Duration.zero,
+        ),
+      );
+      final a = await pool.acquire();
+      await pool.release(a);
+      await pool.acquire();
+      expect(h.validateCalls, 1);
+      await pool.close();
+    });
+
+    test('failed validation destroys and creates a replacement', () async {
+      final pool = h.pool(quietOptions());
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(seconds: 30));
+      h.validateResult = false;
+
+      final b = await pool.acquire();
+      expect(b, isNot(same(a)));
+      expect(h.destroyed, [a]);
+      expect(pool.stats.validationFailures, 1);
+      expect(pool.stats.destroyed, 1);
+      expect(pool.stats.created, 2);
+      await pool.close();
+    });
+
+    test('idle connection past maxLifetime is destroyed without validation',
+        () async {
+      final pool = h.pool(
+        PoolOptions(
+          maxConnections: 2,
+          acquireTimeout: const Duration(milliseconds: 200),
+          idleTimeout: Duration.zero,
+          maxLifetime: const Duration(minutes: 5),
+          validationInterval: const Duration(seconds: 30),
+        ),
+      );
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(minutes: 5));
+
+      final b = await pool.acquire();
+      expect(b, isNot(same(a)));
+      expect(h.destroyed, [a]);
+      expect(h.validateCalls, 0);
+      expect(pool.stats.validationFailures, 0);
+      await pool.close();
+    });
+  });
 }
