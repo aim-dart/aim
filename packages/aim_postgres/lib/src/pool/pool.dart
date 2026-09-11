@@ -277,7 +277,7 @@ class Pool<C> {
   /// (bounded by maxConnections). Runs in the background.
   void _replenishForWaiters() {
     while (!_closed &&
-        _waiters.isNotEmpty &&
+        _waiters.length > _pending &&
         _total < options.maxConnections) {
       // _createEntry increments _pending synchronously, so the loop
       // terminates.
@@ -298,9 +298,18 @@ class Pool<C> {
     }
   }
 
-  Future<C> _waitForConnection() {
+  Future<C> _waitForConnection() async {
     final completer = Completer<C>();
     _waiters.add(completer);
-    return completer.future;
+    try {
+      return await completer.future.timeout(options.acquireTimeout);
+    } on TimeoutException {
+      // The timer fired before any release reached us. Nothing can have
+      // completed the completer in between (release runs in its own
+      // microtask chain), so it is safe to drop it.
+      _waiters.remove(completer);
+      _timeouts++;
+      throw PoolTimeoutException(options.acquireTimeout, stats);
+    }
   }
 }

@@ -191,4 +191,75 @@ void main() {
       expect(pool.stats.validationFailures, 0);
     });
   });
+
+  group('Pool timeout and create failure', () {
+    late Harness h;
+
+    setUp(() => h = Harness());
+
+    test('throws PoolTimeoutException when no connection frees up', () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      final a = await pool.acquire();
+
+      await expectLater(
+        pool.acquire(),
+        throwsA(isA<PoolTimeoutException>()
+            .having((e) => e.waited, 'waited', const Duration(milliseconds: 200))
+            .having((e) => e.stats.inUse, 'stats.inUse', 1)),
+      );
+      expect(pool.stats.timeouts, 1);
+      expect(pool.stats.waiting, 0, reason: 'timed-out waiter was removed');
+
+      // A release after the timeout must park the connection, not hand it
+      // to the dead waiter.
+      await pool.release(a);
+      expect(pool.stats.idle, 1);
+      await pool.close();
+    });
+
+    test('create failure propagates and frees the slot', () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      h.createError = const FormatException('bad url');
+
+      await expectLater(pool.acquire(), throwsFormatException);
+      expect(pool.stats.total, 0);
+
+      h.createError = null;
+      final c = await pool.acquire();
+      expect(c, isA<FakeConn>());
+      expect(pool.stats.total, 1);
+      await pool.close();
+    });
+
+    test('create failure while replenishing fails the waiter', () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      final a = await pool.acquire();
+      final waiting = pool.acquire();
+      await Future<void>.delayed(Duration.zero);
+
+      h.createError = const FormatException('down');
+      await pool.release(a, discard: true);
+
+      await expectLater(waiting, throwsFormatException);
+      expect(pool.stats.total, 0);
+      await pool.close();
+    });
+
+    test('replenish opens at most one replacement per waiter', () async {
+      final pool = h.pool(quietOptions(maxConnections: 3));
+      final a = await pool.acquire();
+      final b = await pool.acquire();
+      final c = await pool.acquire();
+      final waiting = pool.acquire();
+      await Future<void>.delayed(Duration.zero);
+
+      await pool.release(a, discard: true);
+      await pool.release(b, discard: true);
+      await waiting;
+      expect(h.created, hasLength(4), reason: 'one replacement for one waiter');
+      expect(pool.stats.total, 2);
+      await pool.release(c);
+      await pool.close();
+    });
+  });
 }
