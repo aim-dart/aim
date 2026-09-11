@@ -35,7 +35,8 @@ class CfProperties {
   double? _double(String name) {
     final value = raw.getProperty(name.toJS);
     if (value.isA<JSNumber>()) return (value as JSNumber).toDartDouble;
-    if (value.isA<JSString>()) return double.tryParse((value as JSString).toDart);
+    if (value.isA<JSString>())
+      return double.tryParse((value as JSString).toDart);
     return null;
   }
 
