@@ -14,7 +14,17 @@ void main() {
 
 `serveEdge()` registers `globalThis.__aimFetch`. A small JS entry module instantiates the wasm module on the first request and forwards `fetch(request, env, ctx)` to it. See `examples/edge-sample` in the repository for the build script, `wrangler.jsonc`, and the entry module.
 
-Worker bindings and the execution context are available as raw `JSObject`s via `c.env` and `c.executionContext`; type them with `dart:js_interop` in your application.
+## Bindings and request metadata
+
+`c.env` returns a typed `Bindings?`: `c.env?.string('GREETING')` reads a var or secret, `c.env?.get('MY_KV')` returns a resource binding (KV namespace, D1 database, ...) as a raw `JSObject` you call with `dart:js_interop`, and `c.env?.has('MY_KV')` checks presence.
+
+`c.cf` returns a typed `CfProperties?` for Cloudflare's `request.cf` metadata: `c.cf?.country`, `c.cf?.colo`, `c.cf?.city`, `c.cf?.asn`, and more.
+
+`c.executionContext` is still a raw `JSObject?`, for `waitUntil` / `passThroughOnException` via `dart:js_interop`.
+
+## Middleware
+
+The `aim_server_*` middleware packages (cors, cookie, form, logger, sse, jwt, basic_auth) depend on `aim_core` and work unchanged on workerd. `aim_server_static` and `aim_server_multipart`'s `saveTo()` need the file system and are VM-only.
 
 ## Limitations (v1)
 

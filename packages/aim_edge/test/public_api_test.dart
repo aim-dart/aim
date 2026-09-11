@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// The public barrel may export aim_core and the two adapter extensions only,
-/// and must never make a package:web type reachable.
+/// The public barrel may export aim_core, the Bindings/CfProperties value
+/// types, and the two adapter extensions only, and must never make a
+/// package:web type reachable.
 void main() {
   test('lib/aim_edge.dart exports only the allowed surface', () {
     final source = File('lib/aim_edge.dart').readAsStringSync();
@@ -13,23 +14,27 @@ void main() {
         .map((m) => (uri: m.group(1)!, show: m.group(3)?.trim()))
         .toList();
 
-    expect(exports, hasLength(3));
+    expect(exports, hasLength(5));
     expect(exports[0], (uri: 'package:aim_core/aim_core.dart', show: null));
-    expect(exports[1], (uri: 'src/edge_context.dart', show: 'EdgeContext'));
-    expect(exports[2], (uri: 'src/serve_edge.dart', show: 'AimEdge'));
+    expect(exports[1], (uri: 'src/bindings.dart', show: 'Bindings'));
+    expect(exports[2], (uri: 'src/cf_properties.dart', show: 'CfProperties'));
+    expect(exports[3], (uri: 'src/edge_context.dart', show: 'EdgeContext'));
+    expect(exports[4], (uri: 'src/serve_edge.dart', show: 'AimEdge'));
     expect(source, isNot(contains('package:web')));
   });
 
   test('exported extensions expose no package:web types', () {
     final context = File('lib/src/edge_context.dart').readAsStringSync();
     final serve = File('lib/src/serve_edge.dart').readAsStringSync();
-    final publicMembers = RegExp(r'^\s{2}(?:JSObject\?|void)\s+(?:get\s+)?\w+',
+    final publicMembers = RegExp(
+        r'^\s{2}(?:JSObject\?|Bindings\?|CfProperties\?|void)\s+(?:get\s+)?\w+',
         multiLine: true);
     // Any two-space-indented line that looks like the start of a member
     // declaration (starts with a letter, so doc comments starting with
     // `//`/`///` are excluded automatically since they start with `/`).
     final declarationLines = RegExp(r'^  [A-Za-z_][^\n]*$', multiLine: true);
-    // Every member of the two exported extensions returns JSObject? or void.
+    // Every member of the two exported extensions returns JSObject?,
+    // Bindings?, CfProperties? or void.
     final extensionBodies = [
       _extensionBody(context, 'EdgeContext'),
       _extensionBody(serve, 'AimEdge'),
@@ -47,14 +52,56 @@ void main() {
               'package:web type:\n$signatures');
       expect(publicMembers.hasMatch(body), isTrue);
       // Every top-level declaration line in the extension body must be one
-      // of the JSObject?/void-returning members matched above: if the two
-      // counts diverge, some member has snuck in with a different return
-      // type that publicMembers failed to catch.
+      // of the JSObject?/Bindings?/CfProperties?/void-returning members
+      // matched above: if the two counts diverge, some member has snuck in
+      // with a different return type that publicMembers failed to catch.
       expect(
         declarationLines.allMatches(body).length,
         equals(publicMembers.allMatches(body).length),
-        reason: 'every exported member must return JSObject? or void',
+        reason: 'every exported member must return JSObject?, Bindings?, '
+            'CfProperties? or void',
       );
+    }
+  });
+
+  test('Bindings and CfProperties expose no package:web types', () {
+    final bindings = File('lib/src/bindings.dart').readAsStringSync();
+    final cfProperties = File('lib/src/cf_properties.dart').readAsStringSync();
+    const allowedReturnTypes = {
+      'String?',
+      'double?',
+      'int?',
+      'bool',
+      'JSObject?',
+      'JSObject',
+    };
+    final publicMemberLine = RegExp(
+      r'^  (?:final\s+)?(String\?|double\?|int\?|bool|JSObject\?|JSObject)\s+'
+      r'(?:get\s+)?\w+',
+      multiLine: true,
+    );
+    final declarationLines = RegExp(r'^  [A-Za-z_][^\n]*$', multiLine: true);
+
+    for (final source in [bindings, cfProperties]) {
+      expect(source, isNot(contains('package:web')));
+      // No public member line mentions a package:web type.
+      final memberLines = declarationLines
+          .allMatches(source)
+          .map((m) => m.group(0)!)
+          // Exclude private helpers (leading underscore after the type).
+          .where((line) => !RegExp(r'^\s{2}\S+\s+_\w').hasMatch(line))
+          .toList();
+      for (final line in memberLines) {
+        expect(line, isNot(contains('web.')),
+            reason: 'public member mentions a package:web type: $line');
+      }
+      // Every public member's declared return type is one of the allowed
+      // types.
+      final publicMatches = publicMemberLine.allMatches(source).toList();
+      for (final match in publicMatches) {
+        expect(allowedReturnTypes, contains(match.group(1)),
+            reason: 'unexpected public return type in: ${match.group(0)}');
+      }
     }
   });
 }

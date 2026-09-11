@@ -11,6 +11,10 @@ head:
 
 Aim provides a rich ecosystem of official middleware packages for common web application needs. Each package is published separately, allowing you to include only what you need.
 
+::: tip Runs on Cloudflare workerd too
+The `aim_server_*` middleware packages (cors, cookie, form, logger, sse, jwt, basic_auth) depend on `aim_core` and work unchanged on workerd via `aim_edge`. `aim_server_static` and `aim_server_multipart`'s `saveTo()` need the file system and are VM-only.
+:::
+
 ## Available Middleware
 
 ### Core Features

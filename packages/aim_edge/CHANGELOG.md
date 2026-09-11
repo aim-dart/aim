@@ -2,6 +2,8 @@
 
 - **Breaking:** `c.req.workerEnv` / `c.req.workerContext` are replaced by `c.env` / `c.executionContext` (extension on `Context`).
 - **Breaking:** follows `aim_core`'s rename of `Env` → `Variables` and `envFactory` → `variablesFactory` (re-exported).
+- `c.env` now returns `Bindings?` (`string(name)`, `get(name)`, `has(name)`, `raw`) instead of a bare `JSObject?`.
+- New `c.cf` returns `CfProperties?` with typed getters for Cloudflare's request metadata (country, colo, city, asn, ...).
 
 ## 0.1.1
 

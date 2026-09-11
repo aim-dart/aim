@@ -213,6 +213,16 @@ void main() {
     expect(await utf8.decodeStream(res), 'hello from workerd');
   });
 
+  test('exposes request.cf as typed properties', () async {
+    final res = await get('/cf');
+    expect(res.statusCode, 200);
+    final body = jsonDecode(await utf8.decodeStream(res)) as Map;
+    expect(body['country'], isA<String>().having((s) => s.length, 'length', 2));
+    expect(body['colo'], isA<String>().having((s) => s.isNotEmpty, 'non-empty', isTrue));
+    expect(body['asn'], anyOf(isNull, isA<int>()));
+    expect(body['latitude'], anyOf(isNull, isA<num>()));
+  });
+
   test('uses the custom 404 handler', () async {
     final res = await get('/nope');
     expect(res.statusCode, 404);
