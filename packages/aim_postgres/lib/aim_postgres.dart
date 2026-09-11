@@ -33,3 +33,4 @@ library;
 
 export 'src/pg_connection.dart';
 export 'src/pg_database.dart';
+export 'src/pool/pool.dart';
