@@ -1,6 +1,55 @@
 import 'package:aim_postgres/src/pool/pool.dart';
 import 'package:test/test.dart';
 
+class FakeConn {
+  FakeConn(this.id);
+  final int id;
+
+  @override
+  String toString() => 'FakeConn($id)';
+}
+
+/// Records every callback the pool makes so tests can assert on them.
+class Harness {
+  int _nextId = 0;
+  final created = <FakeConn>[];
+  final destroyed = <FakeConn>[];
+  int validateCalls = 0;
+  bool validateResult = true;
+  Object? createError;
+
+  /// Injected clock. Tests advance it with [advance].
+  DateTime clock = DateTime(2026, 1, 1);
+
+  void advance(Duration d) => clock = clock.add(d);
+
+  Pool<FakeConn> pool(PoolOptions options) => Pool<FakeConn>(
+        create: () async {
+          final error = createError;
+          if (error != null) throw error;
+          final conn = FakeConn(_nextId++);
+          created.add(conn);
+          return conn;
+        },
+        validate: (_) async {
+          validateCalls++;
+          return validateResult;
+        },
+        destroy: (conn) async => destroyed.add(conn),
+        options: options,
+        now: () => clock,
+      );
+}
+
+/// Options that disable every timer-driven feature so tests are deterministic.
+PoolOptions quietOptions({int maxConnections = 2}) => PoolOptions(
+      maxConnections: maxConnections,
+      acquireTimeout: const Duration(milliseconds: 200),
+      idleTimeout: Duration.zero,
+      maxLifetime: Duration.zero,
+      validationInterval: const Duration(seconds: 30),
+    );
+
 void main() {
   group('PoolOptions', () {
     test('has documented defaults', () {
@@ -58,6 +107,88 @@ void main() {
       final e = PoolTimeoutException(const Duration(milliseconds: 1500), stats);
       expect(e.toString(), contains('1500ms'));
       expect(e.toString(), contains('inUse: 2'));
+    });
+  });
+
+  group('Pool acquire/release', () {
+    late Harness h;
+    late Pool<FakeConn> pool;
+
+    setUp(() {
+      h = Harness();
+      pool = h.pool(quietOptions());
+    });
+
+    tearDown(() => pool.close());
+
+    test('creates connections lazily up to maxConnections', () async {
+      final a = await pool.acquire();
+      final b = await pool.acquire();
+      expect(a, isNot(same(b)));
+      expect(h.created, hasLength(2));
+      expect(pool.stats.total, 2);
+      expect(pool.stats.inUse, 2);
+      expect(pool.stats.idle, 0);
+    });
+
+    test('reuses the most recently released idle connection (LIFO)', () async {
+      final a = await pool.acquire();
+      final b = await pool.acquire();
+      await pool.release(a);
+      await pool.release(b);
+      final next = await pool.acquire();
+      expect(next, same(b));
+      expect(h.created, hasLength(2));
+      expect(pool.stats.idle, 1);
+    });
+
+    test('blocks when exhausted and hands the released connection to the waiter',
+        () async {
+      final a = await pool.acquire();
+      await pool.acquire();
+      var got = false;
+      final waiting = pool.acquire().then((c) {
+        got = true;
+        return c;
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(got, isFalse);
+      expect(pool.stats.waiting, 1);
+
+      await pool.release(a);
+      final c = await waiting;
+      expect(c, same(a));
+      expect(pool.stats.idle, 0, reason: 'handed off directly, not parked');
+      expect(pool.stats.waiting, 0);
+      expect(h.created, hasLength(2), reason: 'no third connection created');
+    });
+
+    test('discard destroys the connection and replenishes for a waiter',
+        () async {
+      final a = await pool.acquire();
+      await pool.acquire();
+      final waiting = pool.acquire();
+      await Future<void>.delayed(Duration.zero);
+
+      await pool.release(a, discard: true);
+      final c = await waiting;
+      expect(h.destroyed, [a]);
+      expect(c, isNot(same(a)));
+      expect(h.created, hasLength(3));
+      expect(pool.stats.destroyed, 1);
+      expect(pool.stats.total, 2);
+    });
+
+    test('release of a connection not checked out throws', () async {
+      expect(() => pool.release(FakeConn(99)), throwsStateError);
+    });
+
+    test('stats counts created', () async {
+      await pool.acquire();
+      expect(pool.stats.created, 1);
+      expect(pool.stats.destroyed, 0);
+      expect(pool.stats.timeouts, 0);
+      expect(pool.stats.validationFailures, 0);
     });
   });
 }
