@@ -1,3 +1,22 @@
+## Unreleased
+
+### Features
+
+- Connection pooling: `PostgresDatabase.connect()` now manages a pool of connections.
+  New named parameters `maxConnections` (default 10), `acquireTimeout` (30s),
+  `idleTimeout` (10min), `maxLifetime` (30min) and `validationInterval` (30s).
+  `PostgresDatabase.poolStats` exposes a `PoolStats` snapshot.
+  `PoolTimeoutException` is thrown when no connection becomes available in time.
+- Queries on a single connection are now serialized, so concurrent queries inside
+  one transaction no longer corrupt the protocol stream.
+- `PostgresConnection.isBroken`, `isClosed` and `ping()`.
+
+### Fixes
+
+- Concurrent `query()` / `execute()` calls on one `PostgresDatabase` previously
+  interleaved on a single socket. They now run on separate pooled connections.
+
+
 ## 0.1.1
 
 See [Release Notes](https://github.com/aim-dart/aim/releases/tag/0.1.1)

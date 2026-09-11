@@ -62,6 +62,8 @@ void main() {
         ));
         expect(pids, hasLength(30));
         expect(pids.toSet().length, lessThanOrEqualTo(3));
+        expect(pids.toSet().length, greaterThan(1),
+            reason: 'queries actually ran on more than one connection');
         expect(db.poolStats.total, lessThanOrEqualTo(3));
         expect(db.poolStats.inUse, 0);
       } finally {

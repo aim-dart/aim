@@ -95,7 +95,7 @@ class PostgresDatabase extends Database implements PostgresQueryable {
     Map<String, dynamic>? params,
     List<dynamic>? args,
   }) {
-    return _withConnection((conn) async {
+    return _withConnection((conn, _) async {
       final result = await _runQuery(conn, sql, params: params, args: args);
       return result.toMaps();
     });
@@ -107,7 +107,7 @@ class PostgresDatabase extends Database implements PostgresQueryable {
     Map<String, dynamic>? params,
     List<dynamic>? args,
   }) {
-    return _withConnection((conn) async {
+    return _withConnection((conn, _) async {
       await _runQuery(conn, sql, params: params, args: args);
       return 0;
     });
@@ -117,7 +117,7 @@ class PostgresDatabase extends Database implements PostgresQueryable {
   Future<T> transaction<T>(
     Future<T> Function(PostgresTransaction tx) fn,
   ) {
-    return _withConnection((conn) async {
+    return _withConnection((conn, discard) async {
       await conn.sendSimpleQuery('BEGIN');
       try {
         final result = await fn(PostgresTransaction(conn));
@@ -128,8 +128,10 @@ class PostgresDatabase extends Database implements PostgresQueryable {
           try {
             await conn.sendSimpleQuery('ROLLBACK');
           } catch (_) {
-            // The original error is what the caller needs to see. A failed
-            // ROLLBACK marks the connection broken, so it gets discarded.
+            // The caller needs the original error, not this one. A
+            // connection whose ROLLBACK failed may still be inside an
+            // aborted transaction, so never hand it back to the pool.
+            discard();
           }
         }
         rethrow;
@@ -138,14 +140,15 @@ class PostgresDatabase extends Database implements PostgresQueryable {
   }
 
   Future<T> _withConnection<T>(
-    Future<T> Function(PostgresConnection conn) fn,
+    Future<T> Function(PostgresConnection conn, void Function() discard) fn,
   ) async {
     if (_pool.isClosed) throw StateError('PostgresDatabase is closed');
     final conn = await _pool.acquire();
+    var forceDiscard = false;
     try {
-      return await fn(conn);
+      return await fn(conn, () => forceDiscard = true);
     } finally {
-      await _pool.release(conn, discard: conn.isBroken);
+      await _pool.release(conn, discard: forceDiscard || conn.isBroken);
     }
   }
 }

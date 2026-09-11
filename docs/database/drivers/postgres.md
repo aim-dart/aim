@@ -56,6 +56,42 @@ postgresql://user:password@host:port/database?param=value
 |-----------|-------------|---------|
 | `sslmode` | SSL connection mode | `prefer` |
 
+### Connection Pooling
+
+`PostgresDatabase.connect()` opens a pool of connections. One connection is
+established immediately so configuration errors fail fast; the rest are opened
+on demand.
+
+```dart
+final db = await PostgresDatabase.connect(
+  'postgresql://user:pass@localhost:5432/mydb',
+  maxConnections: 20,
+  acquireTimeout: Duration(seconds: 5),
+);
+```
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `maxConnections` | Upper bound on open connections | `10` |
+| `acquireTimeout` | How long a call waits for a free connection before throwing `PoolTimeoutException` | `30s` |
+| `idleTimeout` | Idle connections unused for this long are closed. `Duration.zero` disables | `10min` |
+| `maxLifetime` | Connections older than this are closed once idle. `Duration.zero` disables | `30min` |
+| `validationInterval` | Idle connections unused for at least this long are pinged before reuse. `Duration.zero` pings every time | `30s` |
+
+Each `query()` / `execute()` borrows a connection for the duration of the call.
+`transaction()` pins one connection for the whole callback. Connections that
+hit a transport error are discarded and replaced automatically.
+
+Queries issued on one connection are serialized, so concurrent calls inside a
+single `transaction()` callback do not corrupt the protocol stream. That is not
+transaction isolation: they still run in the same server-side transaction, in
+the order they were issued.
+
+```dart
+print(db.poolStats);
+// PoolStats(total: 3, idle: 2, inUse: 1, waiting: 0, created: 3, destroyed: 0, timeouts: 0, validationFailures: 0)
+```
+
 ## Queries
 
 ### Named Parameters
@@ -208,6 +244,9 @@ void main() async {
   await db.close();
 }
 ```
+
+`PostgresDatabase` is a connection pool, so a single instance shared across the
+whole application is the intended usage. Do not create one per request.
 
 ### 2. Use Named Parameters
 
