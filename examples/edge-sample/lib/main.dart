@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:js_interop';
-import 'dart:js_interop_unsafe';
 
 import 'package:aim_edge/aim_edge.dart';
 import 'package:aim_server_cors/aim_server_cors.dart';
@@ -41,9 +39,7 @@ void main() {
   });
 
   app.get('/env', (c) async {
-    final greeting =
-        (c.env?.getProperty('GREETING'.toJS) as JSString?)?.toDart;
-    return c.text(greeting ?? 'GREETING is not set');
+    return c.text(c.env?.string('GREETING') ?? 'GREETING is not set');
   });
 
   app.get('/boom', (c) async => throw StateError('boom'));
@@ -51,6 +47,17 @@ void main() {
   app.get('/not-modified', (c) async {
     c.header('etag', '"v1"');
     return c.text('', statusCode: 304);
+  });
+
+  app.get('/cf', (c) async {
+    final cf = c.cf;
+    return c.json({
+      'country': cf?.country,
+      'colo': cf?.colo,
+      'city': cf?.city,
+      'asn': cf?.asn,
+      'latitude': cf?.latitude,
+    });
   });
 
   app.notFound((c) async => c.json({'error': 'not found'}, statusCode: 404));

@@ -5,5 +5,7 @@
 library;
 
 export 'package:aim_core/aim_core.dart';
+export 'src/bindings.dart' show Bindings;
+export 'src/cf_properties.dart' show CfProperties;
 export 'src/edge_context.dart' show EdgeContext;
 export 'src/serve_edge.dart' show AimEdge;

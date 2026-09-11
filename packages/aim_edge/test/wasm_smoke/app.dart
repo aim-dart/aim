@@ -5,6 +5,7 @@ import 'package:aim_edge/aim_edge.dart';
 void main() {
   final app = Aim();
   app.get('/env', (c) async => c.text('${c.env != null}'));
+  app.get('/cf', (c) async => c.text('${c.cf?.country}'));
   app.get('/', (c) async => c.text('ok'));
   app.serveEdge();
 }
