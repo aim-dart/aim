@@ -153,6 +153,9 @@ class Pool<C> {
   /// so concurrent acquires cannot overshoot [PoolOptions.maxConnections].
   int _pending = 0;
 
+  /// Creates started by [_replenishForWaiters] that have not yet completed.
+  int _pendingForWaiters = 0;
+
   bool _closed = false;
   int _created = 0;
   int _destroyed = 0;
@@ -186,7 +189,13 @@ class Pool<C> {
     if (idle != null) return idle.conn;
 
     if (_total < options.maxConnections) {
-      final entry = await _createEntry();
+      final _PooledEntry<C> entry;
+      try {
+        entry = await _createEntry();
+      } catch (_) {
+        _replenishForWaiters();
+        rethrow;
+      }
       if (_closed) {
         await _destroyEntry(entry);
         throw StateError('Pool is closed');
@@ -277,12 +286,14 @@ class Pool<C> {
   /// (bounded by maxConnections). Runs in the background.
   void _replenishForWaiters() {
     while (!_closed &&
-        _waiters.length > _pending &&
+        _waiters.length > _pendingForWaiters &&
         _total < options.maxConnections) {
       // _createEntry increments _pending synchronously, so the loop
       // terminates.
+      _pendingForWaiters++;
       _createEntry().then(
         (entry) {
+          _pendingForWaiters--;
           if (_closed) {
             unawaited(_destroyEntry(entry));
             return;
@@ -290,6 +301,7 @@ class Pool<C> {
           _handOff(entry);
         },
         onError: (Object error, StackTrace stackTrace) {
+          _pendingForWaiters--;
           if (_waiters.isNotEmpty) {
             _waiters.removeFirst().completeError(error, stackTrace);
           }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:aim_postgres/src/pool/pool.dart';
 import 'package:test/test.dart';
 
@@ -18,6 +20,13 @@ class Harness {
   bool validateResult = true;
   Object? createError;
 
+  /// When set, every create() awaits this before proceeding.
+  Completer<void>? createGate;
+
+  /// When true, the next create() throws FormatException('gated failure')
+  /// once.
+  bool failNextCreate = false;
+
   /// Injected clock. Tests advance it with [advance].
   DateTime clock = DateTime(2026, 1, 1);
 
@@ -25,6 +34,12 @@ class Harness {
 
   Pool<FakeConn> pool(PoolOptions options) => Pool<FakeConn>(
         create: () async {
+          final gate = createGate;
+          if (gate != null) await gate.future;
+          if (failNextCreate) {
+            failNextCreate = false;
+            throw const FormatException('gated failure');
+          }
           final error = createError;
           if (error != null) throw error;
           final conn = FakeConn(_nextId++);
@@ -258,6 +273,46 @@ void main() {
       await waiting;
       expect(h.created, hasLength(4), reason: 'one replacement for one waiter');
       expect(pool.stats.total, 2);
+      await pool.release(c);
+      await pool.close();
+    });
+
+    test('waiter is replenished even while a direct create is in flight',
+        () async {
+      final pool = h.pool(quietOptions(maxConnections: 2));
+      final a = await pool.acquire();
+      h.createGate = Completer<void>();
+      final x = pool.acquire(); // starts a direct create, blocked on the gate
+      await Future<void>.delayed(Duration.zero);
+      final y = pool.acquire(); // total == max → waiter
+      await Future<void>.delayed(Duration.zero);
+      expect(pool.stats.waiting, 1);
+
+      await pool.release(a, discard: true); // frees a slot; must start a create for y
+      h.createGate!.complete();
+      final results = await Future.wait([x, y]);
+      expect(results[0], isNot(same(results[1])));
+      expect(h.created, hasLength(3));
+      expect(pool.stats.waiting, 0);
+      await pool.close();
+    });
+
+    test('direct create failure frees the slot and replenishes a waiter',
+        () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      h.createGate = Completer<void>();
+      h.failNextCreate = true;
+      final x = pool.acquire(); // direct create, will fail once the gate opens
+      await Future<void>.delayed(Duration.zero);
+      final y = pool.acquire(); // waiter
+      await Future<void>.delayed(Duration.zero);
+
+      h.createGate!.complete();
+      await expectLater(x, throwsFormatException);
+      final c = await y; // replenished after the failure
+      expect(c, isA<FakeConn>());
+      expect(h.created, hasLength(1));
+      expect(pool.stats.total, 1);
       await pool.release(c);
       await pool.close();
     });
