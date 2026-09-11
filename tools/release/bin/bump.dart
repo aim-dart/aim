@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:release/changelog.dart';
 import 'package:release/template_pins.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
@@ -60,7 +61,9 @@ void main(List<String> args) {
   stdout.writeln('\nNext steps:');
   stdout.writeln('  1. Review changes: git diff');
   stdout.writeln('  2. Commit: git commit -am "chore: bump version to $newVersion"');
-  stdout.writeln('  3. Tag: git tag v$newVersion');
+  stdout.writeln(
+    '  3. Tag: git tag $newVersion  (no "v" prefix: docs deploy and create_release expect 0.2.0-style tags)',
+  );
 }
 
 bool _isValidVersion(String version) {
@@ -121,38 +124,45 @@ bool _isAimPackage(String packageName) {
 
 const _repoUrl = 'https://github.com/aim-dart/aim';
 
+final _unreleasedHeadingPattern = RegExp(
+  r'^\s*##\s*unreleased\s*$',
+  multiLine: true,
+  caseSensitive: false,
+);
+
 void _updateChangelog(Directory packageDir, String newVersion) {
   final changelogFile = File('${packageDir.path}/CHANGELOG.md');
-  final newEntry = '''## $newVersion
+  final packageName = packageDir.path
+      .split(Platform.pathSeparator)
+      .where((segment) => segment.isNotEmpty)
+      .last;
 
-See [Release Notes]($_repoUrl/releases/tag/$newVersion)
-''';
-
-  if (changelogFile.existsSync()) {
-    final content = changelogFile.readAsStringSync();
-
-    // Check if this version already exists
-    if (content.contains('## $newVersion')) {
-      return;
-    }
-
-    // Insert at the beginning, or after # Changelog header if exists
-    final lines = content.split('\n');
-    final headerIndex = lines.indexWhere((line) => line.startsWith('# '));
-
-    if (headerIndex != -1) {
-      lines.insert(headerIndex + 1, '\n$newEntry');
-    } else {
-      // No header, insert at beginning
-      lines.insert(0, '$newEntry\n');
-    }
-    changelogFile.writeAsStringSync(lines.join('\n'));
-  } else {
+  if (!changelogFile.existsSync()) {
     // Create new CHANGELOG.md
     final content = '''# Changelog
 
-$newEntry''';
+## $newVersion
+
+See [Release Notes]($_repoUrl/releases/tag/$newVersion)
+''';
     changelogFile.writeAsStringSync(content);
+    stdout.writeln('$packageName: CHANGELOG + $newVersion');
+    return;
+  }
+
+  final content = changelogFile.readAsStringSync();
+  final hadUnreleased = _unreleasedHeadingPattern.hasMatch(content);
+  final updated = bumpChangelog(content, newVersion, repoUrl: _repoUrl);
+
+  if (updated == content) {
+    return;
+  }
+
+  changelogFile.writeAsStringSync(updated);
+  if (hadUnreleased) {
+    stdout.writeln('$packageName: CHANGELOG Unreleased → $newVersion');
+  } else {
+    stdout.writeln('$packageName: CHANGELOG + $newVersion');
   }
 }
 
