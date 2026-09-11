@@ -186,7 +186,14 @@ class Pool<C> {
     if (_closed) throw StateError('Pool is closed');
 
     final idle = await _takeIdle();
-    if (idle != null) return idle.conn;
+    if (idle != null) {
+      if (_closed) {
+        _inUse.remove(idle.conn);
+        await _destroyEntry(idle);
+        throw StateError('Pool is closed');
+      }
+      return idle.conn;
+    }
 
     if (_total < options.maxConnections) {
       final _PooledEntry<C> entry;
@@ -243,19 +250,25 @@ class Pool<C> {
   // ---- internals -------------------------------------------------------
 
   /// Pops idle entries (LIFO) until one is usable. Returns null when none.
+  ///
+  /// The popped entry is registered as in-use before any await so that
+  /// [_total] stays accurate while it is being validated.
   Future<_PooledEntry<C>?> _takeIdle() async {
     while (_idle.isNotEmpty) {
       final entry = _idle.removeLast();
-      if (_isPastLifetime(entry)) {
-        await _destroyEntry(entry);
-        continue;
-      }
-      if (_needsValidation(entry) && !await validate(entry.conn)) {
-        _validationFailures++;
-        await _destroyEntry(entry);
-        continue;
-      }
       _inUse[entry.conn] = entry;
+
+      if (_isPastLifetime(entry)) {
+        _inUse.remove(entry.conn);
+        await _destroyEntry(entry);
+        continue;
+      }
+      if (_needsValidation(entry) && !await _isValid(entry)) {
+        _validationFailures++;
+        _inUse.remove(entry.conn);
+        await _destroyEntry(entry);
+        continue;
+      }
       return entry;
     }
     return null;
@@ -267,6 +280,15 @@ class Pool<C> {
 
   bool _needsValidation(_PooledEntry<C> entry) =>
       _now().difference(entry.lastUsedAt) >= options.validationInterval;
+
+  /// Runs [validate]; a validator that throws counts as a failed validation.
+  Future<bool> _isValid(_PooledEntry<C> entry) async {
+    try {
+      return await validate(entry.conn);
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<_PooledEntry<C>> _createEntry() async {
     _pending++;

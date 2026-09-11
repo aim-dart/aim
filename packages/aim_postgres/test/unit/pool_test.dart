@@ -20,6 +20,12 @@ class Harness {
   bool validateResult = true;
   Object? createError;
 
+  /// When set, every validate() awaits this before returning.
+  Completer<void>? validateGate;
+
+  /// When set, validate() throws this instead of returning.
+  Object? validateError;
+
   /// When set, every create() awaits this before proceeding.
   Completer<void>? createGate;
 
@@ -48,6 +54,10 @@ class Harness {
         },
         validate: (_) async {
           validateCalls++;
+          final gate = validateGate;
+          if (gate != null) await gate.future;
+          final error = validateError;
+          if (error != null) throw error;
           return validateResult;
         },
         destroy: (conn) async => destroyed.add(conn),
@@ -397,6 +407,50 @@ void main() {
       expect(h.destroyed, [a]);
       expect(h.validateCalls, 0);
       expect(pool.stats.validationFailures, 0);
+      await pool.close();
+    });
+
+    test('a connection under validation still counts toward maxConnections',
+        () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(seconds: 30));
+      h.validateGate = Completer<void>();
+
+      final x = pool.acquire(); // pops a, blocked in validate()
+      await Future<void>.delayed(Duration.zero);
+      expect(pool.stats.total, 1);
+      expect(pool.stats.inUse, 1);
+
+      final y = pool.acquire(); // must wait, not create a second connection
+      await Future<void>.delayed(Duration.zero);
+      expect(pool.stats.waiting, 1);
+      expect(h.created, hasLength(1));
+
+      h.validateGate!.complete();
+      final xConn = await x;
+      expect(xConn, same(a));
+      await pool.release(xConn);
+      final yConn = await y;
+      expect(yConn, same(a));
+      expect(h.created, hasLength(1));
+      await pool.release(yConn);
+      await pool.close();
+    });
+
+    test('a throwing validator counts as a failed validation', () async {
+      final pool = h.pool(quietOptions());
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(seconds: 30));
+      h.validateError = Exception('probe failed');
+
+      final b = await pool.acquire();
+      expect(b, isNot(same(a)));
+      expect(h.destroyed, [a]);
+      expect(pool.stats.validationFailures, 1);
+      expect(pool.stats.total, 1);
       await pool.close();
     });
   });
