@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:release/changelog.dart';
+import 'package:release/pubspec_bump.dart';
 import 'package:release/template_pins.dart';
+import 'package:release/workspace.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
@@ -23,32 +25,32 @@ void main(List<String> args) {
     exit(1);
   }
 
-  final packagesDir = Directory('packages');
-  if (!packagesDir.existsSync()) {
-    stderr.writeln('packages directory not found. Run from repository root.');
-    exit(1);
-  }
+  final memberPaths = _resolveWorkspaceMembers();
 
-  final pubspecFiles = <File>[];
-  for (final entity in packagesDir.listSync()) {
-    if (entity is Directory) {
-      final pubspec = File('${entity.path}/pubspec.yaml');
-      if (pubspec.existsSync()) {
-        pubspecFiles.add(pubspec);
-      }
+  final memberFiles = <File>[];
+  for (final member in memberPaths) {
+    final pubspec = File('$member/pubspec.yaml');
+    if (pubspec.existsSync()) {
+      memberFiles.add(pubspec);
     }
   }
 
-  if (pubspecFiles.isEmpty) {
-    stderr.writeln('No pubspec.yaml files found in packages/');
+  if (memberFiles.isEmpty) {
+    stderr.writeln('No workspace member pubspec.yaml files found.');
     exit(1);
   }
 
   stdout.writeln('Bumping version to $newVersion\n');
 
-  for (final file in pubspecFiles) {
-    _updatePubspec(file, newVersion);
-    _updateChangelog(file.parent, newVersion);
+  var packageCount = 0;
+  for (final file in memberFiles) {
+    if (_isTopLevelPackage(file.parent.path)) {
+      _updatePubspec(file, newVersion);
+      _updateChangelog(file.parent, newVersion);
+      packageCount++;
+    } else {
+      _updateWorkspaceMemberDeps(file, newVersion);
+    }
   }
 
   // Update aim_* pins embedded in the aim_cli scaffold templates
@@ -57,7 +59,7 @@ void main(List<String> args) {
   // Update docs version
   _updateDocsVersion(newVersion);
 
-  stdout.writeln('\nDone! Updated ${pubspecFiles.length} packages to $newVersion');
+  stdout.writeln('\nDone! Updated $packageCount packages to $newVersion');
   stdout.writeln('\nNext steps:');
   stdout.writeln('  1. Review changes: git diff');
   stdout.writeln('  2. Commit: git commit -am "chore: bump version to $newVersion"');
@@ -71,21 +73,86 @@ bool _isValidVersion(String version) {
   return regex.hasMatch(version);
 }
 
+/// Returns the ordered list of workspace member directories to process.
+///
+/// Reads the `workspace:` list from the root `pubspec.yaml`. If the root
+/// pubspec has no `workspace:` list (or doesn't exist), falls back to
+/// scanning `packages/*` directly, matching the tool's original behaviour.
+List<String> _resolveWorkspaceMembers() {
+  final rootPubspec = File('pubspec.yaml');
+  if (rootPubspec.existsSync()) {
+    final members = workspaceMembers(rootPubspec.readAsStringSync());
+    if (members.isNotEmpty) {
+      return members;
+    }
+  }
+
+  final packagesDir = Directory('packages');
+  if (!packagesDir.existsSync()) {
+    stderr.writeln('packages directory not found. Run from repository root.');
+    exit(1);
+  }
+
+  return [
+    for (final entity in packagesDir.listSync())
+      if (entity is Directory) entity.path,
+  ];
+}
+
+/// Whether [memberPath] is a top-level package directory, i.e. exactly one
+/// segment under `packages/` (as opposed to a nested workspace member such
+/// as a golden-test fixture, example, or tool).
+bool _isTopLevelPackage(String memberPath) {
+  final normalized = memberPath.replaceAll(Platform.pathSeparator, '/');
+  if (!normalized.startsWith('packages/')) {
+    return false;
+  }
+  final rest = normalized.substring('packages/'.length);
+  return rest.isNotEmpty && !rest.contains('/');
+}
+
 void _updatePubspec(File file, String newVersion) {
   final content = file.readAsStringSync();
   final yaml = loadYaml(content) as YamlMap;
-  final editor = YamlEditor(content);
 
   final packageName = yaml['name'] as String;
   final oldVersion = yaml['version'] as String?;
 
+  var updated = content;
+
   // Update version
   if (oldVersion != null) {
+    final editor = YamlEditor(updated);
     editor.update(['version'], newVersion);
+    updated = editor.toString();
     stdout.writeln('$packageName: $oldVersion → $newVersion');
   }
 
-  // Update aim_* dependencies
+  _printAimConstraintChanges(yaml, newVersion);
+  updated = bumpAimConstraints(updated, newVersion);
+
+  file.writeAsStringSync(updated);
+}
+
+/// Updates only the `aim_*` dependency/dev_dependency constraints of a
+/// workspace member that is not a top-level package (fixtures, examples,
+/// tools). Does not touch `version:` or the CHANGELOG.
+void _updateWorkspaceMemberDeps(File file, String newVersion) {
+  final content = file.readAsStringSync();
+  final yaml = loadYaml(content) as YamlMap;
+  final packageName = (yaml['name'] as String?) ?? file.parent.path;
+
+  stdout.writeln('$packageName (workspace member): deps only');
+  _printAimConstraintChanges(yaml, newVersion);
+
+  final updated = bumpAimConstraints(content, newVersion);
+  file.writeAsStringSync(updated);
+}
+
+/// Prints the `  └─ <dep>: ^old → ^new` lines for every `aim_*`
+/// dependency/dev_dependency constraint in [yaml] that will be bumped to
+/// [newVersion]. Does not perform the update itself.
+void _printAimConstraintChanges(YamlMap yaml, String newVersion) {
   final dependencies = yaml['dependencies'];
   if (dependencies is YamlMap) {
     for (final dep in dependencies.keys) {
@@ -93,14 +160,12 @@ void _updatePubspec(File file, String newVersion) {
       if (_isAimPackage(depName)) {
         final currentVersion = dependencies[depName];
         if (currentVersion is String) {
-          editor.update(['dependencies', depName], '^$newVersion');
           stdout.writeln('  └─ $depName: $currentVersion → ^$newVersion');
         }
       }
     }
   }
 
-  // Update aim_* dev_dependencies
   final devDependencies = yaml['dev_dependencies'];
   if (devDependencies is YamlMap) {
     for (final dep in devDependencies.keys) {
@@ -108,14 +173,11 @@ void _updatePubspec(File file, String newVersion) {
       if (_isAimPackage(depName)) {
         final currentVersion = devDependencies[depName];
         if (currentVersion is String) {
-          editor.update(['dev_dependencies', depName], '^$newVersion');
           stdout.writeln('  └─ $depName (dev): $currentVersion → ^$newVersion');
         }
       }
     }
   }
-
-  file.writeAsStringSync(editor.toString());
 }
 
 bool _isAimPackage(String packageName) {
