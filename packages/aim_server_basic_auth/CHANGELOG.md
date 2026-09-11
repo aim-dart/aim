@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - **Breaking:** `BasicAuthEnv` is renamed to `BasicAuthVariables` (deprecated typedef kept for one release). `basicAuth()` now requires `E extends BasicAuthVariables`.
 

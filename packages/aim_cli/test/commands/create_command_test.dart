@@ -60,7 +60,10 @@ void main() {
 
     expect(File(p.join(tmp.path, 'my_server/bin/server.dart')).existsSync(), isTrue);
     expect(File(p.join(tmp.path, 'my_server/Dockerfile')).existsSync(), isTrue);
-    expect(read('my_server/pubspec.yaml'), contains('aim_server: ^0.1.1'));
+    expect(
+      read('my_server/pubspec.yaml'),
+      matches(RegExp(r'aim_server: \^\d+\.\d+\.\d+')),
+    );
     expect(read('my_server/pubspec.yaml'), isNot(contains('target: edge')));
   });
 

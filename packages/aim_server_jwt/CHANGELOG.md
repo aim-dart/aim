@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - **Breaking:** `JwtEnv` is renamed to `JwtVariables` (deprecated typedef kept for one release). `jwt()` now requires `E extends JwtVariables`.
 

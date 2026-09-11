@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - **Breaking:** follows `aim_core`'s rename of `Env` → `Variables` and `envFactory` → `variablesFactory` (re-exported).
 - Internals moved to the new `aim_core` package. `aim_server` re-exports it, so existing imports keep working.

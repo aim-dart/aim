@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - Requires analyzer ^14.0.0, source_gen ^4.3.0, build ^4.0.11; compatible with build_runner 2.16.
 
