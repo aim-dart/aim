@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.2.0
+
+Second beta. Aim now runs on Cloudflare workerd as well as the Dart VM, `aim_postgres` pools connections, and the per-request variable type follows Hono's naming. This release contains breaking changes; see the [Migration Guide](https://aim-dart.dev/server/guides/migration) for step-by-step instructions.
+
+### Highlights
+
+- **`aim_core`** (new): the framework core (`Aim`, routing, middleware, `Context`, `Request`, `Response`) with no `dart:io` dependency. `aim_server` re-exports it, so existing imports keep working.
+- **`aim_edge`** (new): run the same app on Cloudflare workerd, compiled with `dart compile wasm`. `app.serveEdge()`, `c.env` (`Bindings`), `c.cf` (`CfProperties`), `c.executionContext`. Streaming responses (SSE) work.
+- **`aim_cli`**: `aim: target: edge` in `pubspec.yaml` switches `aim build` to WebAssembly and `aim dev` to `wrangler dev` with recompilation on change. `aim create --target edge` scaffolds a worker project.
+- **`aim_postgres`**: connection pooling in `PostgresDatabase.connect()` (`maxConnections`, `acquireTimeout`, `idleTimeout`, `maxLifetime`, `validationInterval`, `poolStats`). Queries on one connection are serialized, fixing protocol corruption under concurrent requests.
+- Requires Dart 3.13.
+
+### Breaking changes
+
+- `Env` → `Variables`, `EmptyEnv` → `EmptyVariables`; `Aim(envFactory:)` → `Aim(variablesFactory:)`. `JwtEnv` → `JwtVariables`, `BasicAuthEnv` → `BasicAuthVariables`. Deprecated typedefs for the class names remain for this release; `envFactory` has no alias.
+- `Request.raw` is `Object?`. On the VM use `c.req.httpRequest` (extension from `aim_server`).
+- `aim_server_multipart`: `UploadedFile.saveTo()` moved to `package:aim_server_multipart/aim_server_multipart_io.dart`. The main library now exports the public API (`MultipartFormData`, `UploadedFile`, `parseMultipart`, `MultipartRequest`); `src/` imports should be replaced.
+- `aim_cli`: `--entry` now overrides `aim.entry` for `aim dev` too; `aim.env` values are parsed as YAML (quote values containing `:`); errors exit non-zero.
+- `aim_postgres`: `db.query()` / `db.execute()` inside a `transaction()` callback now run on a separate pooled connection. Use `tx` for statements that belong to the transaction. Session state (`SET`, `TEMP` tables, `LISTEN`, advisory locks) no longer persists across calls; pass `maxConnections: 1` to keep single-connection behaviour.
+- `aim_orm_codegen` and `aim_cli` require `analyzer ^14.0.0`; the code generator works with `source_gen ^4.3.0` and `build_runner 2.16`.
+
+### Other changes
+
+- Middleware packages (`aim_server_cors`, `cookie`, `form`, `logger`, `sse`, `jwt`, `basic_auth`, `multipart`) depend on `aim_core` and run unchanged on both runtimes. `aim_server_static` remains VM-only.
+- `aim_server`: `Aim.handle()` no longer prints unhandled errors; `serve()` still logs them.
+- `aim_postgres`: `PostgresConnection.isBroken`, `isClosed`, `ping()`; `PoolTimeoutException`.
+- `aim_cli`: `aim:` configuration is parsed with `package:yaml`; the release tooling keeps the scaffold templates' dependency pins in sync.
+- Docs: new Migration Guide, CLI `target` documentation, connection pooling guide.
+
+### Packages in this release
+
+`aim_core` 0.2.0 (new), `aim_server`, `aim_edge` 0.2.0 (new), `aim_cli`, `aim_server_cors`, `aim_server_cookie`, `aim_server_form`, `aim_server_multipart`, `aim_server_static`, `aim_server_logger`, `aim_server_sse`, `aim_server_jwt`, `aim_server_basic_auth`, `aim_server_testing`, `aim_database`, `aim_postgres`, `aim_orm`, `aim_orm_postgres`, `aim_orm_codegen` — all 0.2.0.
+
 ## Unreleased
 
 ### Database (aim_postgres)
