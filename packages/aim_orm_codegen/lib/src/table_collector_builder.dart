@@ -39,9 +39,9 @@ class TableCollectorBuilder implements Builder {
 
       final fields = <Map<String, dynamic>>[];
       for (final field in tableData.record.fields) {
-        if (field is NamedExpression) {
-          final fieldName = field.name.label.name;
-          final fieldInfo = _analyzeField(fieldName, field.expression);
+        if (field is RecordLiteralNamedField) {
+          final fieldName = field.name.lexeme;
+          final fieldInfo = _analyzeField(fieldName, field.fieldExpression);
           fields.add(fieldInfo);
         }
       }
@@ -96,9 +96,9 @@ class TableCollectorBuilder implements Builder {
 
         if (methodName == 'varchar') {
           for (final arg in method.argumentList.arguments) {
-            if (arg is NamedExpression && arg.name.label.name == 'length') {
-              if (arg.expression is IntegerLiteral) {
-                varcharLength = (arg.expression as IntegerLiteral).value;
+            if (arg is NamedArgument && arg.name.lexeme == 'length') {
+              if (arg.argumentExpression is IntegerLiteral) {
+                varcharLength = (arg.argumentExpression as IntegerLiteral).value;
               }
             }
           }

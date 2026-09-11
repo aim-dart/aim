@@ -1,3 +1,7 @@
+## Unreleased
+
+- Requires analyzer ^14.0.0, source_gen ^4.3.0, build ^4.0.11; compatible with build_runner 2.16.
+
 ## 0.1.1
 
 See [Release Notes](https://github.com/aim-dart/aim/releases/tag/0.1.1)

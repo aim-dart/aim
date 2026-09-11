@@ -180,10 +180,10 @@ class DbGenerateCommand extends Command<void> {
               final foreignKeys = <ForeignKeySchema>[];
 
               for (final field in initializer.fields) {
-                if (field is! NamedExpression) continue;
+                if (field is! RecordLiteralNamedField) continue;
 
-                final fieldName = field.name.label.name;
-                final columnInfo = _analyzeColumn(fieldName, field.expression);
+                final fieldName = field.name.lexeme;
+                final columnInfo = _analyzeColumn(fieldName, field.fieldExpression);
 
                 columns.add(columnInfo.column);
                 if (columnInfo.isIndexed) {
@@ -249,9 +249,9 @@ class DbGenerateCommand extends Command<void> {
           // varchar の length
           if (methodName == 'varchar') {
             for (final arg in args) {
-              if (arg is NamedExpression && arg.name.label.name == 'length') {
-                if (arg.expression is IntegerLiteral) {
-                  varcharLength = (arg.expression as IntegerLiteral).value;
+              if (arg is NamedArgument && arg.name.lexeme == 'length') {
+                if (arg.argumentExpression is IntegerLiteral) {
+                  varcharLength = (arg.argumentExpression as IntegerLiteral).value;
                 }
               }
             }
@@ -268,7 +268,7 @@ class DbGenerateCommand extends Command<void> {
           // withDefault(DateTime.now()) or withDefault('value') etc.
           final args = method.argumentList.arguments;
           if (args.isNotEmpty) {
-            defaultValue = _extractDefaultValue(args.first);
+            defaultValue = _extractDefaultValue(args.first.argumentExpression);
           }
         case 'references':
           // references(() => users.id, onDelete: OnDeleteAction.cascade)
@@ -348,11 +348,11 @@ class DbGenerateCommand extends Command<void> {
     return '__HAS_DEFAULT__';
   }
 
-  String? _extractOnDelete(NodeList<Expression> args) {
+  String? _extractOnDelete(NodeList<Argument> args) {
     for (final arg in args) {
-      if (arg is NamedExpression && arg.name.label.name == 'onDelete') {
-        if (arg.expression is PrefixedIdentifier) {
-          return (arg.expression as PrefixedIdentifier).identifier.name;
+      if (arg is NamedArgument && arg.name.lexeme == 'onDelete') {
+        if (arg.argumentExpression is PrefixedIdentifier) {
+          return (arg.argumentExpression as PrefixedIdentifier).identifier.name;
         }
       }
     }

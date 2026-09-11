@@ -29,8 +29,3 @@ updates:
     groups:
       dart-deps:
         patterns: ["*"]
-    ignore:
-      # analyzer 14 changes the AST API and needs a code migration in
-      # aim_cli (db:generate) and aim_orm_codegen; do it in a dedicated PR.
-      - dependency-name: analyzer
-        update-types: ["version-update:semver-major"]
