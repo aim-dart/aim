@@ -131,7 +131,13 @@ class Pool<C> {
     required this.destroy,
     required this.options,
     DateTime Function()? now,
-  }) : _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now {
+    final interval = evictionIntervalFor(options);
+    if (interval != null) {
+      _evictionTimer =
+          Timer.periodic(interval, (_) => unawaited(evictExpired()));
+    }
+  }
 
   /// Opens a new connection.
   final Future<C> Function() create;
@@ -155,6 +161,8 @@ class Pool<C> {
 
   /// Creates started by [_replenishForWaiters] that have not yet completed.
   int _pendingForWaiters = 0;
+
+  Timer? _evictionTimer;
 
   bool _closed = false;
   int _created = 0;
@@ -232,13 +240,57 @@ class Pool<C> {
     _handOff(entry);
   }
 
+  /// How often the background eviction timer runs for [options]:
+  /// half of the smallest enabled duration among `idleTimeout` and
+  /// `maxLifetime`, or `null` when both are disabled.
+  static Duration? evictionIntervalFor(PoolOptions options) {
+    final enabled = [options.idleTimeout, options.maxLifetime]
+        .where((d) => d > Duration.zero)
+        .toList();
+    if (enabled.isEmpty) return null;
+    final smallest = enabled.reduce((a, b) => a < b ? a : b);
+    final half = smallest ~/ 2;
+    return half > Duration.zero ? half : smallest;
+  }
+
+  /// Destroys idle connections that exceeded [PoolOptions.idleTimeout] or
+  /// [PoolOptions.maxLifetime]. Called periodically by the pool; exposed so
+  /// callers and tests can trigger it directly.
+  Future<void> evictExpired() async {
+    if (_closed) return;
+    final expired = _idle
+        .where((e) => _isPastLifetime(e) || _isIdleExpired(e))
+        .toList();
+    for (final entry in expired) {
+      _idle.remove(entry);
+    }
+    for (final entry in expired) {
+      await _destroyEntry(entry);
+    }
+  }
+
   /// Closes the pool: destroys idle connections and fails every waiter.
   /// Connections still checked out are destroyed when released.
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
-    while (_waiters.isNotEmpty) {
-      _waiters.removeFirst().completeError(StateError('Pool is closed'));
+    _evictionTimer?.cancel();
+    if (_waiters.isNotEmpty) {
+      final waiters = List<Completer<C>>.of(_waiters);
+      _waiters.clear();
+      // Deferred with the Future() constructor (a zero-duration Timer, not a
+      // microtask): this guarantees the failure runs only after the current
+      // microtask queue has fully drained, so a caller that does
+      // `final f = pool.acquire(); ...; await pool.close();` before
+      // attaching a listener to `f` has always had the chance to do so by
+      // the time we call completeError. Completing the error synchronously
+      // here would otherwise often race ahead of that listener attachment
+      // and get reported as an unhandled async error.
+      unawaited(Future(() {
+        for (final waiter in waiters) {
+          waiter.completeError(StateError('Pool is closed'));
+        }
+      }));
     }
     final idle = List<_PooledEntry<C>>.of(_idle);
     _idle.clear();
@@ -280,6 +332,10 @@ class Pool<C> {
 
   bool _needsValidation(_PooledEntry<C> entry) =>
       _now().difference(entry.lastUsedAt) >= options.validationInterval;
+
+  bool _isIdleExpired(_PooledEntry<C> entry) =>
+      options.idleTimeout > Duration.zero &&
+      _now().difference(entry.lastUsedAt) >= options.idleTimeout;
 
   /// Runs [validate]; a validator that throws counts as a failed validation.
   Future<bool> _isValid(_PooledEntry<C> entry) async {

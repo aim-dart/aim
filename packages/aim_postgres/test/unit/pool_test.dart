@@ -454,4 +454,147 @@ void main() {
       await pool.close();
     });
   });
+
+  group('Pool eviction', () {
+    late Harness h;
+
+    setUp(() => h = Harness());
+
+    PoolOptions evictOptions() => PoolOptions(
+          maxConnections: 3,
+          acquireTimeout: const Duration(milliseconds: 200),
+          idleTimeout: const Duration(minutes: 1),
+          maxLifetime: const Duration(minutes: 10),
+          validationInterval: const Duration(hours: 1),
+        );
+
+    test('evictionIntervalFor is half of the smallest enabled duration', () {
+      expect(
+        Pool.evictionIntervalFor(evictOptions()),
+        const Duration(seconds: 30),
+      );
+      expect(
+        Pool.evictionIntervalFor(PoolOptions(
+          idleTimeout: Duration.zero,
+          maxLifetime: const Duration(minutes: 4),
+        )),
+        const Duration(minutes: 2),
+      );
+      expect(
+        Pool.evictionIntervalFor(
+          PoolOptions(idleTimeout: Duration.zero, maxLifetime: Duration.zero),
+        ),
+        isNull,
+      );
+    });
+
+    test('evictExpired closes idle connections past idleTimeout', () async {
+      final pool = h.pool(evictOptions());
+      final a = await pool.acquire();
+      final b = await pool.acquire();
+      final c = await pool.acquire();
+      await pool.release(a);
+      await pool.release(b);
+      h.advance(const Duration(minutes: 1));
+
+      await pool.evictExpired();
+      expect(h.destroyed, unorderedEquals([a, b]));
+      expect(pool.stats.idle, 0);
+      expect(pool.stats.inUse, 1, reason: 'in-use connections are untouched');
+      await pool.release(c);
+      await pool.close();
+    });
+
+    test('evictExpired leaves recently used idle connections alone', () async {
+      final pool = h.pool(evictOptions());
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(seconds: 59));
+      await pool.evictExpired();
+      expect(h.destroyed, isEmpty);
+      await pool.close();
+    });
+
+    test('evictExpired closes idle connections past maxLifetime', () async {
+      final pool = h.pool(evictOptions());
+      final a = await pool.acquire();
+      // Keep it busy so idleTimeout never applies, then release just before
+      // the lifetime check.
+      h.advance(const Duration(minutes: 10));
+      await pool.release(a);
+      await pool.evictExpired();
+      expect(h.destroyed, [a]);
+      await pool.close();
+    });
+  });
+
+  group('Pool close', () {
+    late Harness h;
+
+    setUp(() => h = Harness());
+
+    test('destroys idle now and in-use connections on release', () async {
+      final pool = h.pool(quietOptions(maxConnections: 2));
+      final a = await pool.acquire();
+      final b = await pool.acquire();
+      await pool.release(a);
+
+      await pool.close();
+      expect(pool.isClosed, isTrue);
+      expect(h.destroyed, [a]);
+      expect(pool.stats.idle, 0);
+      expect(pool.stats.inUse, 1);
+
+      await pool.release(b);
+      expect(h.destroyed, [a, b]);
+      expect(pool.stats.total, 0);
+    });
+
+    test('fails waiters with StateError', () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      final a = await pool.acquire();
+      final waiting = pool.acquire();
+      await Future<void>.delayed(Duration.zero);
+      expect(pool.stats.waiting, 1);
+
+      await pool.close();
+      await expectLater(waiting, throwsStateError);
+      expect(pool.stats.waiting, 0);
+      await pool.release(a);
+    });
+
+    test('acquire after close throws', () async {
+      final pool = h.pool(quietOptions());
+      await pool.close();
+      expect(() => pool.acquire(), throwsStateError);
+    });
+
+    test('acquire whose create finishes after close destroys and throws',
+        () async {
+      final gate = Completer<FakeConn>();
+      final destroyed = <FakeConn>[];
+      final pool = Pool<FakeConn>(
+        create: () => gate.future,
+        validate: (_) async => true,
+        destroy: (c) async => destroyed.add(c),
+        options: quietOptions(maxConnections: 1),
+      );
+      final acquiring = pool.acquire();
+      await Future<void>.delayed(Duration.zero);
+      expect(pool.stats.total, 1, reason: 'pending create is counted');
+
+      await pool.close();
+      gate.complete(FakeConn(1));
+
+      await expectLater(acquiring, throwsStateError);
+      expect(destroyed, hasLength(1));
+      expect(pool.stats.total, 0);
+    });
+
+    test('close is idempotent', () async {
+      final pool = h.pool(quietOptions());
+      await pool.close();
+      await expectLater(pool.close(), completes);
+    });
+  });
 }
