@@ -54,3 +54,4 @@ specs/
 # dart compile wasm output and wrangler state (examples/edge-sample)
 .out/
 .wrangler/
+.vercel/
