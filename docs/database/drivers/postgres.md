@@ -56,6 +56,53 @@ postgresql://user:password@host:port/database?param=value
 |-----------|-------------|---------|
 | `sslmode` | SSL connection mode | `prefer` |
 
+### Connection Pooling
+
+`PostgresDatabase.connect()` opens a pool of connections. One connection is
+established immediately so configuration errors fail fast; the rest are opened
+on demand.
+
+```dart
+final db = await PostgresDatabase.connect(
+  'postgresql://user:pass@localhost:5432/mydb',
+  maxConnections: 20,
+  acquireTimeout: Duration(seconds: 5),
+);
+```
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `maxConnections` | Upper bound on open connections | `10` |
+| `acquireTimeout` | Bound for each blocking step of acquiring a connection (validate / connect / wait); throws `PoolTimeoutException` | `30s` |
+| `idleTimeout` | Idle connections unused for this long are closed. `Duration.zero` disables | `10min` |
+| `maxLifetime` | Connections older than this are closed once idle. `Duration.zero` disables | `30min` |
+| `validationInterval` | Idle connections unused for at least this long are pinged before reuse. `Duration.zero` pings every time | `30s` |
+
+Each `query()` / `execute()` borrows a connection for the duration of the call.
+`transaction()` pins one connection for the whole callback. Connections that
+hit a transport error are discarded and replaced automatically.
+
+Queries issued on one connection are serialized, so concurrent calls inside a
+single `transaction()` callback do not corrupt the protocol stream. That is not
+transaction isolation: they still run in the same server-side transaction, in
+the order they were issued.
+
+#### What pooling changes
+
+- `db.query()` / `db.execute()` called **inside** a `transaction()` callback run
+  on a *different* connection and are **not** part of that transaction. Use the
+  `tx` argument for everything that must be atomic.
+- Session state does not survive across calls: `TEMP` tables, `SET`, session
+  advisory locks and `LISTEN` belong to whichever connection ran them. Put such
+  work inside one `transaction()` callback, or use `maxConnections: 1`.
+- Nesting a `db.*` call inside a `transaction()` callback holds two connections
+  at once. With `maxConnections: 1` it always ends in `PoolTimeoutException`.
+
+```dart
+print(db.poolStats);
+// PoolStats(total: 3, idle: 2, inUse: 1, waiting: 0, created: 3, destroyed: 0, timeouts: 0, validationFailures: 0)
+```
+
 ## Queries
 
 ### Named Parameters
@@ -131,28 +178,24 @@ await db.transaction((tx) async {
 });
 ```
 
-### Manual Transaction Control
+### Manual Transaction Control Is Not Supported
 
-```dart
-await db.execute('BEGIN');
-try {
-  await db.execute('UPDATE ...');
-  await db.execute('INSERT ...');
-  await db.execute('COMMIT');
-} catch (e) {
-  await db.execute('ROLLBACK');
-  rethrow;
-}
-```
+Do not send `BEGIN` / `COMMIT` / `ROLLBACK` through `db.execute()`. Every
+`query()` / `execute()` call borrows its own connection from the pool, so the
+statements would run on different connections and nothing would be atomic.
+Always use `db.transaction()`, which pins one connection for the whole callback.
+
+If a connection is handed back to the pool while still inside a transaction
+(for example after a manual `BEGIN`), the pool discards it instead of reusing
+it, so the mistake costs a connection rather than corrupting later queries.
 
 ## Error Handling
 
 ```dart
 try {
   await db.query('SELECT * FROM nonexistent_table');
-} on PostgresException catch (e) {
+} on QueryException catch (e) {
   print('PostgreSQL error: ${e.message}');
-  print('Code: ${e.code}');
 }
 ```
 
@@ -209,6 +252,9 @@ void main() async {
 }
 ```
 
+`PostgresDatabase` is a connection pool, so a single instance shared across the
+whole application is the intended usage. Do not create one per request.
+
 ### 2. Use Named Parameters
 
 ```dart
@@ -227,7 +273,7 @@ await db.query('SELECT * FROM users WHERE name = \'$userInput\'');
 ```dart
 try {
   final result = await db.query('SELECT ...');
-} on PostgresException catch (e) {
+} on QueryException catch (e) {
   // Handle database errors
   print('Database error: ${e.message}');
 } catch (e) {

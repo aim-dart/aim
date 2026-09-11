@@ -3,8 +3,9 @@
 /// This library provides PostgreSQL-specific implementations of the Aim ORM
 /// abstractions. It includes support for:
 ///
+/// - Connection pooling with configurable limits, health checks and eviction
 /// - SSL/TLS connections with multiple security modes
-/// - Cleartext and MD5 password authentication
+/// - Cleartext, MD5 and SCRAM-SHA-256 password authentication
 /// - Simple and Extended Query protocols
 /// - Parameter binding and prepared statements
 ///
@@ -15,9 +16,11 @@
 ///
 /// final db = await PostgresDatabase.connect(
 ///   'postgresql://user:pass@localhost:5432/mydb',
+///   maxConnections: 20,
 /// );
 ///
 /// final results = await db.query('SELECT * FROM users WHERE id = $1', args: [1]);
+/// print(db.poolStats);
 /// await db.close();
 /// ```
 ///
@@ -33,3 +36,4 @@ library;
 
 export 'src/pg_connection.dart';
 export 'src/pg_database.dart';
+export 'src/pool/pool.dart' show PoolOptions, PoolStats, PoolTimeoutException;

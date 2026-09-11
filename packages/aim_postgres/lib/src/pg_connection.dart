@@ -240,6 +240,79 @@ class PostgresConnection {
       StreamController<NoticeMessage>.broadcast();
   Stream<NoticeMessage> get noticeMessage => _noticeController.stream;
 
+  /// Chain that serializes query round-trips on this connection. The wire
+  /// protocol is strictly request/response, so two in-flight queries would
+  /// corrupt each other's message streams.
+  Future<void> _tail = Future<void>.value();
+
+  bool _isBroken = false;
+  bool _isClosed = false;
+  String _transactionStatus = 'I';
+
+  /// `true` once a query round-trip failed for any reason other than a
+  /// server-reported [QueryException] (socket error, unexpected end of
+  /// stream, malformed message), or once [ping] failed. A [QueryException]
+  /// leaves this false: the server returned ReadyForQuery, so the connection
+  /// is intact.
+  bool get isBroken => _isBroken;
+
+  /// `true` once [close] has been called.
+  bool get isClosed => _isClosed;
+
+  /// Transaction status from the last ReadyForQuery: 'I' idle, 'T' in a
+  /// transaction, 'E' in a failed transaction.
+  String get transactionStatus => _transactionStatus;
+
+  /// `true` while the server reports an open (or failed) transaction.
+  bool get inTransaction => _transactionStatus != 'I';
+
+  /// Runs [action] after every previously scheduled action on this
+  /// connection has finished.
+  Future<T> _serialized<T>(Future<T> Function() action) {
+    final previous = _tail;
+    final done = Completer<void>();
+    _tail = done.future;
+    return previous.then((_) => action()).whenComplete(done.complete);
+  }
+
+  /// Sends a request via [send], then reads until ReadyForQuery and parses
+  /// the result. Any failure other than a server-reported [QueryException]
+  /// marks the connection broken.
+  Future<QueryResult> _roundTrip(Future<void> Function() send) {
+    return _serialized(() async {
+      try {
+        await send();
+        final messages = await _receiveUntilReady();
+        // The last message is ReadyForQuery; its single payload byte is the
+        // backend transaction status ('I' / 'T' / 'E').
+        final last = messages.last;
+        if (String.fromCharCode(last[0]) ==
+                PostgresMessageType.readyForQuery.code &&
+            last.length > 5) {
+          _transactionStatus = String.fromCharCode(last[5]);
+        }
+        return parseQueryResult(messages);
+      } on QueryException {
+        rethrow;
+      } catch (_) {
+        _isBroken = true;
+        rethrow;
+      }
+    });
+  }
+
+  /// Cheap liveness probe used by the connection pool before reusing an
+  /// idle connection.
+  Future<bool> ping() async {
+    try {
+      await sendSimpleQuery('SELECT 1');
+      return true;
+    } catch (_) {
+      _isBroken = true;
+      return false;
+    }
+  }
+
   /// Establishes a connection to a PostgreSQL database.
   ///
   /// The [connectionString] should be in the format:
@@ -386,6 +459,7 @@ class PostgresConnection {
   /// Sends a Terminate message to the server to gracefully close the connection,
   /// then cancels the stream iterator and closes the underlying socket.
   Future<void> close() async {
+    _isClosed = true;
     try {
       final builder = BytesBuilder();
       builder.addByte('X'.codeUnitAt(0));
@@ -1011,25 +1085,21 @@ extension PostgresConnectionSimpleQuery on PostgresConnection {
   ///
   /// Uses the Simple Query Protocol without parameter binding. For queries
   /// with parameters, use [sendExtendedQuery] instead.
-  Future<QueryResult> sendSimpleQuery(String sql) async {
-    final builder = BytesBuilder();
-    builder.addByte('Q'.codeUnitAt(0));
+  Future<QueryResult> sendSimpleQuery(String sql) {
+    return _roundTrip(() async {
+      final builder = BytesBuilder();
+      builder.addByte('Q'.codeUnitAt(0));
 
-    final sqlBytes = utf8.encode(sql);
-    final messageLength = 4 + sqlBytes.length + 1; // length + SQL + null
+      final sqlBytes = utf8.encode(sql);
+      final messageLength = 4 + sqlBytes.length + 1; // length + SQL + null
 
-    builder.add(int32Bytes(messageLength));
-    builder.add(sqlBytes);
-    builder.addByte(0); // null terminator
+      builder.add(int32Bytes(messageLength));
+      builder.add(sqlBytes);
+      builder.addByte(0); // null terminator
 
-    _socket.add(builder.toBytes());
-    await _socket.flush();
-
-    // Receive messages
-    final messages = await _receiveUntilReady();
-
-    // Parse result
-    return parseQueryResult(messages);
+      _socket.add(builder.toBytes());
+      await _socket.flush();
+    });
   }
 }
 
@@ -1045,27 +1115,14 @@ extension PostgresConnectionExtendedQuery on PostgresConnection {
   Future<QueryResult> sendExtendedQuery(
     String sql,
     List<dynamic> parameters,
-  ) async {
-    // 1. Send Parse message
-    await _sendParse(sql, parameters.length);
-
-    // 2. Send Bind message
-    await _sendBind(parameters);
-
-    // 3. Send Describe message (Portal)
-    await _sendDescribe('P');
-
-    // 4. Send Execute message
-    await _sendExecute();
-
-    // 5. Send Sync message
-    await _sendSync();
-
-    // 6. Receive messages until ReadyForQuery
-    final messages = await _receiveUntilReady();
-
-    // 7. Parse result
-    return parseQueryResult(messages);
+  ) {
+    return _roundTrip(() async {
+      await _sendParse(sql, parameters.length);
+      await _sendBind(parameters);
+      await _sendDescribe('P');
+      await _sendExecute();
+      await _sendSync();
+    });
   }
 
   /// Sends a Parse message.
