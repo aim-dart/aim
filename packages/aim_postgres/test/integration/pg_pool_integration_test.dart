@@ -222,6 +222,35 @@ void main() {
     });
   });
 
+  group('session hygiene', () {
+    test('a connection left inside a transaction is discarded, not reused',
+        () async {
+      final db = await PostgresDatabase.connect(_url, maxConnections: 1);
+      try {
+        await db.execute('BEGIN');
+        expect(db.poolStats.destroyed, 1);
+        expect(db.poolStats.idle, 0);
+        // The next call gets a fresh connection with no open transaction.
+        final rows = await db.query('SELECT 1 AS v');
+        expect(rows.single['v'], '1');
+        expect(db.poolStats.created, 2);
+      } finally {
+        await db.close();
+      }
+    });
+
+    test('a normal transaction leaves the connection reusable', () async {
+      final db = await PostgresDatabase.connect(_url, maxConnections: 1);
+      try {
+        await db.transaction((tx) => tx.query('SELECT 1'));
+        expect(db.poolStats.destroyed, 0);
+        expect(db.poolStats.idle, 1);
+      } finally {
+        await db.close();
+      }
+    });
+  });
+
   group('PostgresConnection state', () {
     test('a server error leaves the connection usable and not broken', () async {
       final conn = await PostgresConnection.connect(_url);
@@ -253,6 +282,24 @@ void main() {
       expect(conn.isBroken, isTrue);
       await conn.close();
       expect(conn.isClosed, isTrue);
+    });
+
+    test('tracks transaction status from ReadyForQuery', () async {
+      final conn = await PostgresConnection.connect(_url);
+      try {
+        expect(conn.inTransaction, isFalse);
+        await conn.sendSimpleQuery('BEGIN');
+        expect(conn.transactionStatus, 'T');
+        await expectLater(
+          conn.sendSimpleQuery('SELECT * FROM no_such_table_xyz'),
+          throwsA(isA<QueryException>()),
+        );
+        expect(conn.transactionStatus, 'E');
+        await conn.sendSimpleQuery('ROLLBACK');
+        expect(conn.transactionStatus, 'I');
+      } finally {
+        await conn.close();
+      }
     });
 
     test('ping returns false on a terminated backend', () async {

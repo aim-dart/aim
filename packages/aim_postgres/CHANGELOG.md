@@ -16,6 +16,18 @@
 - Concurrent `query()` / `execute()` calls on one `PostgresDatabase` previously
   interleaved on a single socket. They now run on separate pooled connections.
 
+### Behaviour changes
+
+- `db.query()` / `db.execute()` inside a `transaction()` callback now run on a
+  separate pooled connection and are not part of the transaction; use `tx`.
+- Session state (`TEMP` tables, `SET`, `LISTEN`, advisory locks) no longer
+  persists across calls. Use `maxConnections: 1` to keep the old single-connection
+  behaviour.
+- A connection returned to the pool while inside a transaction (manual `BEGIN`
+  via `execute()`) is discarded rather than reused.
+- `acquireTimeout` bounds each blocking step of acquiring a connection
+  (validation, connect, wait).
+
 
 ## 0.1.1
 

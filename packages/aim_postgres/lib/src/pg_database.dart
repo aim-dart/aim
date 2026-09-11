@@ -148,7 +148,13 @@ class PostgresDatabase extends Database implements PostgresQueryable {
     try {
       return await fn(conn, () => forceDiscard = true);
     } finally {
-      await _pool.release(conn, discard: forceDiscard || conn.isBroken);
+      // A connection handed back while still inside a transaction (manual
+      // BEGIN through execute(), or a stashed PostgresTransaction) would
+      // poison the next borrower, so it is discarded instead of reused.
+      await _pool.release(
+        conn,
+        discard: forceDiscard || conn.isBroken || conn.inTransaction,
+      );
     }
   }
 }

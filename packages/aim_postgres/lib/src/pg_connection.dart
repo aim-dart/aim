@@ -247,14 +247,24 @@ class PostgresConnection {
 
   bool _isBroken = false;
   bool _isClosed = false;
+  String _transactionStatus = 'I';
 
-  /// `true` once a transport-level failure (socket error, unexpected end of
-  /// stream) has been observed. Server errors ([QueryException]) do not set
-  /// this: the server returned ReadyForQuery, so the connection is intact.
+  /// `true` once a query round-trip failed for any reason other than a
+  /// server-reported [QueryException] (socket error, unexpected end of
+  /// stream, malformed message), or once [ping] failed. A [QueryException]
+  /// leaves this false: the server returned ReadyForQuery, so the connection
+  /// is intact.
   bool get isBroken => _isBroken;
 
   /// `true` once [close] has been called.
   bool get isClosed => _isClosed;
+
+  /// Transaction status from the last ReadyForQuery: 'I' idle, 'T' in a
+  /// transaction, 'E' in a failed transaction.
+  String get transactionStatus => _transactionStatus;
+
+  /// `true` while the server reports an open (or failed) transaction.
+  bool get inTransaction => _transactionStatus != 'I';
 
   /// Runs [action] after every previously scheduled action on this
   /// connection has finished.
@@ -273,6 +283,14 @@ class PostgresConnection {
       try {
         await send();
         final messages = await _receiveUntilReady();
+        // The last message is ReadyForQuery; its single payload byte is the
+        // backend transaction status ('I' / 'T' / 'E').
+        final last = messages.last;
+        if (String.fromCharCode(last[0]) ==
+                PostgresMessageType.readyForQuery.code &&
+            last.length > 5) {
+          _transactionStatus = String.fromCharCode(last[5]);
+        }
         return parseQueryResult(messages);
       } on QueryException {
         rethrow;

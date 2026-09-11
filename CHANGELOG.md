@@ -1,4 +1,28 @@
 # Changelog
+
+## Unreleased
+
+### Database (aim_postgres)
+
+- Connection pooling in `PostgresDatabase.connect()`: `maxConnections` (default 10),
+  `acquireTimeout` (30s), `idleTimeout` (10min), `maxLifetime` (30min),
+  `validationInterval` (30s), plus `PostgresDatabase.poolStats` and
+  `PoolTimeoutException`.
+- Queries on one connection are serialized, and `PostgresConnection` gained
+  `isBroken`, `isClosed` and `ping()`.
+- Fixed: concurrent `query()` / `execute()` calls no longer interleave on a
+  single socket.
+- Behaviour change: `db.query()` / `db.execute()` inside a `transaction()`
+  callback run on a separate connection and are not part of the transaction;
+  use `tx`.
+- Behaviour change: session state (`TEMP` tables, `SET`, `LISTEN`, advisory
+  locks) no longer persists across calls; use `maxConnections: 1` for the old
+  single-connection behaviour.
+- Behaviour change: a connection returned while inside a transaction (manual
+  `BEGIN`) is discarded, and `acquireTimeout` now bounds each blocking step of
+  acquiring a connection.
+
+
 ## 0.1.1
 Internal fixes. No functional changes.
 

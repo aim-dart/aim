@@ -326,6 +326,22 @@ void main() {
       await pool.release(c);
       await pool.close();
     });
+
+    test(
+        'a create that hangs past acquireTimeout throws and is destroyed when it lands',
+        () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      h.createGate = Completer<void>();
+      await expectLater(pool.acquire(), throwsA(isA<PoolTimeoutException>()));
+      expect(pool.stats.total, 0);
+      expect(pool.stats.timeouts, 1);
+
+      h.createGate!.complete();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(h.destroyed, hasLength(1), reason: 'late connection is destroyed');
+      await pool.close();
+    });
   });
 
   group('Pool validation and lifetime on acquire', () {
@@ -439,6 +455,23 @@ void main() {
       await pool.close();
     });
 
+    test('a validation that hangs past acquireTimeout counts as failed',
+        () async {
+      final pool = h.pool(quietOptions(maxConnections: 1));
+      final a = await pool.acquire();
+      await pool.release(a);
+      h.advance(const Duration(seconds: 30));
+      h.validateGate = Completer<void>();
+
+      final b = await pool.acquire();
+      expect(b, isNot(same(a)));
+      expect(h.destroyed, [a]);
+      expect(pool.stats.validationFailures, 1);
+      h.validateGate!.complete();
+      await pool.release(b);
+      await pool.close();
+    });
+
     test('a throwing validator counts as a failed validation', () async {
       final pool = h.pool(quietOptions());
       final a = await pool.acquire();
@@ -485,6 +518,14 @@ void main() {
           PoolOptions(idleTimeout: Duration.zero, maxLifetime: Duration.zero),
         ),
         isNull,
+      );
+      expect(
+        Pool.evictionIntervalFor(PoolOptions(
+          idleTimeout: const Duration(microseconds: 1),
+          maxLifetime: Duration.zero,
+        )),
+        const Duration(milliseconds: 1),
+        reason: 'sub-millisecond intervals are clamped to 1ms',
       );
     });
 

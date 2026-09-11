@@ -26,8 +26,11 @@ class PoolOptions {
   /// Upper bound on connections (idle + in use + being created).
   final int maxConnections;
 
-  /// How long [Pool.acquire] waits for a free connection before throwing
-  /// [PoolTimeoutException].
+  /// Bound for each blocking phase of [Pool.acquire]: validating an idle
+  /// connection, opening a new one, and waiting for a release. Each phase is
+  /// bounded separately, so a single acquire can take up to three times this
+  /// in the worst case. Exceeding it throws [PoolTimeoutException] (or, for
+  /// validation, discards the connection and moves on).
   final Duration acquireTimeout;
 
   /// Idle connections unused for longer than this are closed.
@@ -250,7 +253,11 @@ class Pool<C> {
     if (enabled.isEmpty) return null;
     final smallest = enabled.reduce((a, b) => a < b ? a : b);
     final half = smallest ~/ 2;
-    return half > Duration.zero ? half : smallest;
+    final interval = half > Duration.zero ? half : smallest;
+    // Timer.periodic with a sub-millisecond period would spin the event loop.
+    return interval < const Duration(milliseconds: 1)
+        ? const Duration(milliseconds: 1)
+        : interval;
   }
 
   /// Destroys idle connections that exceeded [PoolOptions.idleTimeout] or
@@ -323,10 +330,14 @@ class Pool<C> {
       options.idleTimeout > Duration.zero &&
       _now().difference(entry.lastUsedAt) >= options.idleTimeout;
 
-  /// Runs [validate]; a validator that throws counts as a failed validation.
+  /// Runs [validate]; a validator that throws, or that does not answer
+  /// within [PoolOptions.acquireTimeout], counts as a failed validation.
+  ///
+  /// A hung validate may still complete later; that is harmless because the
+  /// entry is destroyed either way and `destroy` closes its socket.
   Future<bool> _isValid(_PooledEntry<C> entry) async {
     try {
-      return await validate(entry.conn);
+      return await validate(entry.conn).timeout(options.acquireTimeout);
     } catch (_) {
       return false;
     }
@@ -335,7 +346,19 @@ class Pool<C> {
   Future<_PooledEntry<C>> _createEntry() async {
     _pending++;
     try {
-      final conn = await create();
+      final creating = create();
+      final C conn;
+      try {
+        conn = await creating.timeout(options.acquireTimeout);
+      } on TimeoutException {
+        // The create may still land later; make sure it does not leak.
+        unawaited(creating.then(
+          (late) => destroy(late).catchError((_) {}),
+          onError: (Object _, StackTrace _) {},
+        ));
+        _timeouts++;
+        throw PoolTimeoutException(options.acquireTimeout, stats);
+      }
       _created++;
       return _PooledEntry(conn, _now());
     } finally {
