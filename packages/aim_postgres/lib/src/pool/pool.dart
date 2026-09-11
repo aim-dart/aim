@@ -275,22 +275,8 @@ class Pool<C> {
     if (_closed) return;
     _closed = true;
     _evictionTimer?.cancel();
-    if (_waiters.isNotEmpty) {
-      final waiters = List<Completer<C>>.of(_waiters);
-      _waiters.clear();
-      // Deferred with the Future() constructor (a zero-duration Timer, not a
-      // microtask): this guarantees the failure runs only after the current
-      // microtask queue has fully drained, so a caller that does
-      // `final f = pool.acquire(); ...; await pool.close();` before
-      // attaching a listener to `f` has always had the chance to do so by
-      // the time we call completeError. Completing the error synchronously
-      // here would otherwise often race ahead of that listener attachment
-      // and get reported as an unhandled async error.
-      unawaited(Future(() {
-        for (final waiter in waiters) {
-          waiter.completeError(StateError('Pool is closed'));
-        }
-      }));
+    while (_waiters.isNotEmpty) {
+      _waiters.removeFirst().completeError(StateError('Pool is closed'));
     }
     final idle = List<_PooledEntry<C>>.of(_idle);
     _idle.clear();

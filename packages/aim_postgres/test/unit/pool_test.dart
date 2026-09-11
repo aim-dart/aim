@@ -553,12 +553,12 @@ void main() {
     test('fails waiters with StateError', () async {
       final pool = h.pool(quietOptions(maxConnections: 1));
       final a = await pool.acquire();
-      final waiting = pool.acquire();
+      final waiting = expectLater(pool.acquire(), throwsStateError);
       await Future<void>.delayed(Duration.zero);
       expect(pool.stats.waiting, 1);
 
       await pool.close();
-      await expectLater(waiting, throwsStateError);
+      await waiting;
       expect(pool.stats.waiting, 0);
       await pool.release(a);
     });
