@@ -128,7 +128,8 @@ import 'package:aim_server/aim_server.dart';
 import 'package:my_app/app.dart';
 
 void main() async {
-  final app = Aim()..configure();
+  final app = Aim();
+  configure(app);
   await app.serve(host: InternetAddress.anyIPv4, port: 8080);
 }
 ```
@@ -139,12 +140,13 @@ import 'package:aim_edge/aim_edge.dart';
 import 'package:my_app/app.dart';
 
 void main() {
-  final app = Aim()..configure();
+  final app = Aim();
+  configure(app);
   app.serveEdge();
 }
 ```
 
-Only the entry files differ. `aim build` and `aim dev` pick the toolchain from `aim: target:` in `pubspec.yaml` (`server` by default, `edge` for Workers).
+Only the entry files differ. `aim build` and `aim dev` follow `aim: target:` in `pubspec.yaml` (`server` by default, `edge` for Workers), so set it to the runtime you deploy with the CLI. The other entry still works with plain Dart tooling: `dart run bin/server.dart` or `dart compile exe bin/server.dart` for the VM, `dart compile wasm lib/main.dart` for Workers.
 
 ## Limitations
 
