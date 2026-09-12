@@ -36,6 +36,19 @@ The CLI will:
 - Set up a basic application
 - Start the development server with hot reload
 
+### Cloudflare Workers
+
+To target Cloudflare Workers instead of the Dart VM, pass `--target edge`:
+
+```bash
+aim create my_worker --target edge
+cd my_worker
+dart pub get
+aim dev   # compiles to WebAssembly and starts wrangler dev
+```
+
+This requires Node.js (the CLI runs `npx wrangler@4`). See [Cloudflare Workers](/server/edge) for bindings, deployment, and what differs from the VM.
+
 ## Manual Setup
 
 If you prefer to set up manually:

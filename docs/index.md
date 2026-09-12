@@ -1,13 +1,13 @@
 ---
 layout: home
 title: Aim - Modular Dart Ecosystem
-titleTemplate: Server, Database, ORM - Use What You Need
-description: A modular ecosystem for Dart. Web server, database, ORM, and CLI tools as independent packages. Pick only what you need.
+titleTemplate: Server, Database, ORM - on the Dart VM and Cloudflare Workers
+description: A modular ecosystem for Dart. Web server, database, ORM, and CLI tools as independent packages. Runs on the Dart VM and on Cloudflare Workers via WebAssembly.
 
 hero:
   name: "Aim"
   text: "Modular ecosystem for Dart"
-  tagline: Web server, database, ORM - use what you need
+  tagline: Web server, database, ORM - on the Dart VM and Cloudflare Workers
   actions:
     - theme: brand
       text: Server
@@ -30,9 +30,14 @@ features:
     details: Native PostgreSQL driver with SSL/TLS, transactions, and type-safe ORM. Works independently without web server.
     link: /database/
     linkText: Get Started
+  - icon: ☁️
+    title: Cloudflare Workers
+    details: Compile the same app to WebAssembly and run it on Cloudflare Workers. Bindings via c.env, request metadata via c.cf.
+    link: /server/edge
+    linkText: Get Started
   - icon: ⚡
     title: CLI Tools
-    details: Development tools with project scaffolding, hot reload, and production builds.
+    details: Project scaffolding, hot reload, production builds, and wasm builds for Cloudflare Workers.
     link: /cli/
     linkText: Get Started
   - icon: 🧩

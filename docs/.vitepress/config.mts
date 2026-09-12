@@ -129,7 +129,8 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/server/' },
             { text: 'Installation', link: '/server/installation' },
-            { text: 'Quick Start', link: '/server/quick-start' }
+            { text: 'Quick Start', link: '/server/quick-start' },
+            { text: 'Cloudflare Workers', link: '/server/edge' }
           ]
         },
         {

@@ -278,5 +278,6 @@ Now that you have a basic application running, explore:
 - [Middleware](/server/concepts/middleware) - Understand the middleware system
 - [Context](/server/concepts/context) - Deep dive into the Context API
 - [Middleware Packages](/server/middleware/) - Add CORS, auth, and more
+- [Cloudflare Workers](/server/edge) - Deploy the same app to the edge with `aim create --target edge`
 
 Happy coding with Aim!
