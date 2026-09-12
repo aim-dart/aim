@@ -18,6 +18,7 @@ A lightweight, fast web framework for Dart.
 - **Middleware** - Composable middleware chain with early response support
 - **Type-Safe** - Custom `Variables` classes for type-safe context variables
 - **Modular** - Use only the middleware packages you need
+- **Runs anywhere** - The same app runs on the Dart VM (`aim_server`) and on [Cloudflare Workers](/server/edge) (`aim_edge`)
 
 ## Quick Start
 
@@ -91,5 +92,6 @@ void main() async {
 
 - [Installation](/server/installation) - Detailed setup guide
 - [Quick Start](/server/quick-start) - Build your first API
+- [Cloudflare Workers](/server/edge) - Deploy the same app to the edge
 - [Routing](/server/concepts/routing) - Path parameters and wildcards
 - [Middleware](/server/concepts/middleware) - Create custom middleware
